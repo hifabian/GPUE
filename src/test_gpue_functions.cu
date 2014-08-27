@@ -69,7 +69,7 @@ void test_sum(){
                 }
         }
        	printf("%e\n",v1[0]);
-	sumVector_d<threads><<<xDim*yDim/threads,threads,threads*sizeof(double)>>>(v1_gpu, v1_gpu, (unsigned int)threads);
+	sumVector_d<threads><<<xDim*yDim/threads,threads,threads*sizeof(double)>>>(v1_gpu, v1_gpu, (unsigned int)threads*8);
         cudaMemcpy(v1, v1_gpu, sizeof(double)*xDim*yDim, cudaMemcpyDeviceToHost);
 	for(int i=0; i<xDim; i++)
 		for(int j=0; j<yDim; ++j)
