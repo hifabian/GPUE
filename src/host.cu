@@ -1,23 +1,28 @@
+#include "../include/gpu_functions.h"
+
 #define hbar 1.0
 double dt_hbar;
 
-
-
 //###########################################################################################################//
+
 //###########################################################################################################//
 /*
 *  Define CUDA variables and set-up required routines.
 */
 //###########################################################################################################//
 
-
-void setupFFT(){
-	if(zDim!=0)
+void setupFFT(	unsigned int *gridSize, 
+		cufftHandle plan_xyz, 
+		cufftHandle plan_xy, 
+		cufftHandle plan_x_batchY)
+{
+	if( gridSize[2] != 0)
         	result = cufftPlan3d(&plan_xyz, xDim, yDim, zDim, CUFFT_Z2Z);
-	if(yDim!=0)
+	if( gridSize[1] != 0)
         	result = cufftPlan2d(&plan_xy, xDim, yDim, CUFFT_Z2Z);
-	if(xDim==yDim)
-		result = cufftPlan1d(&plan_x_batchy, xDim, CUFFT_Z2Z, yDim);
+	if( gridSize[0] == gridSize[1] )
+		result = cufftPlan1d(&plan_x_batchY, xDim, CUFFT_Z2Z, yDim);
+	
 	if(result != CUFFT_SUCCESS){
 		printf("Result:=%d\n",result);
 		printf("Error: Could not set-up CUFFT plan.\n");
@@ -25,7 +30,14 @@ void setupFFT(){
 	}
 }
 
-void allocateMemoryDevice(int *gridSize, double2* wfc_gpu, double2* Uq_gpu, double2* Up_gpu, double2* Uxpy_gpu, double2* Uypx_gpu, double2* buffer){
+void allocateMemoryDevice(	int *gridSize, 
+				double2* wfc_gpu, 
+				double2* Uq_gpu, 
+				double2* Up_gpu, 
+				double2* Uxpy_gpu, 
+				double2* Uypx_gpu, 
+				double2* buffer)
+{
 	cudaMalloc((void**) &wfc_gpu, sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
 	cudaMalloc((void**) &Uq_gpu, sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
 	cudaMalloc((void**) &Up_gpu, sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
@@ -34,7 +46,13 @@ void allocateMemoryDevice(int *gridSize, double2* wfc_gpu, double2* Uq_gpu, doub
 	cudaMalloc((void**) &buffer, sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
 }
 
-void freeMemoryDevice(double2* wfc_gpu, double2* Uq_gpu, double2* Up_gpu, double2* Uxpy_gpu, double2* Uypx_gpu, double2* buffer){
+void freeMemoryDevice(	double2* wfc_gpu, 
+			double2* Uq_gpu, 
+			double2* Up_gpu, 
+			double2* Uxpy_gpu, 
+			double2* Uypx_gpu, 
+			double2* buffer )
+{
 	cudaFree(double2* wfc_gpu);
 	cudaFree(double2* Uq_gpu);
 	cudaFree(double2* Up_gpu);
@@ -42,6 +60,8 @@ void freeMemoryDevice(double2* wfc_gpu, double2* Uq_gpu, double2* Up_gpu, double
 	cudaFree(double2* Uypx_gpu);
 	cudaFree(double2* Uypx_gpu);
 }
+
+//###########################################################################################################//
 
 //###########################################################################################################//
 /*
@@ -53,7 +73,13 @@ void freeMemoryDevice(double2* wfc_gpu, double2* Uq_gpu, double2* Up_gpu, double
 /*
 * @selection Used as a bitwise operation to select which pointers to allocate memory for. 0b1111111111 (0x1ff, 511) selects all
 */
-void allocateMemoryHost(unsigned int selection, int *gridSize, double *V, double *K, double *XPy, double *YPx, double2 *opV, double2 *opK, double2 *opXPy, double2 *opYPx, double2 *wfc){
+void allocateMemoryHost(	unsigned int selection, 
+				unsigned int *gridSize, 
+				double *V, double *K, 
+				double *XPy, double *YPx, 
+				double2 *opV, double2 *opK, 
+				double2 *opXPy, double2 *opYPx, 
+				double2 *wfc){
 
 	if(selection & 0b00000001)
 		double* V = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
@@ -79,16 +105,42 @@ void allocateMemoryHost(unsigned int selection, int *gridSize, double *V, double
 /*
 * Frees memory blocks. Use NULL in place of blocks to ignore.
 */
-void freeMemoryHost( double *V, double *K, double *XPy, double *YPx, double2 *opV, double2 *opK, double2 *opXPy, double2 *opYPx ){
+void freeMemoryHost(	double *V, 
+			double *K, 
+			double *XPy, 
+			double *YPx, 
+			double2 *opV, 
+			double2 *opK, 
+			double2 *opXPy, 
+			double2 *opYPx )
+{
 	free(V); free(K); free(XPy); free(YPx); free(opV); free(opK); free(opXPy); free(opYPx); free(wfc); 
 }
 
 //###########################################################################################################//
 
-void initHamiltonianGnd( int* gridSize, double *X, double *Y, double *Z, double *V, double *K, double *XPy, double *YPx, double2 *opV, double2 *opK, double2 *opXPy, double2 *opYPx ){
-	for(int k=gridSize[2]; k>0; --k){
-		for(int j=gridSize[1]; j>0; --j){
-			for(int i=gridSize[0]; i>0; --i){
+//###########################################################################################################//
+/*
+*  Initialise operators for imaginary time evolution Hamiltonian
+*/
+//###########################################################################################################//
+
+void initHamiltonianGnd(	unsigned int* gridSize, 
+				double *X, 
+				double *Y, 
+				double *Z, 
+				double *V, 
+				double *K, 
+				double *XPy, 
+				double *YPx, 
+				double2 *opV, 
+				double2 *opK, 
+				double2 *opXPy, 
+				double2 *opYPx )
+{
+	for(int k=0; k<gridSize[2]; ++k){
+		for(int j=0; j<gridSize[1]; ++j){
+			for(int i=0; i<gridSize[0]; ++i){
 
 				V[(k*gridSize[1] + j)*gridSize[0] + i] = operator_V( X[i], Y[j], Z[k], mass, omega_V); //may need to set Z[k] to 0 here
 				K[(k*gridSize[1] + j)*gridSize[0] + i] = operator_V( X[i], Y[j], Z[k], mass);
@@ -105,17 +157,37 @@ void initHamiltonianGnd( int* gridSize, double *X, double *Y, double *Z, double 
 	}
 }
 
+//###########################################################################################################//
+
+//###########################################################################################################//
+/*
+*  Initialise operators for real time evolution Hamiltonian.
+*/
+//###########################################################################################################//
+
 /*
 *  Must have V, K, XPY YPX in memory, otherwise this routine will fall over.
 */
-void initHamiltonianEv( int* gridSize, double *X, double *Y, double *Z, double *V, double *K, double *XPy, double *YPx, double2 *opV, double2 *opK, double2 *opXPy, double2 *opYPx ){
+void initHamiltonianEv(	unsigned int* gridSize, 
+			double *X, 
+			double *Y, 
+			double *Z, 
+			double *V, 
+			double *K, 
+			double *XPy, 
+			double *YPx, 
+			double2 *opV, 
+			double2 *opK, 
+			double2 *opXPy, 
+			double2 *opYPx )
+{
 	if(V==NULL || K==NULL || XPy==NULL || YPx==NULL){
 		printf("The required arrays were not stored in memory. Please load them before use.");
 		exit(1);
 	}
-	for(int k=gridSize[2]; k>0; --k){
-		for(int j=gridSize[1]; j>0; --j){
-			for(int i=gridSize[0]; i>0; --i){
+	for(int k=0; k<gridSize[2]; ++k){
+		for(int j=0; j<gridSize[1]; ++j){
+			for(int i=0; i<gridSize[0]; ++i){
 
 				opV[(k*gridSize[1] + j)*gridSize[0] + i] = operator_gnd( V[(k*gridSize[1] + j)*gridSize[0] + i], dt_hbar);
 				opK[(k*gridSize[1] + j)*gridSize[0] + i] = operator_gnd( K[(k*gridSize[1] + j)*gridSize[0] + i], dt_hbar);
@@ -128,6 +200,13 @@ void initHamiltonianEv( int* gridSize, double *X, double *Y, double *Z, double *
 }
 
 //###########################################################################################################//
+
+//###########################################################################################################//
+/*
+*  Initialise operators for real time evolution Hamiltonian.
+*/
+//###########################################################################################################//
+
 void splitOp(double dt, double2 *wfc, double2 *Uq, double2 *Up){
 	
 }
@@ -137,7 +216,18 @@ void parseArguments(int argc, char **argv){
 }
 
 
-void defineGrid(int *gridSize, double *qMax, double *pMax, double *dq, double *dp, double *X, double *Y, double *Z, double *PX, double *PY, double *PZ){
+void defineGrid(	unsigned int *gridSize, 
+			double *qMax, 
+			double *pMax, 
+			double *dq, 
+			double *dp, 
+			double *X, 
+			double *Y, 
+			double *Z, 
+			double *PX, 
+			double *PY, 
+			double *PZ)
+{
 	dp[0] = PI/(qMax[0]);
 	dp[1] = PI/(qMax[1]);
 	dp[2] = PI/(qMax[2]);
@@ -184,20 +274,37 @@ void defineGrid(int *gridSize, double *qMax, double *pMax, double *dq, double *d
 }
 
 //###########################################################################################################//
+
+//###########################################################################################################//
+/*
+*  Do the magic.
+*/
+//###########################################################################################################//
+
 int main(int argc, char **argv){
 	double qMax[3]; double pMax[3];
 	double dq[3]; double dp[3];
 
 	double omega_V[3];
-	int gridSize[3];
+	unsigned int gridSize[3];
 	double mass=1.0;
 	double *X, *Y, *Z, *V, *K, *XPy, *YPx; 
 	double2 *wfc, *opV, *opK, *opXPy, *opYPx, *buffer;
 	double2 *wfc_gpu, *Uq_gpu, *Up_gpu, *Uxpy_gpu, *Uypx_gpu, *buffer;
-
+	
+	//Allocate memory on host and device
 	allocateMemoryHost(0x1ff, gridSize, V, K, XPy, YPx, opV, opK, opXPy, opYPx, wfc);
 	allocateMemoryDevice(gridSize, wfc_gpu, Uq_gpu, Up_gpu, Uxpy_gpu, Uypx_gpu, buffer);
-	createHamiltonian
+
+	//Imaginary time evolution
+	initHamiltonianGnd( gridSize, X, Y, Z, V, K, XPy, YPx, opV, opK, opXPy, opYPx );
+
+	//Real time evolution
+	initHamiltonianEv( gridSize, X, Y, Z, V, K, XPy, YPx, opV, opK, opXPy, opYPx );
+
+	//Free the memory and go home.
+	freeMemoryHost(V,K,XPy,YPx,opV,opK,opXPy,opYPx,wfc);
+	freeMemoryDevice(wfc_gpu,Uq_gpu,Up_gpu,Uxpy_gpu,Uypx_gpu,buffer);
 }
 
 //###########################################################################################################//
