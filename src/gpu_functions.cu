@@ -30,7 +30,6 @@ __device__ unsigned int getGid3d3d(){
 	return gid;
 }
 
-
 //###########################################################################################################//
 /*
 *  Defines values for V, K and subsequent operators at the specified point.
@@ -41,18 +40,18 @@ inline __host__ __device__ double operator_V(double X, double Y, double Z, doubl
 	return 0.5*mass*( pow(X*omega[0],2) + pow(Y*omega[1],2) + pow(Z*omega[2],2) );
 }
 
-inline __host__ __device__ double* operator_K(double PX, double PY, double PZ, double mass){
+inline __host__ __device__ double operator_K(double PX, double PY, double PZ, double mass){
 	return (hbar*hbar/(2*mass))*( pow(PX,2) + pow(PY,2) + pow(PZ,2) );
 }
 
-inline __host__ __device__ double2* operator_gnd(double operator, double dt_hbar){
+inline __host__ __device__ double2 operator_gnd(double operator, double dt_hbar){
 	double2 result;
 	result.x = exp(-operator*dt_hbar);
 	result.y = 0.0;
 	return result;
 }
 
-inline __host__ __device__ double2* operator_ev(double operator, double dt_hbar){
+inline __host__ __device__ double2 operator_ev(double operator, double dt_hbar){
 	double2 result;
 	result.x = cos(-operator*dt_hbar);
 	result.y = sin(-operator*dt_hbar);
