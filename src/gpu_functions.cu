@@ -1,5 +1,5 @@
 /*
-* gpu_functions.cu - GPUE++: Split Operator based GPU solver for Nonlinear 
+* gpu_functions.cu - GPUE2: Split Operator based GPU solver for Nonlinear 
 * Schrodinger Equation, Copyright (C) 2014, Lee J. O'Riordan. 
 
 * This library is free software; you can redistribute it and/or modify 
@@ -14,6 +14,7 @@
 * to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, 
 * Boston, MA 02111-1307 USA 
 */
+
 #include "../include/gpu_functions.h"
 
 #ifndef T32B4
@@ -59,6 +60,7 @@ inline __host__ __device__ double2* operator_ev(double operator, double dt_hbar)
 }
 
 //###########################################################################################################//
+
 //###########################################################################################################//
 /*
 *  Scalar x Vector functions. Double-Double, Double-Complex, Complex-Complex, Int-Int
