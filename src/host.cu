@@ -1,5 +1,24 @@
+/*
+* host.cu - GPUE2: Split Operator based GPU solver for Nonlinear 
+* Schrodinger Equation, Copyright (C) 2014, Lee J. O'Riordan. 
+
+* This library is free software; you can redistribute it and/or modify 
+* it under the terms of the GNU Lesser General Public License as 
+* published by the Free Software Foundation; either version 2.1 of the 
+* License, or (at your option) any later version. This library is 
+* distributed in the hope that it will be useful, but WITHOUT ANY 
+* WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public 
+* License for more details. You should have received a copy of the GNU 
+* Lesser General Public License along with this library; if not, write 
+* to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, 
+* Boston, MA 02111-1307 USA 
+*/
+
 //###########################################################################################################//
-#include "../host.c"
+#include "../include/host.h"
+#include "../include/operators.h"
+#include "../include/gpu_functions.h"
 //###########################################################################################################//
 
 //###########################################################################################################//
@@ -70,10 +89,7 @@ void freeMemoryDevice(struct addr_Uop *U_op){
 /*
 * @selection Used as a bitwise operation to select which pointers to allocate memory for. 0b1111111111 (0x1ff, 511) selects all
 */
-void allocateMemoryHost(	unsigned int selection, 
-				unsigned int *gridSize, 
-				struct addr_op *op, 
-				struct addr_Uop *U_op ){
+void allocateMemoryHost( unsigned int selection, struct addr_grid *grid, struct addr_op *op, struct addr_Uop *U_op ){
 
 	ops->dq = (double*) malloc(sizeof(double)*grid->dim);
 	ops->dp = (double*) malloc(sizeof(double)*grid->dim);
@@ -119,7 +135,7 @@ void freeMemoryHost( struct addr_op *op, struct addr_Uop *U_ops){
 */
 //###########################################################################################################//
 
-void initHamiltonianGnd( struct addr_op *op, struct addr_Uop *U_op ){
+void initHamiltonianGnd( struct addr_grid *grid, struct addr_op *op, struct addr_Uop *U_op ){
 	for(int d=0; d<){
 
 	}
@@ -183,6 +199,8 @@ void initHamiltonianEv( struct addr_grid *grid, struct addr_op *op, struct addr_
 //###########################################################################################################//
 
 void defineGrid(struct addr_grid *grid){
+	grid->Q = (double **) malloc( sizeof(double*)*grid->dim ); 
+	grid->P = (double **) malloc( sizeof(double*)*grid->dim ); 
 	
 	for ( int i=0; i<grid->dim; ++i ){
 		grid->dp[i] = PI/(grid->qMax[i]);
@@ -190,8 +208,8 @@ void defineGrid(struct addr_grid *grid){
 
 		grid->pMax[i] = grid->dp[i]*(grid->gridSize[i]>>1);
 
-		grid->Q[i] = (double *) malloc(sizeof(double)*grid->gridSize[i]); 
-		grid->P[i] = (double *) malloc(sizeof(double)*grid->gridSize[i]); 
+		grid->Q[i] = (double *) malloc( sizeof(double)*grid->gridSize[i] ); 
+		grid->P[i] = (double *) malloc( sizeof(double)*grid->gridSize[i] ); 
 
 		for( int j = 0; j < grid->gridSize[i]>>1; ++j){
 			grid->Q[i][j] = -grid->qMax[i] + (j+1)*grid->dq[i];

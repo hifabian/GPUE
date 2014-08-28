@@ -1,4 +1,22 @@
-#include"../include/gpu_functions.h"
+/*
+* operators.cu - GPUE2: Split Operator based GPU solver for Nonlinear 
+* Schrodinger Equation, Copyright (C) 2014, Lee J. O'Riordan. 
+
+* This library is free software; you can redistribute it and/or modify 
+* it under the terms of the GNU Lesser General Public License as 
+* published by the Free Software Foundation; either version 2.1 of the 
+* License, or (at your option) any later version. This library is 
+* distributed in the hope that it will be useful, but WITHOUT ANY 
+* WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public 
+* License for more details. You should have received a copy of the GNU 
+* Lesser General Public License along with this library; if not, write 
+* to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, 
+* Boston, MA 02111-1307 USA 
+*/
+
+#include "../include/gpu_functions.h"
+#include "../include/operators.h"
 
 //###########################################################################################################//
 /*
@@ -6,11 +24,21 @@
 */
 //###########################################################################################################//
 
-double* generate_V(int[] gridSize, double *gridX, double *gridY, double *gridZ, double mass, double[] omega){
-	double* V = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
-	for(int k=0; k < gridSize[2]; ++k){
-		for(int j=0; j < gridSize[1]; ++j){
-			for(int i=0; i < gridSize[0]; ++i){
+double* generate_V(struct addr_grid *addr_grid, double mass, double[] omega){
+	unsigned int gridMax = 1;
+	for(int i=0; i<addr_grid->dim;++i){
+		gridMax *= addr_grid->gridSize[i];
+	}
+	double* V = (double*) malloc( sizeof(double) * gridMax );
+	for (int d = 0; d < addr_grid->dim; ++i){
+		
+	}
+
+
+
+	for(int k=0; k < grid->gridSize[2]; ++k){
+		for(int j=0; j < grid->gridSize[1]; ++j){
+			for(int i=0; i < grid->gridSize[0]; ++i){
 				V[(k*gridSize[1] + j)*gridSize[0] + i] = operator_V(gridX[i],gridY[j],gridZ[k],mass,omega);
 			}
 		}
