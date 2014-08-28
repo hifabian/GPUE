@@ -1,8 +1,5 @@
-#include "../include/gpu_functions.h"
-
-#define hbar 1.0
-double dt_hbar;
-
+//###########################################################################################################//
+#include "../host.c"
 //###########################################################################################################//
 
 //###########################################################################################################//
@@ -30,42 +27,42 @@ void setupFFT(	unsigned int *gridSize,
 	}
 }
 
-void allocateMemoryDevice(	int *gridSize, 
-				double2* wfc_gpu, 
-				double2* Uq_gpu, 
-				double2* Up_gpu, 
-				double2* Uxpy_gpu, 
-				double2* Uypx_gpu, 
-				double2* buffer)
-{
-	cudaMalloc((void**) &wfc_gpu, sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
-	cudaMalloc((void**) &Uq_gpu, sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
-	cudaMalloc((void**) &Up_gpu, sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
-	cudaMalloc((void**) &XPy_gpu, sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
-	cudaMalloc((void**) &YPx_gpu, sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
-	cudaMalloc((void**) &buffer, sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
+//###########################################################################################################//
+
+//###########################################################################################################//
+/*
+*  Allocate and free memory for the device. Non-required memory can be NULL.
+*/
+//###########################################################################################################//
+
+void allocateMemoryDevice( struct addr_grid *grid, struct addr_Uop *U_op ){
+	unsigned int gridMax = 1;
+	for(int i=0; i<addr_grid->dim;++i){
+		gridMax *= addr_grid->gridSize[i];
+	}
+	cudaMalloc((void**) &(U_op->wfc), sizeof(double2)*gridMax);
+	cudaMalloc((void**) &(U_op->opV), sizeof(double2)*gridMax);
+	cudaMalloc((void**) &(U_op->opK), sizeof(double2)*gridMax);
+	cudaMalloc((void**) &(U_op->opXPy), sizeof(double2)*gridMax);
+	cudaMalloc((void**) &(U_op->opYPx), sizeof(double2)*gridMax);
+	cudaMalloc((void**) &(U_op->buffer), sizeof(double2)*gridMax);
 }
 
-void freeMemoryDevice(	double2* wfc_gpu, 
-			double2* Uq_gpu, 
-			double2* Up_gpu, 
-			double2* Uxpy_gpu, 
-			double2* Uypx_gpu, 
-			double2* buffer )
-{
-	cudaFree(double2* wfc_gpu);
-	cudaFree(double2* Uq_gpu);
-	cudaFree(double2* Up_gpu);
-	cudaFree(double2* Uxpy_gpu);
-	cudaFree(double2* Uypx_gpu);
-	cudaFree(double2* Uypx_gpu);
+void freeMemoryDevice(struct addr_Uop *U_op){
+
+	cudaFree( U_op->wfc );
+	cudaFree( U_op->opV );
+	cudaFree( U_op->opK );
+	cudaFree( U_op->opXPy );
+	cudaFree( U_op->opYPx );
+	cudaFree( U_op->buffer );
 }
 
 //###########################################################################################################//
 
 //###########################################################################################################//
 /*
-*  Allocate and free memory for the problem. Non-required memory can be NULL.
+*  Allocate and free memory for the host. Non-required memory can be NULL.
 */
 //###########################################################################################################//
 
@@ -75,46 +72,43 @@ void freeMemoryDevice(	double2* wfc_gpu,
 */
 void allocateMemoryHost(	unsigned int selection, 
 				unsigned int *gridSize, 
-				double *V, double *K, 
-				double *XPy, double *YPx, 
-				double2 *opV, double2 *opK, 
-				double2 *opXPy, double2 *opYPx, 
-				double2 *wfc){
+				struct addr_op *op, 
+				struct addr_Uop *U_op ){
+
+	ops->dq = (double*) malloc(sizeof(double)*grid->dim);
+	ops->dp = (double*) malloc(sizeof(double)*grid->dim);
+	ops->qMax = (double*) malloc(sizeof(double)*grid->dim);
+	ops->pMax = (double*) malloc(sizeof(double)*grid->dim);
 
 	if(selection & 0b00000001)
-		double* V = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
+		op->V = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
 	if(selection & 0b00000010)
-		double* K = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
+		op->K = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
 	if(selection & 0b00000100)
-		double* XPy = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
+		op->XPy = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
 	if(selection & 0b00001000)
-		double* YPx = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
+		op->YPx = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
 	
 	if(selection & 0b00010000)
-		double2 *opV = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
+		U_op->opV = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
 	if(selection & 0b00100000)
-		double2 *opK = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
+		U_op->opK = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
 	if(selection & 0b01000000)
-		double2 *opXPy = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
+		U_op->opXPy = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
 	if(selection & 0b10000000)
-		double2 *opYPx = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
+		U_op->opYPx = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
 	if(selection & 0b100000000)
-		double2 *wfc = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
+		U_op->wfc = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
 }
 
 /*
 * Frees memory blocks. Use NULL in place of blocks to ignore.
 */
-void freeMemoryHost(	double *V, 
-			double *K, 
-			double *XPy, 
-			double *YPx, 
-			double2 *opV, 
-			double2 *opK, 
-			double2 *opXPy, 
-			double2 *opYPx )
-{
-	free(V); free(K); free(XPy); free(YPx); free(opV); free(opK); free(opXPy); free(opYPx); free(wfc); 
+void freeMemoryHost( struct addr_op *op, struct addr_Uop *U_ops){
+
+	free(op->V);		free(op->K);		free(op->XPy);		free(op->YPx); 
+	free(U_op->opV);	free(U_op->opK);	free(U_op->opXPy);	free(U_op->opYPx); 
+	free(U_op->wfc); 
 }
 
 //###########################################################################################################//
@@ -125,19 +119,11 @@ void freeMemoryHost(	double *V,
 */
 //###########################################################################################################//
 
-void initHamiltonianGnd(	unsigned int* gridSize, 
-				double *X, 
-				double *Y, 
-				double *Z, 
-				double *V, 
-				double *K, 
-				double *XPy, 
-				double *YPx, 
-				double2 *opV, 
-				double2 *opK, 
-				double2 *opXPy, 
-				double2 *opYPx )
-{
+void initHamiltonianGnd( struct addr_op *op, struct addr_Uop *U_op ){
+	for(int d=0; d<){
+
+	}
+
 	for(int k=0; k<gridSize[2]; ++k){
 		for(int j=0; j<gridSize[1]; ++j){
 			for(int i=0; i<gridSize[0]; ++i){
@@ -168,18 +154,7 @@ void initHamiltonianGnd(	unsigned int* gridSize,
 /*
 *  Must have V, K, XPY YPX in memory, otherwise this routine will fall over.
 */
-void initHamiltonianEv(	unsigned int* gridSize, 
-			double *X, 
-			double *Y, 
-			double *Z, 
-			double *V, 
-			double *K, 
-			double *XPy, 
-			double *YPx, 
-			double2 *opV, 
-			double2 *opK, 
-			double2 *opXPy, 
-			double2 *opYPx )
+void initHamiltonianEv( struct addr_grid *grid, struct addr_op *op, struct addr_Uop *Uop )
 {
 	if(V==NULL || K==NULL || XPy==NULL || YPx==NULL){
 		printf("The required arrays were not stored in memory. Please load them before use.");
@@ -203,73 +178,28 @@ void initHamiltonianEv(	unsigned int* gridSize,
 
 //###########################################################################################################//
 /*
-*  Initialise operators for real time evolution Hamiltonian.
+*  Initialise grids based upon system size and dimensionality.
 */
 //###########################################################################################################//
 
-void splitOp(double dt, double2 *wfc, double2 *Uq, double2 *Up){
+void defineGrid(struct addr_grid *grid){
 	
-}
+	for ( int i=0; i<grid->dim; ++i ){
+		grid->dp[i] = PI/(grid->qMax[i]);
+		grid->dq[i] = grid->qMax[i]/(grid->gridSize[i]>>1);
 
-void parseArguments(int argc, char **argv){
-	while((c = get_opt(argc,argv,)))
-}
+		grid->pMax[i] = grid->dp[i]*(grid->gridSize[i]>>1);
 
+		grid->Q[i] = (double *) malloc(sizeof(double)*grid->gridSize[i]); 
+		grid->P[i] = (double *) malloc(sizeof(double)*grid->gridSize[i]); 
 
-void defineGrid(	unsigned int *gridSize, 
-			double *qMax, 
-			double *pMax, 
-			double *dq, 
-			double *dp, 
-			double *X, 
-			double *Y, 
-			double *Z, 
-			double *PX, 
-			double *PY, 
-			double *PZ)
-{
-	dp[0] = PI/(qMax[0]);
-	dp[1] = PI/(qMax[1]);
-	dp[2] = PI/(qMax[2]);
+		for( int j = 0; j < grid->gridSize[i]>>1; ++j){
+			grid->Q[i][j] = -grid->qMax[i] + (j+1)*grid->dq[i];
+			grid->Q[i][j + grid->gridSize[i]>>1] = (j+1)*grid->dq[i];
 
-	dq[0] = qMax[0]/(gridSize[0]>>1);
-	dq[1] = qMax[1]/(gridSize[1]>>1);
-	dq[2] = qMax[2]/(gridSize[2]>>1);
-
-	pMax[0] = dp[0]*(gridSize[0]>>1);
-	pMax[1] = dp[1]*(gridSize[1]>>1);
-	pMax[2] = dp[2]*(gridSize[2]>>1);
-
-	X = (double *) malloc(sizeof(double) * gridSize[0]);
-	Y = (double *) malloc(sizeof(double) * gridSize[1]);
-	Z = (double *) malloc(sizeof(double) * gridSize[2]);
-
-	PX = (double *) malloc(sizeof(double) * gridSize[0]);
-	PY = (double *) malloc(sizeof(double) * gridSize[1]);
-	PZ = (double *) malloc(sizeof(double) * gridSize[2]);
-
-/*
-* Pos and Mom grids. Assumes the grids are equally sized.
-*/	if(gridSize[0]==gridSize[1])
-	for(i=0; i < gridSize[0]/2; ++i){
-		X[i] = -qMax[0] + (i+1)*dq[0];
-		X[i + (gridSize[0]/2)] = (i+1)*dq[0];
-
-		Y[i] = -qMax[1] + (i+1)*dq[1];
-		Y[i + (gridSize[1]/2)] = (i+1)*dq[1];
-
-		Z[i] = -qMax[2] + (i+1)*dq[2];
-		Z[i + (gridSize[2]/2)] = (i+1)*dq[2];
-
-		XP[i] = (i+1)*dp[0];
-		XP[i + (gridSize[0]/2)] = -pMax[0] + (i+1)*dp[0];
-
-		YP[i] = (i+1)*dp[1];
-		YP[i + (gridSize[1]/2)] = -pMax[1] + (i+1)*dp[1];
-
-		ZP[i] = (i+1)*dp[2];
-		ZP[i + (gridSize[2]/2)] = -pMax[2] + (i+1)*dp[2];
-
+			grid->P[i][j] = (j+1)*grid->dp[i];
+			grid->P[i][j + grid->gridSize[i]>>1] = -grid->pMax[i] + (j+1)*grid->dp[i];
+		}
 	}
 }
 
@@ -277,28 +207,60 @@ void defineGrid(	unsigned int *gridSize,
 
 //###########################################################################################################//
 /*
-*  Do the magic.
+*  Parse command-line arguments.
+*/
+//###########################################################################################################//
+
+void parseArgs(int argc, char **argv){
+	while((c = get_opt(argc,argv,)))
+}
+
+//###########################################################################################################//
+
+//###########################################################################################################//
+/*
+*  Do the evolution.
+*/
+//###########################################################################################################//
+
+void splitOp(unsigned int steps, double dt, double2 *wfc, double *wfc_gpu, double2 *Uq, double2 *Up, double *Uxpy, double *Uypx){
+	double2 *Uq_gpu_half = 
+	//1 half step in position space
+	vecVecMult_d2d2<<<,>>>(wfc_gpu, Uq_gpu, wfc_gpu);
+
+	//Steps -1 momentum & position
+
+	//1 full step momentum & 1 half step in position
+}
+
+//###########################################################################################################//
+
+//###########################################################################################################//
+/*
+*	Get to the choppah!
 */
 //###########################################################################################################//
 
 int main(int argc, char **argv){
-	double qMax[3]; double pMax[3];
-	double dq[3]; double dp[3];
-
-	double omega_V[3];
+	parseArgs();
+	double dt;
 	unsigned int gridSize[3];
+	double omega_V[3];
 	double mass=1.0;
-	double *X, *Y, *Z, *V, *K, *XPy, *YPx; 
-	double2 *wfc, *opV, *opK, *opXPy, *opYPx, *buffer;
-	double2 *wfc_gpu, *Uq_gpu, *Up_gpu, *Uxpy_gpu, *Uypx_gpu, *buffer;
-	
-	//Allocate memory on host and device
-	allocateMemoryHost(0x1ff, gridSize, V, K, XPy, YPx, opV, opK, opXPy, opYPx, wfc);
-	allocateMemoryDevice(gridSize, wfc_gpu, Uq_gpu, Up_gpu, Uxpy_gpu, Uypx_gpu, buffer);
+
+	//These contains the addresses of all the essential arrays for both CPU and GPU.
+	struct addr_grid addr_grid;
+	struct addr_op addr_op_host; 
+	struct addr_Uop addr_Uop_host, addr_Uop_gpu; 
+
+	defineGrid(&addr_grid);
+
+	allocateMemoryHost(0x1ff, &addr_grid, &addr_op_host, &addr_Uop_host);
+	allocateMemoryDevice(&addr_grid, &addr_Uop_gpu);
 
 	//Imaginary time evolution
-	initHamiltonianGnd( gridSize, X, Y, Z, V, K, XPy, YPx, opV, opK, opXPy, opYPx );
-
+	initHamiltonianGnd( addr_grid, addr_op_host, addr_Uop_host, addr_Uop_gpu );
+	splitOp(steps, dt, wfc, wfc_gpu, Uq_gpu, Up_gpu, Uxpy_gpu, Uypx_gpu, buffer);
 	//Real time evolution
 	initHamiltonianEv( gridSize, X, Y, Z, V, K, XPy, YPx, opV, opK, opXPy, opYPx );
 
