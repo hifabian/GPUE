@@ -1,7 +1,6 @@
 /*
-* constants.h - GPUE: Split Operator based GPU solver for Nonlinear 
-* Schrodinger Equation, Copyright (C) 2012, Lee J. O'Riordan, Tadhg 
-* Morgan, Neil Crowley. 
+* constants.h - GPUE2: Split Operator based GPU solver for Nonlinear 
+* Schrodinger Equation, Copyright (C) 2014, Lee J. O'Riordan. 
 
 * This library is free software; you can redistribute it and/or modify 
 * it under the terms of the GNU Lesser General Public License as 
@@ -15,6 +14,9 @@
 * to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, 
 * Boston, MA 02111-1307 USA 
 */
+
+//###########################################################################################################//
+
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
@@ -29,3 +31,5 @@
 #define RT_2 1.4142135623730951 // sqrt(2)
 
 #endif
+
+//###########################################################################################################//

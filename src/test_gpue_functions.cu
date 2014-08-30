@@ -15,11 +15,13 @@
 * Boston, MA 02111-1307 USA 
 */
 
+//###########################################################################################################//
+
 #include<assert.h>
 #include<cuda.h>
 #include<stdio.h>
 #include<cuda_runtime.h>
-#include"gpu_functions.cu"
+#include "gpu_functions.h"
 
 
 void test_scalVectMult(){

@@ -15,6 +15,8 @@
 * Boston, MA 02111-1307 USA 
 */
 
+//###########################################################################################################//
+
 #ifndef GPU_FUNCTIONS_H 
 #define GPU_FUNCTIONS_H 
 __host__ __device__ double compMagnitude(double2 cmp1);
@@ -38,4 +40,7 @@ __global__ void vecVecMult_d2d2(double2 *vec1In, double2 *vec2In, double2 *vecOu
 __global__ void vecVecMult_d2d(double2 *vec1In, double *vec2In, double2 *vecOut);
 __global__ void vecVecMult_dd(double *vec1In, double *vec2In, double *vecOut);
 __global__ void vecVecMult_ii(int *vec1In, int *vec2In, int *vecOut);
+
+//###########################################################################################################//
+
 #endif
