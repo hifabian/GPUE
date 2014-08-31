@@ -61,6 +61,7 @@ void defineGrid( struct addr_grid *grid );
 void parseArgs( int argc, char **argv );
 void splitOp( unsigned int steps, double dt, struct addr_grid grid*, struct addr_op *op, struct addr_Uop *Uop);
 
+#endif
+
 //###########################################################################################################//
 
-#endif

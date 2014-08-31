@@ -19,6 +19,9 @@
 
 #ifndef GPU_FUNCTIONS_H 
 #define GPU_FUNCTIONS_H 
+
+__device__ unsigned int getGid3d3d();
+
 __host__ __device__ double compMagnitude(double2 cmp1);
 __host__ __device__ double2 realCompMult(double rl, double2 cmp);
 __host__ __device__ double2 compCompMult(double2 cmp1, double2 cmp2);
@@ -30,7 +33,6 @@ inline __host__ __device__ double* operator_K(double PX, double PY, double PZ, d
 inline __host__ __device__ double2* operator_gnd(double operator, double dt_hbar);
 inline __host__ __device__ double2* operator_ev(double operator, double dt_hbar);
 
-__device__ unsigned int getGid3d3d();
 __global__ void scalVecMult_d2d(double2 *vecIn, double scalIn, double2 *vecOut);
 __global__ void scalVecMult_dd(double *vecIn, double scalIn, double *vecOut);
 __global__ void scalVecMult_ii(int *vecIn, int scalIn, int *vecOut);
@@ -41,6 +43,7 @@ __global__ void vecVecMult_d2d(double2 *vec1In, double *vec2In, double2 *vecOut)
 __global__ void vecVecMult_dd(double *vec1In, double *vec2In, double *vecOut);
 __global__ void vecVecMult_ii(int *vec1In, int *vec2In, int *vecOut);
 
+#endif
+
 //###########################################################################################################//
 
-#endif

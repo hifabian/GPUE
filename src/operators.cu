@@ -26,29 +26,43 @@
 */
 //###########################################################################################################//
 
-double* generate_V(struct addr_grid *addr_grid, double mass, double[] omega){
+
+
+
+double* generate_V(struct addr_grid *grid, double mass, double[] omega){
 	unsigned int gridMax = 1;
 	for(int i=0; i<addr_grid->dim;++i){
-		gridMax *= addr_grid->gridSize[i];
+		gridMax *= grid->gridSize[i];
 	}
 	double* V = (double*) malloc( sizeof(double) * gridMax );
-	for (int d = 0; d < addr_grid->dim; ++i){
+	for (int d = 0; d < grid->dim; ++i){
 		
 	}
 
 
-
+	#if defined D3
 	for(int k=0; k < grid->gridSize[2]; ++k){
+	#endif
+		#if defined D2 || defined D3
 		for(int j=0; j < grid->gridSize[1]; ++j){
+		#endif
 			for(int i=0; i < grid->gridSize[0]; ++i){
-				V[(k*gridSize[1] + j)*gridSize[0] + i] = operator_V(gridX[i],gridY[j],gridZ[k],mass,omega);
+				#if defined D3
+				V[(k*gridSize[1] + j)*gridSize[0] + i] = operator_V(gridX[i], gridY[j], gridZ[k], mass,omega);
+				#endif
+				#if defined D2
+				V[j*gridSize[0] + i] = operator_V(gridX[i], gridY[j], 0, mass, omega);
+				#endif
+				#if defined D1
+				V[i] = operator_V(gridX[i], 0, 0, mass, omega);
+				#endif
 			}
 		}
 	}
 	return *V;
 }
 
-double* generate_K(int[] gridSize, double *gridPX, double *gridPY, double *gridPZ, double mass){
+double* generate_K(struct addr_grid *grid, double mass){
 	double* K = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
 	for(int k = 0; k < gridSize[2]; ++k){
 		for(int j=0; j < gridSize[1]; ++j){
@@ -60,7 +74,7 @@ double* generate_K(int[] gridSize, double *gridPX, double *gridPY, double *gridP
 	return *K;
 }
 
-double2* generate_gndOperator(double *operator, int[] gridSize, double dt_hbar){
+double2* generate_gndOperator(double *operator, struct addr_grid *grid, double dt_hbar){
 	double2 *gnd_op = (double2*) malloc(sizeof(double2)**gridSize[0]*gridSize[1]*gridSize[2]);
 	
 	for(int k=0; k<gridSize[2]; ++k){
@@ -73,7 +87,7 @@ double2* generate_gndOperator(double *operator, int[] gridSize, double dt_hbar){
 	return *gnd_op;
 }
 
-double2* generate_evOperator(double *operator, int[] gridSize, double dt_hbar){
+double2* generate_evOperator(double *operator, struct addr_grid *grid, double dt_hbar){
 	double2 *ev_op = (double2*) malloc(sizeof(double2)**gridSize[0]*gridSize[1]*gridSize[2]);
 	
 	for(int k=0; k<gridSize[2]; ++k){
