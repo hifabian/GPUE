@@ -29,22 +29,26 @@
 */
 //###########################################################################################################//
 
-void setupFFT(	unsigned int *gridSize, 
+void setupFFT(	struct addr_grid *grid, 
 		cufftHandle plan_xyz, 
 		cufftHandle plan_xy, 
 		cufftHandle plan_x_batchY)
 {
-	if( gridSize[2] != 0)
+	if( grid->dim = 3)
         	result = cufftPlan3d(&plan_xyz, xDim, yDim, zDim, CUFFT_Z2Z);
-	if( gridSize[1] != 0)
+	else if( grid->dim = 2){
         	result = cufftPlan2d(&plan_xy, xDim, yDim, CUFFT_Z2Z);
-	if( gridSize[0] == gridSize[1] )
-		result = cufftPlan1d(&plan_x_batchY, xDim, CUFFT_Z2Z, yDim);
-	
+		if( grid->gridSize[0] == grid->gridSize[1] )
+			result = cufftPlan1d(&plan_x_batchY, xDim, CUFFT_Z2Z, yDim);
+	}
+	else{
+		printf("Error: Runtype not currently supported.\n");
+		exit(1);
+	}
 	if(result != CUFFT_SUCCESS){
 		printf("Result:=%d\n",result);
 		printf("Error: Could not set-up CUFFT plan.\n");
-     		exit (-1);
+     		exit (2);
 	}
 }
 
@@ -98,25 +102,25 @@ void allocateMemoryHost( unsigned int selection, struct addr_grid *grid, struct 
 	ops->qMax = (double*) malloc(sizeof(double)*grid->dim);
 	ops->pMax = (double*) malloc(sizeof(double)*grid->dim);
 
-	if(selection & 0b00000001)
-		op->V = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
-	if(selection & 0b00000010)
-		op->K = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
-	if(selection & 0b00000100)
-		op->XPy = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
-	if(selection & 0b00001000)
-		op->YPx = (double*) malloc(sizeof(double)*gridSize[0]*gridSize[1]*gridSize[2]);
+	if(selection & 0b000000001)
+		op->V = (double*) malloc(sizeof(double)*grid->gridMax );
+	if(selection & 0b000000010)
+		op->K = (double*) malloc(sizeof(double)*grid->gridMax );
+	if(selection & 0b000000100)
+		op->XPy = (double*) malloc(sizeof(double)*grid->gridMax );
+	if(selection & 0b000001000)
+		op->YPx = (double*) malloc(sizeof(double)*grid->gridMax );
 	
-	if(selection & 0b00010000)
-		U_op->opV = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
-	if(selection & 0b00100000)
-		U_op->opK = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
-	if(selection & 0b01000000)
-		U_op->opXPy = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
-	if(selection & 0b10000000)
-		U_op->opYPx = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
+	if(selection & 0b000010000)
+		U_op->opV = (double2*) malloc(sizeof(double2)*grid->gridMax );
+	if(selection & 0b000100000)
+		U_op->opK = (double2*) malloc(sizeof(double2)*grid->gridMax );
+	if(selection & 0b001000000)
+		U_op->opXPy = (double2*) malloc(sizeof(double2)*grid->gridMax );
+	if(selection & 0b010000000)
+		U_op->opYPx = (double2*) malloc(sizeof(double2)*grid->gridMax );
 	if(selection & 0b100000000)
-		U_op->wfc = (double2*) malloc(sizeof(double2)*gridSize[0]*gridSize[1]*gridSize[2]);
+		U_op->wfc = (double2*) malloc(sizeof(double2)*grid->gridMax );
 }
 
 /*

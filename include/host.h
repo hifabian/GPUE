@@ -37,6 +37,7 @@
 struct addr_grid {
 	unsigned int dim;
 	unsigned int *gridSize;
+	unsigned int gridMax;
 	double *qMax, *pMax, *dq, *dp;//These guys should depend on the size of dim
 	double **Q, **P; //First index represents the respective cartesian dimension space. The outer represents the associated value at that point.
 };

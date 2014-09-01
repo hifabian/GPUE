@@ -22,16 +22,21 @@
 
 #ifndef T32B4
 	#define TILE_DIM 32 //small segment to be computed
-	#define BLOCK_ROW 4 // sum of the two should match threads
+	#define BLOCK_ROW 8 // sum of the two should match threads
 #endif
 
+//###########################################################################################################//
 /*
 *  Returns the global (not grid) index for the relevant thread in a 3d grid 3d block fashion. I will use 1d 1d mostly here though.
 */
+//###########################################################################################################//
+
 __device__ unsigned int getGid3d3d(){
 	int gid = blockDim.x * ( ( blockDim.y * ( ( blockIdx.z * blockDim.z + threadIdx.z ) + blockIdx.y ) + threadIdx.y ) + blockIdx.x ) + threadIdx.x;
 	return gid;
 }
+
+//###########################################################################################################//
 
 //###########################################################################################################//
 /*

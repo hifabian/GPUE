@@ -99,22 +99,22 @@ void test_transpose(){
 	int xDim, yDim;
 	int temp;
 	const int threads = 16;
-	xDim=4;
-	yDim=4;
+	xDim=32;
+	yDim=32;
         int *v1, *v2, *v1_gpu, *v2_gpu;
         v1 = (int*) malloc(sizeof(int)*xDim*yDim);
         v2 = (int*) malloc(sizeof(int)*xDim*yDim);
         cudaMalloc((void**) &v1_gpu, sizeof(int)*xDim*yDim);
         cudaMalloc((void**) &v2_gpu, sizeof(int)*xDim*yDim);
 
-	printf("Allocate blocks\n");
+	//printf("Allocate blocks\n");
         for(int i=0; i<xDim; ++i){
                 for(int j=0; j<yDim; ++j){
                         v1[i*yDim + j] = i*yDim + j;
                         v2[i*yDim + j] = i*yDim + j;
-			printf("V1[%d,%d]=%d	",i,j, v1[i*yDim +j]);
+			//printf("V1[%d,%d]=%d	",i,j, v1[i*yDim +j]);
+			printf("%d,%d,%d\n",i,j, v1[i*yDim +j]);
                 }
-		printf("\n");
         }
 	printf("\n");
 
@@ -141,8 +141,8 @@ void test_transpose(){
         }
 	printf("\n");
 	printf("GPU Transpose 1 IP\n");
-	matTrans<<<1,16>>>(v1_gpu, v2_gpu);
-	matTrans<<<1,16>>>(v1_gpu, v1_gpu);
+	matTrans<<<1,128>>>(v1_gpu, v2_gpu);
+	matTrans<<<1,128>>>(v1_gpu, v1_gpu);
         cudaMemcpy(v1, v1_gpu, sizeof(int)*xDim*yDim, cudaMemcpyDeviceToHost);
         cudaMemcpy(v2, v2_gpu, sizeof(int)*xDim*yDim, cudaMemcpyDeviceToHost);
 	for(int i=0; i<xDim; i++){
