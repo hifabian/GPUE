@@ -28,10 +28,10 @@ __host__ __device__ double2 compCompMult(double2 cmp1, double2 cmp2);
 __host__ __device__ double2 compSum(double2 cmp1, double2 cmp2);
 __host__ __device__ double2 conj(double2 cmp);
 
-inline __host__ __device__ double operator_V(double X, double Y, double Z, double mass, double[] omega);
-inline __host__ __device__ double* operator_K(double PX, double PY, double PZ, double mass);
-inline __host__ __device__ double2* operator_gnd(double operator, double dt_hbar);
-inline __host__ __device__ double2* operator_ev(double operator, double dt_hbar);
+inline __host__ __device__ double operator_V(double X, double Y, double Z, double mass, double *omega);
+inline __host__ __device__ double operator_K(double PX, double PY, double PZ, double mass);
+inline __host__ __device__ double2 operator_gnd(double oper, double dt_hbar);
+inline __host__ __device__ double2 operator_ev(double oper, double dt_hbar);
 
 __global__ void scalVecMult_d2d(double2 *vecIn, double scalIn, double2 *vecOut);
 __global__ void scalVecMult_dd(double *vecIn, double scalIn, double *vecOut);

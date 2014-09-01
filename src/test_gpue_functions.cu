@@ -21,7 +21,7 @@
 #include<cuda.h>
 #include<stdio.h>
 #include<cuda_runtime.h>
-#include "gpu_functions.h"
+#include "./gpu_functions.cu"
 
 
 void test_scalVectMult(){
@@ -95,9 +95,75 @@ void test_sum(){
         		printf("[%d,%d]=%e\n",i,j,v1[i*yDim + j]);
        	printf("%e\n",v1[0]);
 }
+void test_transpose(){
+	int xDim, yDim;
+	int temp;
+	const int threads = 16;
+	xDim=4;
+	yDim=4;
+        int *v1, *v2, *v1_gpu, *v2_gpu;
+        v1 = (int*) malloc(sizeof(int)*xDim*yDim);
+        v2 = (int*) malloc(sizeof(int)*xDim*yDim);
+        cudaMalloc((void**) &v1_gpu, sizeof(int)*xDim*yDim);
+        cudaMalloc((void**) &v2_gpu, sizeof(int)*xDim*yDim);
+
+	printf("Allocate blocks\n");
+        for(int i=0; i<xDim; ++i){
+                for(int j=0; j<yDim; ++j){
+                        v1[i*yDim + j] = i*yDim + j;
+                        v2[i*yDim + j] = i*yDim + j;
+			printf("V1[%d,%d]=%d	",i,j, v1[i*yDim +j]);
+                }
+		printf("\n");
+        }
+	printf("\n");
+
+	printf("CPU Transpose 1 OP\n");
+        cudaMemcpy(v1_gpu, v1, sizeof(int)*xDim*yDim, cudaMemcpyHostToDevice);
+        for(int i=0; i<xDim; ++i){
+                for(int j=0; j<yDim; ++j){
+			v2[i*yDim + j] = v1[j*xDim + i];
+			printf("V2[%d,%d]=%d	",i,j, v2[i*yDim + j]);
+                }
+		printf("\n");
+        }
+	printf("\n");
+
+	printf("CPU Transpose 2 IP\n");
+        for(int i=0; i<xDim; ++i){
+                for(int j=0; j<yDim; ++j){
+			temp = v1[i*yDim + j];
+			v1[i*yDim + j] = v1[j*yDim + i];
+			v1[j*xDim + i] = temp;
+			printf("V1[%d,%d]=%d	",i,j, v1[i*yDim + j]);
+                }
+		printf("\n");
+        }
+	printf("\n");
+	printf("GPU Transpose 1 IP\n");
+	matTrans<<<1,16>>>(v1_gpu, v2_gpu);
+	matTrans<<<1,16>>>(v1_gpu, v1_gpu);
+        cudaMemcpy(v1, v1_gpu, sizeof(int)*xDim*yDim, cudaMemcpyDeviceToHost);
+        cudaMemcpy(v2, v2_gpu, sizeof(int)*xDim*yDim, cudaMemcpyDeviceToHost);
+	for(int i=0; i<xDim; i++){
+		for(int j=0; j<yDim; ++j){
+        		printf("G1[%d,%d]=%d	",i,j,v1[i*yDim + j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+	printf("GPU Transpose 2 OP\n");
+	for(int i=0; i<xDim; i++){
+		for(int j=0; j<yDim; ++j){
+        		printf("G2[%d,%d]=%d	",i,j,v2[i*yDim + j]);
+		}
+		printf("\n");
+	}
+}
 
 int main(){
-	test_scalVectMult();
-	test_sum();
+	//test_scalVectMult();
+	//test_sum();
+	test_transpose();
 	return 0;
 }
