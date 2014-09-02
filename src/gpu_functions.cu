@@ -144,6 +144,25 @@ __global__ void matTrans(T *vecIn, T *vecOut){
 
 }
 
+
+template<typename T>
+__global__ void matTrans2(T *vecIn, T *vecOut){
+	__shared__ double tile[TILE_DIM][TILE_DIM];
+	int x = blockIdx.x * TILE_DIM + threadIdx.x;
+	int y = blockIdx.y * TILE_DIM + threadIdx.y;
+	int width = gridDim.x * TILE_DIM;
+	
+	for(int j=0; j<blockDim.x; j+=blockDim.x){
+		tile[threadIdx.y + j][threadIdx.x] = vecIn[(y+j)*width + x];
+	}
+	__syncthreads();
+	x = blockIdx.y * TILE_DIM + threadIdx.x;
+	y = blockIdx.x * TILE_DIM + threadIdx.y;
+	for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS){
+		vecOut[(y+j)*width + x] = tile[threadIdx.x][threadIdx.y + j];
+	}
+
+}
 //###########################################################################################################//
 
 //###########################################################################################################//
