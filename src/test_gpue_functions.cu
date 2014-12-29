@@ -99,8 +99,8 @@ void test_transpose(){
 	int xDim, yDim;
 	int temp;
 	const int threads = 16;
-	xDim=32;
-	yDim=32;
+	xDim=20;
+	yDim=20;
         int *v1, *v2, *v1_gpu, *v2_gpu;
         v1 = (int*) malloc(sizeof(int)*xDim*yDim);
         v2 = (int*) malloc(sizeof(int)*xDim*yDim);

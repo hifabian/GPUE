@@ -158,7 +158,7 @@ __global__ void matTrans2(T *vecIn, T *vecOut){
 	__syncthreads();
 	x = blockIdx.y * TILE_DIM + threadIdx.x;
 	y = blockIdx.x * TILE_DIM + threadIdx.y;
-	for (int j = 0; j < TILE_DIM; j += BLOCK_ROWS){
+	for (int j = 0; j < TILE_DIM; j += BLOCK_ROW){
 		vecOut[(y+j)*width + x] = tile[threadIdx.x][threadIdx.y + j];
 	}
 
