@@ -1,18 +1,18 @@
 /*
-* operators.cu - GPUE2: Split Operator based GPU solver for Nonlinear 
-* Schrodinger Equation, Copyright (C) 2014, Lee J. O'Riordan. 
+* operators.cu - GPUE2: Split Operator based GPU solver for Nonlinear
+* Schrodinger Equation, Copyright (C) 2014, Lee J. O'Riordan.
 
-* This library is free software; you can redistribute it and/or modify 
-* it under the terms of the GNU Lesser General Public License as 
-* published by the Free Software Foundation; either version 2.1 of the 
-* License, or (at your option) any later version. This library is 
-* distributed in the hope that it will be useful, but WITHOUT ANY 
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-* FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public 
-* License for more details. You should have received a copy of the GNU 
-* Lesser General Public License along with this library; if not, write 
-* to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, 
-* Boston, MA 02111-1307 USA 
+* This library is free software; you can redistribute it and/or modify
+* it under the terms of the GNU Lesser General Public License as
+* published by the Free Software Foundation; either version 2.1 of the
+* License, or (at your option) any later version. This library is
+* distributed in the hope that it will be useful, but WITHOUT ANY
+* WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+* License for more details. You should have received a copy of the GNU
+* Lesser General Public License along with this library; if not, write
+* to the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+* Boston, MA 02111-1307 USA
 */
 
 //###########################################################################################################//
@@ -27,8 +27,6 @@
 //###########################################################################################################//
 
 
-
-
 double* generate_V(struct addr_grid *grid, double mass, double[] omega){
 	unsigned int gridMax = 1;
 	for(int i=0; i<addr_grid->dim;++i){
@@ -36,9 +34,8 @@ double* generate_V(struct addr_grid *grid, double mass, double[] omega){
 	}
 	double* V = (double*) malloc( sizeof(double) * gridMax );
 	for (int d = 0; d < grid->dim; ++i){
-		
-	}
 
+	}
 
 	#if defined D3
 	for(int k=0; k < grid->gridSize[2]; ++k){
@@ -76,7 +73,7 @@ double* generate_K(struct addr_grid *grid, double mass){
 
 double2* generate_gndOperator(double *operator, struct addr_grid *grid, double dt_hbar){
 	double2 *gnd_op = (double2*) malloc(sizeof(double2)**gridSize[0]*gridSize[1]*gridSize[2]);
-	
+
 	for(int k=0; k<gridSize[2]; ++k){
 		for(int j=0; j<gridSize[1]; ++j){
 			for(int i=0; i<gridSize[0]; ++i){
@@ -89,7 +86,7 @@ double2* generate_gndOperator(double *operator, struct addr_grid *grid, double d
 
 double2* generate_evOperator(double *operator, struct addr_grid *grid, double dt_hbar){
 	double2 *ev_op = (double2*) malloc(sizeof(double2)**gridSize[0]*gridSize[1]*gridSize[2]);
-	
+
 	for(int k=0; k<gridSize[2]; ++k){
 		for(int j=0; j<gridSize[1]; ++j){
 			for(int i=0; i<gridSize[0]; ++i){

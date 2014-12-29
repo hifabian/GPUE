@@ -1,23 +1,24 @@
 /*
-* host.cu - GPUE2: Split Operator based GPU solver for Nonlinear 
-* Schrodinger Equation, Copyright (C) 2014, Lee J. O'Riordan. 
+* host.cu - GPUE2: Split Operator based GPU solver for Nonlinear
+* Schrodinger Equation, Copyright (C) 2014, Lee J. O'Riordan.
 
-* This library is free software; you can redistribute it and/or modify 
-* it under the terms of the GNU Lesser General Public License as 
-* published by the Free Software Foundation; either version 2.1 of the 
-* License, or (at your option) any later version. This library is 
-* distributed in the hope that it will be useful, but WITHOUT ANY 
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-* FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public 
-* License for more details. You should have received a copy of the GNU 
-* Lesser General Public License along with this library; if not, write 
-* to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, 
-* Boston, MA 02111-1307 USA 
+* This library is free software; you can redistribute it and/or modify
+* it under the terms of the GNU Lesser General Public License as
+* published by the Free Software Foundation; either version 2.1 of the
+* License, or (at your option) any later version. This library is
+* distributed in the hope that it will be useful, but WITHOUT ANY
+* WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+* License for more details. You should have received a copy of the GNU
+* Lesser General Public License along with this library; if not, write
+* to the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+* Boston, MA 02111-1307 USA
 */
 
 //###########################################################################################################//
 
 #include "../include/host.h"
+#include "../include/state.hpp"
 #include "../include/operators.h"
 #include "../include/gpu_functions.h"
 
@@ -29,16 +30,16 @@
 */
 //###########################################################################################################//
 
-void setupFFT(	struct addr_grid *grid, 
-		cufftHandle plan_xyz, 
-		cufftHandle plan_xy, 
+static void Host::setupFFT( struct Host::addr_grid *grid,
+		cufftHandle plan_xyz,
+		cufftHandle plan_xy,
 		cufftHandle plan_x_batchY)
 {
 	if( grid->dim = 3)
         	result = cufftPlan3d(&plan_xyz, xDim, yDim, zDim, CUFFT_Z2Z);
 	else if( grid->dim = 2){
         	result = cufftPlan2d(&plan_xy, xDim, yDim, CUFFT_Z2Z);
-		if( grid->gridSize[0] == grid->gridSize[1] )
+	if( grid->gridSize[0] == grid->gridSize[1] )
 			result = cufftPlan1d(&plan_x_batchY, xDim, CUFFT_Z2Z, yDim);
 	}
 	else{
@@ -60,7 +61,7 @@ void setupFFT(	struct addr_grid *grid,
 */
 //###########################################################################################################//
 
-void allocateMemoryDevice( struct addr_grid *grid, struct addr_Uop *U_op ){
+static void Host::allocateMemoryDevice( struct addr_grid *grid, struct addr_Uop *U_op ){
 	unsigned int gridMax = 1;
 	for(int i=0; i<addr_grid->dim;++i){
 		gridMax *= addr_grid->gridSize[i];
@@ -73,7 +74,7 @@ void allocateMemoryDevice( struct addr_grid *grid, struct addr_Uop *U_op ){
 	cudaMalloc((void**) &(U_op->buffer), sizeof(double2)*gridMax);
 }
 
-void freeMemoryDevice(struct addr_Uop *U_op){
+static void Host::freeMemoryDevice(struct addr_Uop *U_op){
 
 	cudaFree( U_op->wfc );
 	cudaFree( U_op->opV );
@@ -95,7 +96,7 @@ void freeMemoryDevice(struct addr_Uop *U_op){
 /*
 * @selection Used as a bitwise operation to select which pointers to allocate memory for. 0b1111111111 (0x1ff, 511) selects all
 */
-void allocateMemoryHost( unsigned int selection, struct addr_grid *grid, struct addr_op *op, struct addr_Uop *U_op ){
+static void Host::allocateMemoryHost( unsigned int selection, struct addr_grid *grid, struct addr_op *op, struct addr_Uop *U_op ){
 
 	ops->dq = (double*) malloc(sizeof(double)*grid->dim);
 	ops->dp = (double*) malloc(sizeof(double)*grid->dim);
@@ -110,7 +111,7 @@ void allocateMemoryHost( unsigned int selection, struct addr_grid *grid, struct 
 		op->XPy = (double*) malloc(sizeof(double)*grid->gridMax );
 	if(selection & 0b000001000)
 		op->YPx = (double*) malloc(sizeof(double)*grid->gridMax );
-	
+
 	if(selection & 0b000010000)
 		U_op->opV = (double2*) malloc(sizeof(double2)*grid->gridMax );
 	if(selection & 0b000100000)
@@ -126,11 +127,11 @@ void allocateMemoryHost( unsigned int selection, struct addr_grid *grid, struct 
 /*
 * Frees memory blocks. Use NULL in place of blocks to ignore.
 */
-void freeMemoryHost( struct addr_op *op, struct addr_Uop *U_ops){
+static void Host::freeMemoryHost( struct addr_op *op, struct addr_Uop *U_ops){
 
-	free(op->V);		free(op->K);		free(op->XPy);		free(op->YPx); 
-	free(U_op->opV);	free(U_op->opK);	free(U_op->opXPy);	free(U_op->opYPx); 
-	free(U_op->wfc); 
+	free(op->V);		free(op->K);		free(op->XPy);		free(op->YPx);
+	free(U_op->opV);	free(U_op->opK);	free(U_op->opXPy);	free(U_op->opYPx);
+	free(U_op->wfc);
 }
 
 //###########################################################################################################//
@@ -141,7 +142,7 @@ void freeMemoryHost( struct addr_op *op, struct addr_Uop *U_ops){
 */
 //###########################################################################################################//
 
-void initHamiltonianGnd( struct addr_grid *grid, struct addr_op *op, struct addr_Uop *U_op ){
+static void Host::initHamiltonianGnd( struct addr_grid *grid, struct addr_op *op, struct addr_Uop *U_op ){
 	for(int d=0; d<){
 
 	}
@@ -152,7 +153,7 @@ void initHamiltonianGnd( struct addr_grid *grid, struct addr_op *op, struct addr
 
 				V[(k*gridSize[1] + j)*gridSize[0] + i] = operator_V( X[i], Y[j], Z[k], mass, omega_V); //may need to set Z[k] to 0 here
 				K[(k*gridSize[1] + j)*gridSize[0] + i] = operator_V( X[i], Y[j], Z[k], mass);
-				XPy[(k*gridSize[1] + j)*gridSize[0] + i] = X[i]*PY[j]; 
+				XPy[(k*gridSize[1] + j)*gridSize[0] + i] = X[i]*PY[j];
 				YPx[(k*gridSize[1] + j)*gridSize[0] + i] = -Y[j]*PX[i];
 
 				opV[(k*gridSize[1] + j)*gridSize[0] + i] = operator_gnd( V[(k*gridSize[1] + j)*gridSize[0] + i], dt_hbar);
@@ -176,7 +177,7 @@ void initHamiltonianGnd( struct addr_grid *grid, struct addr_op *op, struct addr
 /*
 *  Must have V, K, XPY YPX in memory, otherwise this routine will fall over.
 */
-void initHamiltonianEv( struct addr_grid *grid, struct addr_op *op, struct addr_Uop *Uop )
+static void Host::initHamiltonianEv( struct addr_grid *grid, struct addr_op *op, struct addr_Uop *Uop )
 {
 	if(V==NULL || K==NULL || XPy==NULL || YPx==NULL){
 		printf("The required arrays were not stored in memory. Please load them before use.");
@@ -204,18 +205,18 @@ void initHamiltonianEv( struct addr_grid *grid, struct addr_op *op, struct addr_
 */
 //###########################################################################################################//
 
-void defineGrid(struct addr_grid *grid){
-	grid->Q = (double **) malloc( sizeof(double*)*grid->dim ); 
-	grid->P = (double **) malloc( sizeof(double*)*grid->dim ); 
-	
+static void Host::defineGrid(struct addr_grid *grid){
+	grid->Q = (double **) malloc( sizeof(double*)*grid->dim );
+	grid->P = (double **) malloc( sizeof(double*)*grid->dim );
+
 	for ( int i=0; i<grid->dim; ++i ){
 		grid->dp[i] = PI/(grid->qMax[i]);
 		grid->dq[i] = grid->qMax[i]/(grid->gridSize[i]>>1);
 
 		grid->pMax[i] = grid->dp[i]*(grid->gridSize[i]>>1);
 
-		grid->Q[i] = (double *) malloc( sizeof(double)*grid->gridSize[i] ); 
-		grid->P[i] = (double *) malloc( sizeof(double)*grid->gridSize[i] ); 
+		grid->Q[i] = (double *) malloc( sizeof(double)*grid->gridSize[i] );
+		grid->P[i] = (double *) malloc( sizeof(double)*grid->gridSize[i] );
 
 		for( int j = 0; j < grid->gridSize[i]>>1; ++j){
 			grid->Q[i][j] = -grid->qMax[i] + (j+1)*grid->dq[i];
@@ -235,7 +236,7 @@ void defineGrid(struct addr_grid *grid){
 */
 //###########################################################################################################//
 
-void parseArgs(int argc, char **argv){
+static void Host::parseArgs(int argc, char **argv){
 	while((c = get_opt(argc,argv,)))
 }
 
@@ -247,8 +248,8 @@ void parseArgs(int argc, char **argv){
 */
 //###########################################################################################################//
 
-void splitOp(unsigned int steps, double dt, double2 *wfc, double *wfc_gpu, double2 *Uq, double2 *Up, double *Uxpy, double *Uypx){
-	double2 *Uq_gpu_half = 
+static void Host::splitOp(unsigned int steps, double dt, double2 *wfc, double *wfc_gpu, double2 *Uq, double2 *Up, double *Uxpy, double *Uypx){
+	double2 *Uq_gpu_half =
 	//1 half step in position space
 	vecVecMult_d2d2<<<,>>>(wfc_gpu, Uq_gpu, wfc_gpu);
 
@@ -266,31 +267,35 @@ void splitOp(unsigned int steps, double dt, double2 *wfc, double *wfc_gpu, doubl
 //###########################################################################################################//
 
 int main(int argc, char **argv){
-	parseArgs();
+	Host::parseArgs();
+	State gpe;
+
 	double dt;
 	unsigned int gridSize[3];
 	double omega_V[3];
 	double mass=1.0;
 
-	//These contains the addresses of all the essential arrays for both CPU and GPU.
-	struct addr_grid addr_grid;
-	struct addr_op addr_op_host; 
-	struct addr_Uop addr_Uop_host, addr_Uop_gpu; 
+	//These structs contain the addresses of all the essential arrays for both CPU and GPU.
+	State::addr_grid addr_grid;
+	State::addr_op addr_op_host;
+	State::addr_Uop addr_Uop_host, addr_Uop_gpu;
 
-	defineGrid(&addr_grid);
+	Host::defineGrid(&addr_grid);
 
-	allocateMemoryHost(0x1ff, &addr_grid, &addr_op_host, &addr_Uop_host);
-	allocateMemoryDevice(&addr_grid, &addr_Uop_gpu);
+	Host::allocateMemoryHost(0x1ff, &addr_grid, &addr_op_host, &addr_Uop_host);
+	Host::allocateMemoryDevice(&addr_grid, &addr_Uop_gpu);
 
 	//Imaginary time evolution
-	initHamiltonianGnd( addr_grid, addr_op_host, addr_Uop_host, addr_Uop_gpu );
-	splitOp(steps, dt, wfc, wfc_gpu, Uq_gpu, Up_gpu, Uxpy_gpu, Uypx_gpu, buffer);
+	Host::initHamiltonianGnd( addr_grid, addr_op_host, addr_Uop_host, addr_Uop_gpu );
+	Host::splitOp(steps, dt, wfc, wfc_gpu, Uq_gpu, Up_gpu, Uxpy_gpu, Uypx_gpu, buffer);
+
 	//Real time evolution
-	initHamiltonianEv( gridSize, X, Y, Z, V, K, XPy, YPx, opV, opK, opXPy, opYPx );
+	Host::initHamiltonianEv( gridSize, X, Y, Z, V, K, XPy, YPx, opV, opK, opXPy, opYPx );
+	Host::splitOp(steps, dt, wfc, wfc_gpu, Uq_gpu, Up_gpu, Uxpy_gpu, Uypx_gpu, buffer);
 
 	//Free the memory and go home.
-	freeMemoryHost(V,K,XPy,YPx,opV,opK,opXPy,opYPx,wfc);
-	freeMemoryDevice(wfc_gpu,Uq_gpu,Up_gpu,Uxpy_gpu,Uypx_gpu,buffer);
+	Host::freeMemoryHost(V,K,XPy,YPx,opV,opK,opXPy,opYPx,wfc);
+	Host::freeMemoryDevice(wfc_gpu,Uq_gpu,Up_gpu,Uxpy_gpu,Uypx_gpu,buffer);
 }
 
 //###########################################################################################################//
