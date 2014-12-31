@@ -1,18 +1,18 @@
 /*
-* gpu_functions.cu - GPUE2: Split Operator based GPU solver for Nonlinear 
-* Schrodinger Equation, Copyright (C) 2014, Lee J. O'Riordan. 
+* gpu_functions.cu - GPUE2: Split Operator based GPU solver for Nonlinear
+* Schrodinger Equation, Copyright (C) 2014, Lee J. O'Riordan.
 
-* This library is free software; you can redistribute it and/or modify 
-* it under the terms of the GNU Lesser General Public License as 
-* published by the Free Software Foundation; either version 2.1 of the 
-* License, or (at your option) any later version. This library is 
-* distributed in the hope that it will be useful, but WITHOUT ANY 
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-* FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public 
-* License for more details. You should have received a copy of the GNU 
-* Lesser General Public License along with this library; if not, write 
-* to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, 
-* Boston, MA 02111-1307 USA 
+* This library is free software; you can redistribute it and/or modify
+* it under the terms of the GNU Lesser General Public License as
+* published by the Free Software Foundation; either version 2.1 of the
+* License, or (at your option) any later version. This library is
+* distributed in the hope that it will be useful, but WITHOUT ANY
+* WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+* License for more details. You should have received a copy of the GNU
+* Lesser General Public License along with this library; if not, write
+* to the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+* Boston, MA 02111-1307 USA
 */
 
 //###########################################################################################################//
@@ -133,11 +133,11 @@ __global__ void vecVecMult_ii(int *vec1In, int *vec2In, int *vecOut){
 
 template<typename T>
 __global__ void matTrans(T *vecIn, T *vecOut){
-	
+
 	int x = blockIdx.x * TILE_DIM + threadIdx.x;
 	int y = blockIdx.y * TILE_DIM + threadIdx.y;
 	int width = gridDim.x * TILE_DIM;
-	
+
 	for(int j=0; j<blockDim.x; j+=blockDim.x){
 		vecOut[ x*width + (y+j)  ] = vecIn[(y+j)*width + x];
 	}
@@ -151,7 +151,7 @@ __global__ void matTrans2(T *vecIn, T *vecOut){
 	int x = blockIdx.x * TILE_DIM + threadIdx.x;
 	int y = blockIdx.y * TILE_DIM + threadIdx.y;
 	int width = gridDim.x * TILE_DIM;
-	
+
 	for(int j=0; j<blockDim.x; j+=blockDim.x){
 		tile[threadIdx.y + j][threadIdx.x] = vecIn[(y+j)*width + x];
 	}
@@ -178,7 +178,7 @@ __global__ void matTrans2(T *vecIn, T *vecOut){
 template <unsigned int blockSize>
 __global__ void sumVector_d(double* vecIn, double* vecOut, unsigned int n){
 	extern __shared__ double sdata_d[];
-	
+
 	unsigned int tid = threadIdx.x;
 	unsigned int i = blockIdx.x*(blockSize*2) + tid;
 	unsigned int gridSize = blockSize*2*gridDim.x;
@@ -187,13 +187,13 @@ __global__ void sumVector_d(double* vecIn, double* vecOut, unsigned int n){
 	while ( i < n ){
 		sdata_d[tid] += vecIn[i] + vecIn[i + blockSize];
 		i += gridSize;
-	}	
+	}
 	__syncthreads();
 	if(blockSize >= 1024) { if(tid < 512) { sdata_d[tid] += sdata_d[tid+512];} __syncthreads; }
 	if(blockSize >= 512) { if(tid < 256) { sdata_d[tid] += sdata_d[tid+256];} __syncthreads; }
 	if(blockSize >= 256) { if(tid < 128) { sdata_d[tid] += sdata_d[tid+128];} __syncthreads; }
 	if(blockSize >= 128) { if(tid < 64) { sdata_d[tid] += sdata_d[tid+64];} __syncthreads; }
-	
+
 	if (tid < 32){
 		if(blockSize >= 64) sdata_d[tid] += sdata_d[tid+32];
 		if(blockSize >= 32) sdata_d[tid] += sdata_d[tid+16];
@@ -208,7 +208,7 @@ __global__ void sumVector_d(double* vecIn, double* vecOut, unsigned int n){
 template <unsigned int blockSize>
 __global__ void sumVector_d2(double2* vecIn, double2* vecOut, unsigned int n){
 	extern __shared__ double2 sdata_d2[];
-	
+
 	unsigned int tid = threadIdx.x;
 	unsigned int i = blockIdx.x*(blockSize*2) + tid;
 	unsigned int gridSize = blockSize*2*gridDim.x;
@@ -218,12 +218,12 @@ __global__ void sumVector_d2(double2* vecIn, double2* vecOut, unsigned int n){
 		sdata_d2[tid].x += vecIn[i].x + vecIn[i + blockSize].x;
 		sdata_d2[tid].y += vecIn[i].y + vecIn[i + blockSize].y;
 		i += gridSize;
-	}	
+	}
 	if(blockSize >= 1024) { if(tid < 512) { sdata_d2[tid].x += sdata_d2[tid+512].x; sdata_d2[tid].y += sdata_d2[tid+512].y; } __syncthreads; }
 	if(blockSize >= 512)  { if(tid < 256) { sdata_d2[tid].x += sdata_d2[tid+256].x; sdata_d2[tid].y += sdata_d2[tid+256].y; } __syncthreads; }
 	if(blockSize >= 256)  { if(tid < 128) { sdata_d2[tid].x += sdata_d2[tid+128].x; sdata_d2[tid].y += sdata_d2[tid+128].y; } __syncthreads; }
 	if(blockSize >= 128)  { if(tid < 64)  { sdata_d2[tid].x += sdata_d2[tid+64].x;  sdata_d2[tid].y += sdata_d2[tid+64].y;  } __syncthreads; }
-	
+
 	if (tid < 32){
 		if(blockSize >= 64){ sdata_d2[tid].x += sdata_d2[tid+32].x; sdata_d2[tid].y += sdata_d2[tid+32].y; }
 		if(blockSize >= 32){ sdata_d2[tid].x += sdata_d2[tid+16].x; sdata_d2[tid].y += sdata_d2[tid+16].y; }

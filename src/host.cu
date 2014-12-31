@@ -30,7 +30,7 @@
 */
 //###########################################################################################################//
 
-static void Host::setupFFT( struct Host::addr_grid *grid,
+static void Host::setupFFT( State::addr_grid *grid,
 		cufftHandle plan_xyz,
 		cufftHandle plan_xy,
 		cufftHandle plan_x_batchY)
@@ -61,7 +61,7 @@ static void Host::setupFFT( struct Host::addr_grid *grid,
 */
 //###########################################################################################################//
 
-static void Host::allocateMemoryDevice( struct addr_grid *grid, struct addr_Uop *U_op ){
+static void Host::allocateMemoryDevice( State::addr_grid *grid, State::addr_Uop *U_op ){
 	unsigned int gridMax = 1;
 	for(int i=0; i<addr_grid->dim;++i){
 		gridMax *= addr_grid->gridSize[i];
@@ -74,7 +74,7 @@ static void Host::allocateMemoryDevice( struct addr_grid *grid, struct addr_Uop 
 	cudaMalloc((void**) &(U_op->buffer), sizeof(double2)*gridMax);
 }
 
-static void Host::freeMemoryDevice(struct addr_Uop *U_op){
+static void Host::freeMemoryDevice( State::addr_Uop *U_op){
 	cudaFree( U_op->wfc );
 	cudaFree( U_op->opV );
 	cudaFree( U_op->opK );
@@ -95,7 +95,7 @@ static void Host::freeMemoryDevice(struct addr_Uop *U_op){
 /*
 * @selection Used as a bitwise operation to select which pointers to allocate memory for. 0b1111111111 (0x1ff, 511) selects all
 */
-static void Host::allocateMemoryHost( unsigned int selection, struct addr_grid *grid, struct addr_op *op, struct addr_Uop *U_op ){
+static void Host::allocateMemoryHost( unsigned int selection, State::addr_grid *grid, State::addr_op *op, State::addr_Uop *U_op ){
 
 	ops->dq = (double*) malloc(sizeof(double)*grid->dim);
 	ops->dp = (double*) malloc(sizeof(double)*grid->dim);
@@ -126,7 +126,7 @@ static void Host::allocateMemoryHost( unsigned int selection, struct addr_grid *
 /*
 * Frees memory blocks. Use NULL in place of blocks to ignore.
 */
-static void Host::freeMemoryHost( struct addr_op *op, struct addr_Uop *U_ops){
+static void Host::freeMemoryHost( State::addr_op *op, State::addr_Uop *U_op){
 
 	free(op->V);		free(op->K);		free(op->XPy);		free(op->YPx);
 	free(U_op->opV);	free(U_op->opK);	free(U_op->opXPy);	free(U_op->opYPx);
@@ -141,7 +141,7 @@ static void Host::freeMemoryHost( struct addr_op *op, struct addr_Uop *U_ops){
 */
 //###########################################################################################################//
 
-static void Host::initHamiltonianGnd( struct addr_grid *grid, struct addr_op *op, struct addr_Uop *U_op ){
+static void Host::initHamiltonianGnd( State::addr_grid *grid, State::addr_op *op, State::addr_Uop *U_op ){
 	for(int d=0; d<){
 
 	}
@@ -176,7 +176,7 @@ static void Host::initHamiltonianGnd( struct addr_grid *grid, struct addr_op *op
 /*
 *  Must have V, K, XPY YPX in memory, otherwise this routine will fall over.
 */
-static void Host::initHamiltonianEv( struct addr_grid *grid, struct addr_op *op, struct addr_Uop *Uop )
+static void Host::initHamiltonianEv( State::addr_grid *grid, State::addr_op *op, State::addr_Uop *Uop )
 {
 	if(V==NULL || K==NULL || XPy==NULL || YPx==NULL){
 		printf("The required arrays were not stored in memory. Please load them before use.");
@@ -204,7 +204,7 @@ static void Host::initHamiltonianEv( struct addr_grid *grid, struct addr_op *op,
 */
 //###########################################################################################################//
 
-static void Host::defineGrid(struct addr_grid *grid){
+static void Host::defineGrid( State::addr_grid *grid ){
 	grid->Q = (double **) malloc( sizeof(double*)*grid->dim );
 	grid->P = (double **) malloc( sizeof(double*)*grid->dim );
 
