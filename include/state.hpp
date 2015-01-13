@@ -1,6 +1,6 @@
 /*
-* state.hpp - GPUE2: Split Operator based GPU solver for Nonlinear
-* Schrodinger Equation, Copyright (C) 2014, Lee J. O'Riordan.
+* state.hpp - GPUE2: GPU Split Operator solver for Nonlinear
+* Schrodinger Equation, Copyright (C) 2015, Lee J. O'Riordan.
 
 * This library is free software; you can redistribute it and/or modify
 * it under the terms of the GNU Lesser General Public License as

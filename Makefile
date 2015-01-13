@@ -1,46 +1,49 @@
+# Makefile - GPU Split Operator solver for Nonlinear
+# Schrodinger Equation, Copyright (C) 2015, Lee J. O'Riordan.
+
 OS:=	$(shell uname)
 ifeq ($(OS),Darwin)
 CCGPU		= nvcc
-CCHOST		= g++
 CUDA_LIB	= /usr/local/cuda/lib
 CUDA_HEADER	= /usr/local/cuda/include
-CFLAGSGPU	= -g -ccbin /usr/bin/clang --ptxas-options=-v#-save-temps
-CFLAGSHOST	= -g -G -march=native -lcufft -lcudart
+CFLAGSGPU	= -g -O3 -ccbin /usr/bin/clang --ptxas-options=-v#-save-temps
+CFLAGSHOST	= -g -G -O3 -march=native -lcufft -lcudart
 GPU_ARCH	= sm_30
 else
 CCGPU		= nvcc --ptxas-options=-v --compiler-options -Wall#-save-temps
-CCHOST		= g++
 CUDA_LIB	= /usr/local/cuda-5.5/lib64
 CUDA_HEADER	= /usr/local/cuda-5.5/include
-CFLAGSGPU	= -g  #-malign-double
-CFLAGSHOST	= -g -G -march=native -fopenmp -lcufft -lcudart
+CFLAGSGPU	= -g -O3 #-malign-double
+CFLAGSHOST	= -g -G -O3 -march=native -fopenmp -lcufft -lcudart
 GPU_ARCH	= sm_20
 endif
-
-CLINKER		= $(CCGPU)
+CCMPI		= mpic++
+CCHOST		= g++
 RM		= /bin/rm
 INCFLAGS	= -I$(CUDA_HEADER)
 LDFLAGS		= -L$(CUDA_LIB)
-EXECS		= gpue # BINARY NAME HERE
+EXECS		= GPUE
 
-gpue: fileIO.o kernels.o split_op.o tracker.o minions.o ds.o
-	$(CCHOST) *.o $(LDFLAGS) $(CFLAGSHOST) -o gpue
-	#rm -rf ./*.o
+gpu_functions.o: ./src/gpu_functions.cu ./include/gpu_functions.h
+	$(CCGPU) -c ./src/gpu_functions.cu -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) $(CHOSTFLAGS) -march=native
 
-split_op.o: ./src/split_op.cu ./include/split_op.h ./include/kernels.h ./include/constants.h ./include/fileIO.h ./include/minions.h Makefile
-	$(CCGPU) -c ./src/split_op.cu -o $@ $(INCFLAGS) $(CFLAGS) -Xcompiler "-fopenmp" -arch=$(GPU_ARCH)
+host.o: ./src/host.cu ./include/gpu_functions.h ./include/host.h
+	$(CCGPU) -c ./src/host.cu -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) $(CHOSTFLAGS) -march=native -Xcompiler "-fopenmp" -arch=$(GPU_ARCH)
 
-kernels.o: ./include/split_op.h Makefile ./include/constants.h ./include/kernels.h ./src/kernels.cu
-	$(CCGPU) -c ./src/kernels.cu -o $@ $(INCFLAGS) $(CFLAGSGPU) -arch=$(GPU_ARCH)
+host_minions.o: ./src/host_minions.cc
+	$(CCGPU) -c ./src/split_op.cu -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) $(CHOSTFLAGS) -march=native
 
-fileIO.o: ./include/fileIO.h ./src/fileIO.cc Makefile
-	$(CCHOST) -c ./src/fileIO.cc -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) -Ofast -march=native
+main.o: ./include/* gpu_functions.o host.o host_minions.o operators.o state.o
+	$(CCHOST) *.o $(LDFLAGS) $(CFLAGSHOST) -o $(EXECS)
 
-tracker.o: ./src/tracker.cc ./include/tracker.h ./include/fileIO.h
-	$(CCHOST) -c ./src/tracker.cc -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) $(CHOSTFLAGS) -Ofast -march=native
+operators.o: ./src/operators.cu ./include/operators.h
+	$(CCGPU) -c ./src/operators.cu -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) $(CHOSTFLAGS) -march=native
 
-default:	gpue
-all:		gpue test
+state.o: ./src/state.cc ./include/state.hpp
+	$(CCHOST) -c ./src/state.cc -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) $(CHOSTFLAGS) -march=native
+
+default:	main
+all:		main test
 
 .c.o:
 	$(CCGPU) $(INCFLAGS) $(CFLAGS) -c $<
