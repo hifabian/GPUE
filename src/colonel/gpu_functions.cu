@@ -17,8 +17,8 @@
 
 //###########################################################################################################//
 
-#include "../include/gpu_functions.h"
-#include "../include/constants.h"
+#include "...../include/gpu_functions.h"
+#include "../../include/constants.h"
 
 #ifndef T32B4
 	#define TILE_DIM 32 //small segment to be computed

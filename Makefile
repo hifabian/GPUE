@@ -24,8 +24,8 @@ INCFLAGS	= -I$(CUDA_HEADER)
 LDFLAGS		= -L$(CUDA_LIB)
 EXECS		= GPUE
 
-gpu_functions.o: ./src/gpu_functions.cu ./include/gpu_functions.h
-	$(CCGPU) -c ./src/gpu_functions.cu -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) $(CHOSTFLAGS) -march=native
+gpu_functions.o: ./src/colonel/gpu_functions.cu ./include/gpu_functions.h
+	$(CCGPU) -c ./src/colonel/gpu_functions.cu -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) $(CHOSTFLAGS) -march=native
 
 host.o: ./src/host.cu ./include/gpu_functions.h ./include/host.h
 	$(CCGPU) -c ./src/host.cu -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) $(CHOSTFLAGS) -march=native -Xcompiler "-fopenmp" -arch=$(GPU_ARCH)

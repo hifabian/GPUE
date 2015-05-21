@@ -21,7 +21,7 @@
 #include<cuda.h>
 #include<stdio.h>
 #include<cuda_runtime.h>
-#include "./gpu_functions.cu"
+#include "../colonel/gpu_functions.cu"
 
 
 void test_scalVectMult(){
