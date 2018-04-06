@@ -1,18 +1,6 @@
 /*
 * gpu_functions.cu - GPUE2: Split Operator based GPU solver for Nonlinear
-* Schrodinger Equation, Copyright (C) 2015, Lee J. O'Riordan.
-
-* This library is free software; you can redistribute it and/or modify
-* it under the terms of the GNU Lesser General Public License as
-* published by the Free Software Foundation; either version 2.1 of the
-* License, or (at your option) any later version. This library is
-* distributed in the hope that it will be useful, but WITHOUT ANY
-* WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
-* License for more details. You should have received a copy of the GNU
-* Lesser General Public License along with this library; if not, write
-* to the Free Software Foundation, Inc., 59 Temple Place, Suite 330,
-* Boston, MA 02111-1307 USA
+* Schrodinger Equation, Copyright (C) 2018, Lee J. O'Riordan, James Schloss
 */
 
 //###########################################################################################################//
@@ -243,23 +231,23 @@ __global__ void sumVector_d2(double2* vecIn, double2* vecOut, unsigned int n){
 */
 //###########################################################################################################//
 
-__host__ __device__ double compMagnitude(double2 cmp1){
+inline __host__ __device__ double compMagnitude(double2 cmp1){
 	return sqrt(cmp1.x*cmp1.x + cmp1.y*cmp1.y);
 }
 
-__host__ __device__ double2 realCompMult(double rl, double2 cmp){
+inline __host__ __device__ double2 realCompMult(double rl, double2 cmp){
 	double2 result;
 	result.x = rl*cmp.x;
 	result.y = rl*cmp.y;
 	return result;
 }
-__host__ __device__ double2 compCompMult(double2 cmp1, double2 cmp2){
+inline __host__ __device__ double2 compCompMult(double2 cmp1, double2 cmp2){
 	double2 result;
 	result.x = (cmp1.x*cmp2.x - cmp1.y*cmp2.y);
 	result.y = (cmp1.x*cmp2.y + cmp1.y*cmp2.x);
 	return result;
 }
-__host__ __device__ double2 compCompSum(double2 cmp1, double2 cmp2){
+inline __host__ __device__ double2 compCompSum(double2 cmp1, double2 cmp2){
 	double2 result;
 	result.x = cmp1.x + cmp2.x;
 	result.y = cmp1.y + cmp2.y;

@@ -1,5 +1,5 @@
-# Makefile - GPU Split Operator solver for Nonlinear
-# Schrodinger Equation, Copyright (C) 2015, Lee J. O'Riordan.
+# Makefile - GPUE 2e Split Operator solver for Nonlinear
+# Schrodinger Equation, Copyright (C) 2018, Lee J. O'Riordan, James Schloss
 
 OS:=	$(shell uname)
 ifeq ($(OS),Darwin)
