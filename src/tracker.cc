@@ -144,13 +144,13 @@ namespace Tracker {
                     }
                     sum = phiDelta[0] + phiDelta[1] + phiDelta[2] + phiDelta[3];
                     rnd_value = lround(sum/(2*PI));
-                    if( sum >= 1.9*PI && cond_x <= 0 && cond_y <= 0){
+                    if( sum >= 1.7*PI && cond_x <= 0 && cond_y <= 0){
                         marker[i*xDim + j] = rnd_value;
                         ++found;
                         sum = 0.0;
                         cond_x = 2; cond_y = 2;
                     }
-                    else if( sum <= -1.9*PI && cond_x <= 0 && cond_y <= 0 )  {
+                    else if( sum <= -1.7*PI && cond_x <= 0 && cond_y <= 0 )  {
                         marker[i*xDim + j] = -rnd_value;
                         ++found;
                         sum = 0.0;

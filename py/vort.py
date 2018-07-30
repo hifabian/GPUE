@@ -219,7 +219,8 @@ def do_the_thing(start,fin,incr): #Performs the tracking
 		vorts_p = VtxList()
 		vorts_c = VtxList()
 		v_arr_c=genfromtxt(data_dir+'vort_arr_' + str(i), delimiter=',')
-		if i==2000:
+		if i==start + incr*2:
+        		#from IPython import embed; embed()
 			v_arr_p_coords = np.array([a for a in v_arr_p[:,[1,3]]]) # Select the coordinates from the previous timestep
 			v_arr_c_coords = np.array([a for a in v_arr_c[:,[1,3]]]) # Select the coordinates from the current timestep
 			v_arr_p_sign = np.array([a for a in v_arr_p[:,4]]) # Select the vortex signs from previous
@@ -245,9 +246,12 @@ def do_the_thing(start,fin,incr): #Performs the tracking
 			v0p = vorts_p.element(i3).sign # Get the sign of the current vortex at index i3
 			v1c = vorts_c.element(index_r[0]).uid #Get uid of current vortex
                         #Check if distance is less than 7 grid points, and that the sign is matched between previous and current vortices, and that the current vortex has a negative uid, indicating that a pair has not yet been found. If true, then update the current vortex index to that of the previous vortex index, and turn vortex on --- may be dangerous
-			if (index_r[1] < 4) and (vorts_c.element(index_r[0]).sign == vorts_p.element(i3).sign) and (vorts_c.element(index_r[0]).uid < 0) and (vorts_p.element(i3).isOn == True):
+			if (index_r[1] < 30) and (vorts_c.element(index_r[0]).sign == vorts_p.element(i3).sign) and (vorts_c.element(index_r[0]).uid < 0) and (vorts_p.element(i3).isOn == True):
 				vorts_c.element(index_r[0]).update_uid(vorts_p.element(i3).uid)
 				vorts_c.element(index_r[0]).update_on(True)
+			else:
+        			from IPython import embed; embed()
+				
 
 		#You will never remember why this works
 		uid_c = [[a for a in b][3] for b in vorts_c.as_np()] # Slice the uids for current data

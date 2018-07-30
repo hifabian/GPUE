@@ -209,7 +209,7 @@ def image_gen_single(dataName, value, imgdpi,opmode):
 #			#plt.rc('font',family='serif')
 
 			fig, ax = plt.subplots()
-			f = plt.imshow((abs(b)**2),cmap='gnuplot2',vmin=0,vmax=1e7)
+			f = plt.imshow((abs(b)**2),cmap='gnuplot2',vmin=0,vmax=5e7)
 			plt.title('rho(r) @ t=' + str(value*dt))
 		#	plt.title(r'$\\rho \left( r,t \right),\,t=$' + str(value*dt))
 			

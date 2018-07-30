@@ -43,8 +43,8 @@ void evolve_2d(Wave &wave, Op &opr,
     int gridSize = xDim * yDim;
     int kill_idx = par.ival("kill_idx");
     int charge = par.ival("charge");
-    int x0_shift = par.dval("x0_shift");
-    int y0_shift = par.dval("y0_shift");
+    double x0_shift = par.dval("x0_shift");
+    double y0_shift = par.dval("y0_shift");
     cufftDoubleComplex *EV = opr.cufftDoubleComplexval("EV");
     cufftDoubleComplex *wfc = wave.cufftDoubleComplexval("wfc");
     cufftDoubleComplex *EV_opt = opr.cufftDoubleComplexval("EV_opt");
@@ -177,6 +177,7 @@ void evolve_2d(Wave &wave, Op &opr,
                     vortexLocation = (int *) calloc(xDim * yDim, sizeof(int));
                     num_vortices[0] = Tracker::findVortex(vortexLocation, wfc,
                                                           mask_2d, xDim, x, i);
+                    std::cout << "Found " << num_vortices[0] << " vortices" << std::endl;
                     // If initial step, locate vortices, least-squares to find
                     // exact centre, calculate lattice angle, generate optical
                     // lattice.
@@ -296,52 +297,43 @@ void evolve_2d(Wave &wave, Op &opr,
                             //Lambda for vortex annihilation/creation.
                             auto killIt=[&](int idx, int winding, 
                                             double delta_x, double delta_y) {
-                                if (abs(delta_x) > 0 || abs(delta_y) > 0){
+                                //if (abs(delta_x) > 0 || abs(delta_y) > 0){
                                     // Killing initial vortex and then 
                                     // imprinting new one
-                                    WFC::phaseWinding(Phi, 1, x,y, dx,dy,
-                                        lattice.getVortexUid(idx)->
-                                            getData().getCoordsD().x,
-                                        lattice.getVortexUid(idx)->
-                                            getData().getCoordsD().y,
+                                //Remove pre-existing vortex
+                                int imprint = -lattice.getVortexUid(idx)->getData().getWinding();
+                                std::cout << "Annihilating Vortex " << idx << " at position (" \
+                                        << lattice.getVortexUid(idx)->getData().getCoordsD().x \
+                                        << "," 
+                                        << lattice.getVortexUid(idx)->getData().getCoordsD().y \
+                                        << ")." << std::endl;
+
+                                if(winding>0){ //Shift vortex position; remove and add at new x,y
+                                    WFC::phaseWinding(Phi, imprint, x, y, dx, dy,	
+                                        lattice.getVortexUid(idx)->getData().getCoordsD().x,
+                                        lattice.getVortexUid(idx)->getData().getCoordsD().y,
+                                        xDim);
+                                    WFC::phaseWindingSum(Phi, -imprint, x, y, dx, dy,
+                                        lattice.getVortexUid(idx)->getData().getCoordsD().x + delta_x,
+                                        lattice.getVortexUid(idx)->getData().getCoordsD().y + delta_y,
                                         xDim);
 
-                                    cudaMemcpy(Phi_gpu, Phi, 
-                                               sizeof(double) * xDim * yDim, 
-                                               cudaMemcpyHostToDevice);
-                                    cMultPhi <<<grid, threads>>>(gpuWfc,Phi_gpu,
-                                                                  gpuWfc);
-
-                                    // Imprinting new one
-                                    int cval = -winding;
-                                    WFC::phaseWinding(Phi, cval, x,y, dx,dy,
-                                        lattice.getVortexUid(idx)->
-                                            getData().getCoordsD().x + delta_x,
-                                        lattice.getVortexUid(idx)->
-                                            getData().getCoordsD().y + delta_y,
-                                        xDim);
-
-                                    // Sending to device for imprinting
-                                    cudaMemcpy(Phi_gpu, Phi, 
-                                               sizeof(double) * xDim * yDim, 
-                                               cudaMemcpyHostToDevice);
-                                    cMultPhi <<<grid, threads>>>(gpuWfc,Phi_gpu,
-                                                                  gpuWfc);
                                 }
-                                else{
-                                    int cval = -(winding-1);
-                                    WFC::phaseWinding(Phi, cval, x,y,dx,dy,
-                                        lattice.getVortexUid(idx)->
-                                            getData().getCoordsD().x,
-                                        lattice.getVortexUid(idx)->
-                                            getData().getCoordsD().y,
+                                else if(winding<0){//Flip vortex; imprint charge q+1 at x,y (let 1 annihilate with nearby core)
+                                    WFC::phaseWindingSum(Phi, -2*imprint, x, y, dx, dy,
+                                        lattice.getVortexUid(idx)->getData().getCoordsD().x + delta_x,
+                                        lattice.getVortexUid(idx)->getData().getCoordsD().y + delta_y,
                                         xDim);
-                                    cudaMemcpy(Phi_gpu, Phi, 
-                                               sizeof(double) * xDim * yDim, 
-                                               cudaMemcpyHostToDevice);
-                                    cMultPhi <<<grid, threads>>>(gpuWfc,Phi_gpu,
-                                                                  gpuWfc);
                                 }
+                                else {
+                                }
+
+                               cudaMemcpy(Phi_gpu, Phi, sizeof(double) * xDim * yDim, cudaMemcpyHostToDevice);
+                               cMultPhi <<<grid, threads>>> ( gpuWfc, Phi_gpu, gpuWfc );
+
+                               std::string wfc_phase_imprint = "wfc_phase_imp";
+                               FileIO::writeOut(buffer, data_dir + wfc_phase_imprint, wfc, xDim*yDim, i);
+                               FileIO::writeOutDouble(buffer, "PHI_IMP", Phi, xDim*yDim, i);
                             };
                             if (kill_idx > 0){
                                 killIt(kill_idx, charge, x0_shift, y0_shift);
@@ -386,7 +378,7 @@ void evolve_2d(Wave &wave, Op &opr,
                     num_vortices[1] = num_vortices[0];
                     vortCoords->getVortices().swap(vortCoordsP->getVortices());
 		            vortCoords->getVortices().clear();
-			        std::cout << "I am here" << std::endl;
+			        std::cout << "Vortex tracking complete for timestep " << i << std::endl;
 
                     break;
 

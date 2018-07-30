@@ -239,7 +239,6 @@ namespace Vtx {
                                 v
                         )
                 );
-                //std::cout << "UIDin=" << vtx->getUID() << " UIDout=" << v->getUID() << " R=" << pow(v->coordsD.x - vtx->coordsD.x, 2) + pow(v->coordsD.y - vtx->coordsD.y, 2) << "\n" ;
             }
         };
         pairRDist(this);

@@ -1,7 +1,14 @@
-#CUDA_HOME = /usr/local/cuda/
-CUDA_HOME = /apps/free/cuda/7.5.18/
+CUDA_HOME = /apps/free/cuda/8.0.61/#/usr/local/cuda-8.0
+#CUDA_HOME = /apps/free/cuda/7.5.18/
 #CUTT_DIR = cutt/lib
-GPU_ARCH	= sm_20
+GPU_ARCH	= sm_30 \
+     -gencode=arch=compute_20,code=sm_20 \
+     -gencode=arch=compute_30,code=sm_30 \
+     -gencode=arch=compute_50,code=sm_50 \
+     -gencode=arch=compute_52,code=sm_52 \
+     -gencode=arch=compute_60,code=sm_60 \
+     -gencode=arch=compute_61,code=sm_61 \
+     -gencode=arch=compute_61,code=compute_61
 OS:=	$(shell uname)
 ifeq ($(OS),Darwin)
 CUDA_LIB	= $(CUDA_HOME)/lib
@@ -38,4 +45,4 @@ gpue: $(OBJ)
 	$(CC) -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) $(CUDA_FLAGS) -Xcompiler "-fopenmp" -arch=$(GPU_ARCH) $^
 
 clean:
-	@-$(RM) -f r_0 Phi_0 E* px_* py_0* xPy* xpy* ypx* x_* y_* yPx* p0* p1* p2* EKp* EVr* gpot wfc* Tpot 0* V_* K_* Vi_* Ki_* 0i* k s_* si_* *.o *~ PI* $(EXECS) $(OTHER_EXECS) *.dat *.eps *.ii *.i *cudafe* *fatbin* *hash* *module* *ptx test* vort* v_opt*;
+	@-$(RM) -f r_0 Phi_0 E* px_* py_0* xPy* xpy* ypx* x_* y_* yPx* p0* p1* p2* EKp* EVr* gpot wfc* Tpot 0* V_* K_* Vi_* Ki_* 0i* k s_* si_* *.o *~ PI* $(EXECS) $(OTHER_EXECS) *.dat *.eps *.ii *.i *cudafe* *fatbin* *hash* *module* *ptx test* vort* v_opt* *.bc *.cui *.s;

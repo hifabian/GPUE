@@ -153,8 +153,8 @@ int init_2d(Op &opr, Cuda &cupar, Grid &par, Wave &wave){
                                                ( 1 - omega*omega) ) ));
 
     //std::cout << "Rxy is: " << Rxy << '\n';
-    double xMax = 6*Rxy*a0x; //10*bec_length; //6*Rxy*a0x;
-    double yMax = 6*Rxy*a0y; //10*bec_length;
+    double xMax = 4*Rxy*a0x; //10*bec_length; //6*Rxy*a0x;
+    double yMax = 4*Rxy*a0y; //10*bec_length;
     par.store("xMax",xMax);
     par.store("yMax",yMax);
 

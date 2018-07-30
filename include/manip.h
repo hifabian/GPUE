@@ -38,6 +38,11 @@ namespace WFC {
 	*/
     void phaseWinding(double *phi, int winding, double *x, double *y, double dx, double dy, double posx, double posy, int dim);
 
+    /**
+     * As above, but assumes Phi has pre-existing values to sum onto.
+     */
+    void phaseWindingSum(double *phi, int winding, double *x, double *y, double dx, double dy, double posx, double posy, int dim);
+
 	/**
 	* @brief	Generate phase winding for condensate imprint, multiple locations
 	* @ingroup	wfc
