@@ -119,7 +119,7 @@ int main(int argc, char *argv[]){
     std::size_t st_st;
     std::size_t st_en;
 
-    for(int ii=std::stoi(start, &st_st); ii<=std::stoi(end, &st_en); ii+=incr){
+    for(unsigned long ii=atol(start.c_str()); ii<=atol(end.c_str()); ii+=incr){
 		std::cout << "ii=" << ii << std::endl;
         tmpr = r + std::to_string(ii);
         tmpi = i + std::to_string(ii);

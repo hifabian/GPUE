@@ -1,33 +1,33 @@
 '''
-vis.py - GPUE: Split Operator based GPU solver for Nonlinear 
-Schrodinger Equation, Copyright (C) 2011-2015, Lee J. O'Riordan 
+vis.py - GPUE: Split Operator based GPU solver for Nonlinear
+Schrodinger Equation, Copyright (C) 2011-2015, Lee J. O'Riordan
 <loriordan@gmail.com>, Tadhg Morgan, Neil Crowley. All rights reserved.
 
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
 met:
 
-1. Redistributions of source code must retain the above copyright 
+1. Redistributions of source code must retain the above copyright
 notice, this list of conditions and the following disclaimer.
 
-2. Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+2. Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
 
-3. Neither the name of the copyright holder nor the names of its 
-contributors may be used to endorse or promote products derived from 
+3. Neither the name of the copyright holder nor the names of its
+contributors may be used to endorse or promote products derived from
 this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A 
-PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
-HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
 SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
-TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 '''
 import os
@@ -47,6 +47,8 @@ from multiprocessing import Pool
 from multiprocessing import Process
 from matplotlib.ticker import ScalarFormatter
 import matplotlib.pyplot as plt
+from matplotlib import pyplot as plt
+import matplotlib.patheffects as PathEffects
 import ConfigParser
 import random as r
 from decimal import *
@@ -63,7 +65,7 @@ xDim = int(c.getfloat('Params','xDim'))
 yDim = int(c.getfloat('Params','yDim'))
 gndMaxVal = int(c.getfloat('Params','gsteps'))
 evMaxVal = int(c.getfloat('Params','esteps'))
-incr = int(c.getfloat('Params','print_out'))
+incr = int(c.getfloat('Params','printSteps'))
 sep = (c.getfloat('Params','dx'))
 dx = (c.getfloat('Params','dx'))
 dt = (c.getfloat('Params','dt'))
@@ -176,7 +178,7 @@ def image_gen(dataName, initValue, finalValue, increment,imgdpi):
 		else:
 			print "File(s) " + str(i) +".png already exist."
 
-def image_gen_single(dataName, value, imgdpi,opmode):
+def image_gen_single(dataName, value, imgdpi,opmode, x_dat):
 	real=open(dataName + '_' + str(0)).read().splitlines()
 	img=open(dataName + 'i_' + str(0)).read().splitlines()
 	a1_r = numpy.asanyarray(real,dtype='f8') #128-bit complex
@@ -192,6 +194,9 @@ def image_gen_single(dataName, value, imgdpi,opmode):
 		a = a_r[:] + 1j*a_i[:]
 		b = np.reshape(a,(xDim,yDim))
 		m_val=np.max(np.abs(b)**2)
+
+                vorts = np.loadtxt('vort_ord_' + str(value) + '.csv', delimiter=',', unpack=True)
+
 		#scaleAxis(b,dataName,"_abspsi2",value,imgdpi)
 		if opmode & 0b100000 > 0:
 #			fig, ax = plt.subplots()
@@ -209,16 +214,31 @@ def image_gen_single(dataName, value, imgdpi,opmode):
 #			#plt.rc('font',family='serif')
 
 			fig, ax = plt.subplots()
-			f = plt.imshow((abs(b)**2),cmap='gnuplot2',vmin=0,vmax=5e7)
-			plt.title('rho(r) @ t=' + str(value*dt))
+			plt.rc('text',usetex=True)
+                        plt.rc('font', family='serif')
+			f = plt.imshow( (abs(b)**2),
+                                cmap='gnuplot2', vmin=0, vmax=6e7,
+                                interpolation='none',
+                                extent=[-xMax, xMax, -xMax, xMax])
+			plt.title(r'$\rho(\mathbf{r},t=%f)$'%(value*dt))
 		#	plt.title(r'$\\rho \left( r,t \right),\,t=$' + str(value*dt))
-			
+
 			#plugins.connect(fig, plugins.MousePosition(fontsize=14))
-			
+
 			cbar = fig.colorbar(f)
-			plt.gca().set_xlabel('x '+ str((dx)))
+			plt.gca().set_xlabel(r'$\times x 10^{}$ '+ str((dx)))
 			plt.gca().set_ylabel('x '+ str(dx))
 			plt.gca().invert_yaxis()
+
+                        for x, y, z in zip(vorts[1,:],vorts[0,:], vorts[3,:]):
+                            if z==0:
+                                txt = plt.text(x, y, str(int(z)+":-"), color='#379696', fontsize=6, alpha=0.7)
+                                txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='#B9EA56')])
+                            else:
+                                txt = plt.text(x, y, str(int(z)+":+"), color='#B9EA56', fontsize=6, alpha=0.7)
+                                txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='#379696')])
+
+
 			plt.savefig(dataName+"r_"+str(value)+"_abspsi2.png",dpi=imgdpi)
 			plt.axis('off')
 			plt.savefig(dataName+"r_"+str(value)+"_abspsi2_axis0.pdf",bbox_inches='tight',dpi=imgdpi)
@@ -320,12 +340,14 @@ def overlap(dataName, initValue, finalValue, increment):
 		print i, np.sum(b)
 
 if __name__ == '__main__':
-	opPot('V_opt_0',200)
-	opPot('V_0',200)
-	opPot('K_0',200)
+	#opPot('V_opt_0',200)
+	#opPot('V_0',200)
+	#opPot('K_0',200)
 	gndImgList=[]
 	evImgList=[]
-	for i in range(0,gndMaxVal,incr):
+        x_coord = np.loadtxt('x_0', unpack=True)
+
+        for i in range(0,gndMaxVal,incr):
 		gndImgList.append(i)
 	for i in range(0,evMaxVal,incr):
 		evImgList.append(i)
@@ -337,7 +359,7 @@ if __name__ == '__main__':
 		gnd_proc.append(Process(target=image_gen_single,args=("wfc_0_const",i,200,0b110000)))
 	while evImgList:
 		i=evImgList.pop()
-		ev_proc.append(Process(target=image_gen_single,args=("wfc_ev",i,200,0b101000)))
+		ev_proc.append(Process(target=image_gen_single,args=("wfc_ev",i,200,0b101000,x_coord)))
 	proc = gnd_proc + ev_proc
 	while proc:
 		#if (mp.cpu_count()/2) > len(mp.active_children()):

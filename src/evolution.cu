@@ -272,8 +272,8 @@ void evolve_2d(Wave &wave, Op &opr,
                                                wfc, xDim);
                         	Tracker::vortArrange(vortCoords->getVortices(),
                                                     vortCoordsP->getVortices());
-                    		FileIO::writeOutInt(buffer, data_dir + "vLoc_",
-                                               vortexLocation, xDim * yDim, i);
+                    		//FileIO::writeOutInt(buffer, data_dir + "vLoc_",
+                            //                   vortexLocation, xDim * yDim, i);
                          }
                     }
 

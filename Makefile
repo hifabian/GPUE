@@ -20,7 +20,7 @@ CUDA_LIB	= $(CUDA_HOME)/lib64
 CUDA_HEADER	= $(CUDA_HOME)/include
 CC		= $(CUDA_HOME)/bin/nvcc --ptxas-options=-v --compiler-options -Wall #-save-temps
 CHOSTFLAGS	= #-fopenmp
-CFLAGS		= -g -O0 -std=c++11 -Xcompiler '-std=c++11' -Xcompiler '-fopenmp' #-L$(CUTT_DIR) -l:libcutt.a
+CFLAGS		= -g -O3 -std=c++11 -Xcompiler '-std=c++11' -Xcompiler '-fopenmp' #-L$(CUTT_DIR) -l:libcutt.a
 endif
 
 CUDA_FLAGS 	= -lcufft
@@ -40,6 +40,9 @@ OBJ = fileIO.o kernels.o split_op.o tracker.o minions.o ds.o edge.o node.o latti
 
 %.o: ./src/%.cu $(DEPS)
 	$(CC) -c -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) $(CUDA_FLAGS) -Xcompiler "-fopenmp" -arch=$(GPU_ARCH) $< -dc
+
+vtx_standalone: ./vtx_standalone.cu minions.o vort.o tracker.o 
+	$(CC) ./vtx_standalone.cu -g -O3 -D_GLIBCXX_USE_CXX11_ABI=0 --std=c++11 -o vtx_standalone ./tracker.o ./vort.o ./minions.o
 
 gpue: $(OBJ)
 	$(CC) -o $@ $(INCFLAGS) $(CFLAGS) $(LDFLAGS) $(CUDA_FLAGS) -Xcompiler "-fopenmp" -arch=$(GPU_ARCH) $^
