@@ -30,7 +30,7 @@ LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 '''
-import os
+import sys, os
 from mpi4py import MPI
 CPUs = 12#os.environ['SLURM_JOB_CPUS_PER_NODE']
 from numpy import genfromtxt
@@ -43,20 +43,36 @@ from scipy.spatial import Voronoi, voronoi_plot_2d
 import numpy.matlib
 mpl.use('Agg')
 from matplotlib.ticker import ScalarFormatter
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
 from matplotlib import pyplot as plt
 import matplotlib.patheffects as PathEffects
 import ConfigParser
 import random as r
 from decimal import *
-import stats
-import hist3d
+#import stats
+#import hist3d
+
+dat1 = sys.argv[1]
+dat2 = sys.argv[2]
+
+comm = MPI.COMM_WORLD
+size = comm.size
+rank = comm.rank
+print "Rank %d/%d initialised"%(rank,size-1)
+
+if rank==0:
+    if os.path.exists('dual'):
+        import shutil
+        shutil.rmtree('dual')
+    os.mkdir('dual')
+comm.Barrier()
 
 getcontext().prec = 4
 c = ConfigParser.ConfigParser()
 getcontext().prec = 4
 c = ConfigParser.ConfigParser()
-c.readfp(open(r'Params.dat'))
+c.readfp(open(dat1 + '/Params.dat'))
 
 xDim = int(c.getfloat('Params','xDim'))
 yDim = int(c.getfloat('Params','yDim'))
@@ -65,6 +81,7 @@ evMaxVal = int(c.getfloat('Params','esteps'))
 incr = int(c.getfloat('Params','printSteps'))
 sep = (c.getfloat('Params','dx'))
 dx = (c.getfloat('Params','dx'))
+dy = (c.getfloat('Params','dy'))
 dt = (c.getfloat('Params','dt'))
 xMax = (c.getfloat('Params','xMax'))
 yMax = (c.getfloat('Params','yMax'))
@@ -175,67 +192,111 @@ def image_gen(dataName, initValue, finalValue, increment,imgdpi):
 		else:
 			print "File(s) " + str(i) +".png already exist."
 
-def image_gen_single(dataName, value, imgdpi,opmode, x_dat, cbarOn=True, plot_vtx=False):
-    real=open(dataName + '_' + str(0)).read().splitlines()
-    img=open(dataName + 'i_' + str(0)).read().splitlines()
-    a1_r = numpy.asanyarray(real,dtype='f8') #128-bit complex
-    a1_i = numpy.asanyarray(img,dtype='f8') #128-bit complex
+def image_gen_single(dataName, value, imgdpi,opmode, x_dat, dat1, dat2, cbarOn=True, plot_vtx=False):
+    real1=open(dat1 + '/' + dataName + '_' + str(0)).read().splitlines()
+    img1=open(dat1 + '/' + dataName + 'i_' + str(0)).read().splitlines()
+    a1_r = numpy.asanyarray(real1,dtype='f8') #128-bit complex
+    a1_i = numpy.asanyarray(img1,dtype='f8') #128-bit complex
     a1 = a1_r[:] + 1j*a1_i[:]
     b1 = np.reshape(a1,(xDim,yDim))
 
+    real2=open(dat2 + '/' + dataName + '_' + str(0)).read().splitlines()
+    img2=open(dat2 + '/' + dataName + 'i_' + str(0)).read().splitlines()
+    a2_r = numpy.asanyarray(real2,dtype='f8') #128-bit complex
+    a2_i = numpy.asanyarray(img2,dtype='f8') #128-bit complex
+    a2 = a2_r[:] + 1j*a2_i[:]
+    b2 = np.reshape(a2,(xDim,yDim))
+
+    m_val=np.max(np.abs(b2)**2)
     if not os.path.exists(dataName+"r_"+str(value)+"_abspsi2.png"):
-        real=open(dataName + '_' + str(value)).read().splitlines()
-        img=open(dataName + 'i_' + str(value)).read().splitlines()
-        a_r = numpy.asanyarray(real,dtype='f8') #128-bit complex
-        a_i = numpy.asanyarray(img,dtype='f8') #128-bit complex
-        a = a_r[:] + 1j*a_i[:]
-        b = np.transpose(np.reshape(a,(xDim,yDim))) #Transpose to match matlab plots
-        m_val=np.max(np.abs(b)**2)
+        real1=open(dat1 + '/' + dataName + '_' + str(value)).read().splitlines()
+        img1=open(dat1 + '/' + dataName + 'i_' + str(value)).read().splitlines()
+        a1_r = numpy.asanyarray(real1,dtype='f8') #128-bit complex
+        a1_i = numpy.asanyarray(img1,dtype='f8') #128-bit complex
+        a1 = a1_r[:] + 1j*a1_i[:]
+        b1 = np.transpose(np.reshape(a1,(xDim,yDim)))
+
+        real2=open(dat2 + '/' + dataName + '_' + str(value)).read().splitlines()
+        img2=open(dat2 + '/' + dataName + 'i_' + str(value)).read().splitlines()
+        a2_r = numpy.asanyarray(real2,dtype='f8') #128-bit complex
+        a2_i = numpy.asanyarray(img2,dtype='f8') #128-bit complex
+        a2 = a2_r[:] + 1j*a2_i[:]
+        b2 = np.transpose(np.reshape(a2,(xDim,yDim))) #Transpose to match matlab plots
+
         startBit = 0x00
 
         try:
-            vorts = np.loadtxt('vort_ord_' + str(value) + '.csv', delimiter=',', unpack=True)
+            vorts1 = np.loadtxt(dat1 + '/' + 'vort_ord_' + str(value) + '.csv', delimiter=',', unpack=True)
+            vorts2 = np.loadtxt(dat2 + '/' + 'vort_ord_' + str(value) + '.csv', delimiter=',', unpack=True)
         except Exception as e:
             print "Failed to load the required data file: %s"%e
             print "Please run vort.py before plotting the density, if you wih to have correctly numbered vortices"
-            vorts = np.loadtxt('vort_arr_' + str(value), delimiter=',', unpack=True, skiprows=1)
+            vorts1 = np.loadtxt(dat1 + '/' + 'vort_arr_' + str(value), delimiter=',', unpack=True, skiprows=1)
+            vorts2 = np.loadtxt(dat2 + '/' + 'vort_arr_' + str(value), delimiter=',', unpack=True, skiprows=1)
             startBit=0x01
 
         if opmode & 0b100000 > 0:
             nameStr = dataName+"r_"+str(value)
 
-            fig, ax = plt.subplots()
-            f = plt.imshow( (abs(b)**2),
+            fig = plt.figure(figsize=(8, 4.5))
+
+            #Plot of dat1 data
+            ax1 = fig.add_subplot(121)
+            f1 = ax1.imshow( (abs(b1)**2),
                                 cmap='hot', vmin=0, vmax=5.4e7,
-                                interpolation='none',)
-                                #extent=[-xMax, xMax, -xMax, xMax])
-            tstr =  str(value*dt)
-            plt.title('t=' + tstr + " s", fontsize=28)
-		    #plt.title(r'$\\rho \left( r,t \right),\,t=$' + str(value*dt))
+                                interpolation='none',
+                                extent=[-xMax, xMax, -xMax, xMax])
+
+            #plt.axis('equal')
+            plt.axis([-1.25e-4, 1.25e-4, -1.25e-4, 1.25e-4])
+
+            plt.axis('off')
+            plt.gca().invert_yaxis()
+
+            ax2 = fig.add_subplot(122)
+            f2 = ax2.imshow( (abs(b2)**2),
+                                cmap='hot', vmin=0, vmax=5.4e7,
+                                interpolation='none',
+                                extent=[-xMax, xMax, -xMax, xMax])
+            #plt.axis('equal')
+            plt.axis([-1.25e-4,1.25e-4,-1.25e-4,1.25e-4])
+
+            plt.axis('off')
+            plt.gca().invert_yaxis()
+
+            tstr = "%.2f" % (value*dt)
+            plt.suptitle('t=' + tstr + " s", fontsize=18, y=0.9)
 
             if cbarOn==True:
-                tbar = fig.colorbar(f)
-            #plt.gca().set_xlabel(r'$\times x 10^{}$ '+ str((dx)))
-            #plt.gca().set_ylabel('x '+ str(dx))
-            plt.gca().invert_yaxis()
+                cb_ax = fig.add_axes([0.93, 0.18, 0.02, 0.62])
+                cbar = fig.colorbar(f2, cax=cb_ax)
+
             if plot_vtx==True:
                 if startBit==0x00:
-                    zVort = zip(vorts[0,:],vorts[1,:], vorts[3,:])
+                    zVort1 = zip(vorts1[0,:],vorts1[1,:], vorts1[3,:])
+                    zVort2 = zip(vorts2[0,:],vorts2[1,:], vorts2[3,:])
                 else:
-                    zVort = zip(vorts[1,:], vorts[3,:], [0, 1, 2, 3])
-                for x, y, z in zVort:
-                    if z==0:
-                        txt = plt.text(x, y, str(int(z)), color='#379696', fontsize=6, alpha=0.7)
-                        txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='#B9EA56')])
+                    zVort1 = zip(vorts1[1,:], vorts1[3,:], [0, 1, 2, 3])
+                    zVort2 = zip(vorts2[1,:], vorts2[3,:], [0, 1, 2, 3])
+                for r1, r2 in zip(zVort1, zVort2):
+
+                    if r1[2]==0:
+                        txt1 = ax1.text((r1[0]-xDim/2)*dx, -(r1[1]-yDim/2)*dy, str(int(r1[2])), color='#379696', fontsize=6, alpha=0.7)
+                        txt1.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='#B9EA56')])
                     else:
-                        txt = plt.text(x, y, str(int(z)), color='#B9EA56', fontsize=6, alpha=0.7)
-                        txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='#379696')])
-            plt.axis('equal')
-            plt.axis('off')
+                        txt1 = ax1.text((r1[0]-xDim/2)*dx, -(r1[1]-yDim/2)*dy, str(int(r1[2])), color='#B9EA56', fontsize=6, alpha=0.7)
+                        txt1.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='#379696')])
+
+                    if r2[2]==0:
+                        txt2 = ax2.text((r2[0]-xDim/2)*dx, -(r2[1]-yDim/2)*dy, str(int(r2[2])), color='#379696', fontsize=6, alpha=0.7)
+                        txt2.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='#B9EA56')])
+                    else:
+                        txt2 = ax2.text((r2[0]-xDim/2)*dx, -(r2[1]-yDim/2)*dy, str(int(r2[2])), color='#B9EA56', fontsize=6, alpha=0.7)
+                        txt2.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='#379696')])
             if plot_vtx==True:
-                plt.savefig(dataName+"r_"+str(value)+"_abspsi2_num.png",dpi=imgdpi, bbox_inches='tight')
+                plt.savefig('dual/' + dataName+"r_"+str(value)+"_abspsi2_num.png",dpi=imgdpi, bbox_inches='tight')
             else:
-                plt.savefig(dataName+"r_"+str(value)+"_abspsi2_nonum.png",dpi=imgdpi, bbox_inches='tight')
+                plt.savefig('dual/' + dataName+"r_"+str(value)+"_abspsi2_nonum.png",dpi=imgdpi, bbox_inches='tight')
             plt.close()
 
         if opmode & 0b010000 > 0:
@@ -334,17 +395,13 @@ def overlap(dataName, initValue, finalValue, increment):
 		print i, np.sum(b)
 
 if __name__ == '__main__':
-    import sys
-    cbarOn = sys.argv[1].lower() == 'true'
-    plot_vtx = sys.argv[2].lower() == 'true'
+    import sys, os
+    cbarOn = sys.argv[3].lower() == 'true'
+    plot_vtx = sys.argv[4].lower() == 'true'
+
     gndImgList=[]
     evImgList=[]
-    x_coord = np.loadtxt('x_0', unpack=True)
-
-    comm = MPI.COMM_WORLD
-    size = comm.size
-    rank = comm.rank
-    print "Rank %d/%d initialised"%(rank,size-1)
+    x_coord = np.loadtxt(dat1 + '/x_0', unpack=True)
 
     arrG = np.array_split( xrange(0,gndMaxVal,incr), size)
     arrE = np.array_split( xrange(0,evMaxVal,incr), size)
@@ -361,5 +418,5 @@ if __name__ == '__main__':
     while evImgList:
         print "Processing data index=%d on rank=%d"%(i,rank)
         i=evImgList.pop()
-        image_gen_single("wfc_ev", i, 400, 0b100000, x_coord, cbarOn, plot_vtx)
+        image_gen_single("wfc_ev", i, 600, 0b100000, x_coord, dat1, dat2, cbarOn, plot_vtx)
         print "Processed data index=%d on rank=%d"%(i,rank)

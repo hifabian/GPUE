@@ -8,8 +8,6 @@
 
 source /work/BuschU/mlxd_2018/4vtx_chaos/conda/mc2/etc/profile.d/conda.sh
 conda activate 4vtx_chaos
-
-cd $1
-rm *.png *.pdf
 module load openmpi.gcc/1.10.1
-mpirun -n 96 python /work/BuschU/mlxd_2018/4vtx_chaos/gpue/py/mpi_vis.py false
+
+mpirun -n 96 python /work/BuschU/mlxd_2018/4vtx_chaos/gpue/py/mpi_vis_dual.py $1 $2 true true

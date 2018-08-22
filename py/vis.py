@@ -178,110 +178,108 @@ def image_gen(dataName, initValue, finalValue, increment,imgdpi):
 		else:
 			print "File(s) " + str(i) +".png already exist."
 
-def image_gen_single(dataName, value, imgdpi,opmode, x_dat):
-	real=open(dataName + '_' + str(0)).read().splitlines()
-	img=open(dataName + 'i_' + str(0)).read().splitlines()
-	a1_r = numpy.asanyarray(real,dtype='f8') #128-bit complex
-	a1_i = numpy.asanyarray(img,dtype='f8') #128-bit complex
-	a1 = a1_r[:] + 1j*a1_i[:]
-	b1 = np.reshape(a1,(xDim,yDim))
+def image_gen_single(dataName, value, imgdpi,opmode, x_dat, cbarOn=True, plot_vtx=False):
+    real=open(dataName + '_' + str(0)).read().splitlines()
+    img=open(dataName + 'i_' + str(0)).read().splitlines()
+    a1_r = numpy.asanyarray(real,dtype='f8') #128-bit complex
+    a1_i = numpy.asanyarray(img,dtype='f8') #128-bit complex
+    a1 = a1_r[:] + 1j*a1_i[:]
+    b1 = np.reshape(a1,(xDim,yDim))
 
-	if not os.path.exists(dataName+"r_"+str(value)+"_abspsi2.png"):
-		real=open(dataName + '_' + str(value)).read().splitlines()
-		img=open(dataName + 'i_' + str(value)).read().splitlines()
-		a_r = numpy.asanyarray(real,dtype='f8') #128-bit complex
-		a_i = numpy.asanyarray(img,dtype='f8') #128-bit complex
-		a = a_r[:] + 1j*a_i[:]
-		b = np.reshape(a,(xDim,yDim))
-		m_val=np.max(np.abs(b)**2)
-
-                vorts = np.loadtxt('vort_ord_' + str(value) + '.csv', delimiter=',', unpack=True)
-
-		#scaleAxis(b,dataName,"_abspsi2",value,imgdpi)
-		if opmode & 0b100000 > 0:
-#			fig, ax = plt.subplots()
-#			#plt.rc('text',usetex=True)
-#			#plt.rc('font',family='serif')
-#			f = plt.imshow((abs(b)**2 - abs(b1)**2),cmap='gnuplot2',vmin=-6,vmax=6)
-#			plt.title(r'$\left(\rho( r,t ) - \rho( r,t_0 )\right),t=$' + str(value*dt))
-#			cbar = fig.colorbar(f)
-#			plt.gca().set_xlabel('x '+ str((dx)))
-#			plt.gca().set_ylabel('x '+ str(dx))
-#			plt.gca().invert_yaxis()
-#			plt.savefig(dataName+"r_"+str(value)+"_diffabspsi2.png",dpi=imgdpi)
-#			plt.close()
-#			#plt.rc('text',usetex=True)
-#			#plt.rc('font',family='serif')
-
-			fig, ax = plt.subplots()
-			plt.rc('text',usetex=True)
-                        plt.rc('font', family='serif')
-			f = plt.imshow( (abs(b)**2),
-                                cmap='gnuplot2', vmin=0, vmax=6e7,
-                                interpolation='none',
-                                extent=[-xMax, xMax, -xMax, xMax])
-			plt.title(r'$\rho(\mathbf{r},t=%f)$'%(value*dt))
-		#	plt.title(r'$\\rho \left( r,t \right),\,t=$' + str(value*dt))
-
-			#plugins.connect(fig, plugins.MousePosition(fontsize=14))
-
-			cbar = fig.colorbar(f)
-			plt.gca().set_xlabel(r'$\times x 10^{}$ '+ str((dx)))
-			plt.gca().set_ylabel('x '+ str(dx))
-			plt.gca().invert_yaxis()
-
-                        for x, y, z in zip(vorts[1,:],vorts[0,:], vorts[3,:]):
-                            if z==0:
-                                txt = plt.text(x, y, str(int(z)+":-"), color='#379696', fontsize=6, alpha=0.7)
-                                txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='#B9EA56')])
-                            else:
-                                txt = plt.text(x, y, str(int(z)+":+"), color='#B9EA56', fontsize=6, alpha=0.7)
-                                txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='#379696')])
+    if not os.path.exists(dataName+"r_"+str(value)+"_abspsi2.png"):
+        real=open(dataName + '_' + str(value)).read().splitlines()
+        img=open(dataName + 'i_' + str(value)).read().splitlines()
+        a_r = numpy.asanyarray(real,dtype='f8') #128-bit complex
+        a_i = numpy.asanyarray(img,dtype='f8') #128-bit complex
+        a = a_r[:] + 1j*a_i[:]
+        b = np.transpose(np.reshape(a,(xDim,yDim))) #Transpose to match matlab plots
+        m_val=np.max(np.abs(b)**2)
+        startBit = 0x00
 
 
-			plt.savefig(dataName+"r_"+str(value)+"_abspsi2.png",dpi=imgdpi)
-			plt.axis('off')
-			plt.savefig(dataName+"r_"+str(value)+"_abspsi2_axis0.pdf",bbox_inches='tight',dpi=imgdpi)
-			plt.close()
+        try:
+            vorts = np.loadtxt('vort_ord_' + str(value) + '.csv', delimiter=',', unpack=True)
+        except Exception as e:
+            print "Failed to load the required data file: %s"%e
+            print "Please run vort.py before plotting the density, if you wih to have correctly numbered vortices"
+            vorts = np.loadtxt('vort_arr_' + str(value), delimiter=',', unpack=True, skiprows=1)
+            startBit=0x01
 
-		if opmode & 0b010000 > 0:
-			fig, ax = plt.subplots()
-			g = plt.imshow(np.angle(b))
-			cbar = fig.colorbar(g)
-			plt.gca().invert_yaxis()
-			plt.title('theta(r) @ t=' + str(value*dt))
-			plt.savefig(dataName+"r_"+str(value)+"_phi.png",dpi=imgdpi)
-			plt.close()
+        if opmode & 0b100000 > 0:
+            nameStr = dataName+"r_"+str(value)
 
-		if opmode & 0b001000 > 0:
-			fig, ax = plt.subplots()
-			f = plt.imshow(abs(np.fft.fftshift(np.fft.fft2(b)))**2)
-			cbar = fig.colorbar(f)
-			plt.gca().invert_yaxis()
-			plt.jet()
-			plt.title('rho(p) @ t=' + str(value*dt))
-			plt.savefig(dataName+"p_"+str(value)+"_abspsi2.png",dpi=imgdpi)
-			plt.close()
+            fig, ax = plt.subplots()
+            f = plt.imshow( (abs(b)**2),
+                                cmap='hot', vmin=0, vmax=5.4e7,
+                                interpolation='none',)
+                                #extent=[-xMax, xMax, -xMax, xMax])
+            tstr =  str(value*dt)
+            #plt.title('$\rho(\mathbf{r},t=' + tstr + ")")
+		    #plt.title(r'$\\rho \left( r,t \right),\,t=$' + str(value*dt))
 
-		if opmode & 0b000100 > 0:
-			fig, ax = plt.subplots()
-			g = plt.imshow(np.angle(np.fft.fftshift(np.fft.fft2(b))))
-			cbar = fig.colorbar(g)
-			plt.gca().invert_yaxis()
-			plt.title('theta(p) @ t=' + str(value*dt))
-			plt.savefig(dataName+"p_"+str(value)+"_phi.png",dpi=imgdpi)
-			plt.close()
+            if cbarOn==True:
+                tbar = fig.colorbar(f)
+            #plt.gca().set_xlabel(r'$\times x 10^{}$ '+ str((dx)))
+            #plt.gca().set_ylabel('x '+ str(dx))
+            plt.gca().invert_yaxis()
+            if plot_vtx==True:
+                if startBit==0x00:
+                    zVort = zip(vorts[0,:],vorts[1,:], vorts[3,:])
+                else:
+                    zVort = zip(vorts[1,:], vorts[3,:], [0, 1, 2, 3])
+                for x, y, z in zVort:
+                    if z==0:
+                        txt = plt.text(x, y, str(int(z)), color='#379696', fontsize=6, alpha=0.7)
+                        txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='#B9EA56')])
+                    else:
+                        txt = plt.text(x, y, str(int(z)), color='#B9EA56', fontsize=6, alpha=0.7)
+                        txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='#379696')])
+            plt.axis('equal')
+            plt.axis('off')
+            if plot_vtx==True:
+                plt.savefig(dataName+"r_"+str(value)+"_abspsi2_num.png",dpi=imgdpi, bbox_inches='tight')
+            else:
+                plt.savefig(dataName+"r_"+str(value)+"_abspsi2_nonum.png",dpi=imgdpi, bbox_inches='tight')
+            plt.close()
 
-		if opmode & 0b000010 > 0:
-			struct_fact(abs(b)**2,dataName+"_" + str(value),imgdpi)
+        if opmode & 0b010000 > 0:
+            fig, ax = plt.subplots()
+            g = plt.imshow(np.angle(b))
+            cbar = fig.colorbar(g)
+            plt.gca().invert_yaxis()
+            plt.title('theta(r) @ t=' + str(value*dt))
+            plt.savefig(dataName+"r_"+str(value)+"_phi.png",dpi=imgdpi)
+            plt.close()
 
-		if opmode & 0b000001 > 0:
-			laplacian(abs(b)**2,dataName+"_" + str(value),imgdpi)
+        if opmode & 0b001000 > 0:
+            fig, ax = plt.subplots()
+            f = plt.imshow(abs(np.fft.fftshift(np.fft.fft2(b)))**2)
+            cbar = fig.colorbar(f)
+            plt.gca().invert_yaxis()
+            plt.jet()
+            plt.title('rho(p) @ t=' + str(value*dt))
+            plt.savefig(dataName+"p_"+str(value)+"_abspsi2.png",dpi=imgdpi)
+            plt.close()
 
-		print "Saved figure: " + str(value) + ".png"
-		plt.close()
-	else:
-		print "File(s) " + str(value) +".png already exist."
+        if opmode & 0b000100 > 0:
+            fig, ax = plt.subplots()
+            g = plt.imshow(np.angle(np.fft.fftshift(np.fft.fft2(b))))
+            cbar = fig.colorbar(g)
+            plt.gca().invert_yaxis()
+            plt.title('theta(p) @ t=' + str(value*dt))
+            plt.savefig(dataName+"p_"+str(value)+"_phi.png",dpi=imgdpi)
+            plt.close()
+
+        if opmode & 0b000010 > 0:
+            struct_fact(abs(b)**2,dataName+"_" + str(value),imgdpi)
+
+        if opmode & 0b000001 > 0:
+		    laplacian(abs(b)**2,dataName+"_" + str(value),imgdpi)
+
+        print "Saved figure: " + str(value) + ".png"
+        plt.close()
+    else:
+        print "File(s) " + str(value) +".png already exist."
 
 def vort_traj(name,imgdpi):
 	evMaxVal_l = evMaxVal
@@ -343,10 +341,10 @@ if __name__ == '__main__':
 	#opPot('V_opt_0',200)
 	#opPot('V_0',200)
 	#opPot('K_0',200)
+    cbarOn = sys.argv[1].lower() == 'true'
 	gndImgList=[]
 	evImgList=[]
         x_coord = np.loadtxt('x_0', unpack=True)
-
         for i in range(0,gndMaxVal,incr):
 		gndImgList.append(i)
 	for i in range(0,evMaxVal,incr):
@@ -355,11 +353,11 @@ if __name__ == '__main__':
 	ev_proc = []
 	while gndImgList:
 		i=gndImgList.pop()
-		gnd_proc.append(Process(target=image_gen_single,args=("wfc_0_ramp",i,200,0b110000)))
-		gnd_proc.append(Process(target=image_gen_single,args=("wfc_0_const",i,200,0b110000)))
+		gnd_proc.append(Process(target=image_gen_single,args=("wfc_0_ramp",i,300,0b110000)))
+		gnd_proc.append(Process(target=image_gen_single,args=("wfc_0_const",i,300,0b110000)))
 	while evImgList:
 		i=evImgList.pop()
-		ev_proc.append(Process(target=image_gen_single,args=("wfc_ev",i,200,0b101000,x_coord)))
+		ev_proc.append(Process(target=image_gen_single,args=("wfc_ev", i, 400, 0b100000, x_coord, cbarOn, False)))
 	proc = gnd_proc + ev_proc
 	while proc:
 		#if (mp.cpu_count()/2) > len(mp.active_children()):
