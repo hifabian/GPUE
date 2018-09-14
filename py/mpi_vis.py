@@ -1,6 +1,6 @@
 '''
 vis.py - GPUE: Split Operator based GPU solver for Nonlinear
-Schrodinger Equation, Copyright (C) 2011-2015, Lee J. O'Riordan
+Schrodinger Equation, Copyright (C) 2011-2018, Lee J. O'Riordan
 <loriordan@gmail.com>, Tadhg Morgan, Neil Crowley. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 '''
 import os
 from mpi4py import MPI
-CPUs = 12#os.environ['SLURM_JOB_CPUS_PER_NODE']
+CPUs = 1#os.environ['SLURM_JOB_CPUS_PER_NODE']
 from numpy import genfromtxt
 import math as m
 import matplotlib as mpl
@@ -58,6 +58,10 @@ getcontext().prec = 4
 c = ConfigParser.ConfigParser()
 c.readfp(open(r'Params.dat'))
 
+#Default value for wavefunction density max; modified by initially loaded wavefunction set, 
+# and used for all subsequent plotting.
+maxDensityVal=5e7 
+
 xDim = int(c.getfloat('Params','xDim'))
 yDim = int(c.getfloat('Params','yDim'))
 gndMaxVal = int(c.getfloat('Params','gsteps'))
@@ -71,109 +75,6 @@ yMax = (c.getfloat('Params','yMax'))
 num_vort = 0#int(c.getfloat('Params','Num_vort'))
 
 data = numpy.ndarray(shape=(xDim,yDim))
-
-def delaunay(dataName,dataType,value):
-	v_arr=genfromtxt(dataName + str(value) + dataType,delimiter=',' )
-	data = np.array([[row[0],row[1]] for row in v_arr])
-	dln = sp.spatial.Delaunay(data)
-	plt.triplot(data[:,0],data[:,1],dln.simplices.copy(),linewidth=0.5,color='b',marker='.')
-	plt.xlim(300,700);plt.ylim(300,700);
-	plt.savefig('delaun_' + str(value) + '.png',dpi=200)
-	print 'Saved Delaunay @ t=' + str(value)
-
-def voronoi(dataName,dataType,value):
-	v_arr=genfromtxt(dataName + str(value) + dataType,delimiter=',' )
-	data = [[row[0],row[1]] for row in v_arr]
-	vor = Voronoi(data)
-	voronoi_plot_2d(vor)
-	plt.xlim(300,700);plt.ylim(300,700);
-	plt.savefig('voronoi_' + str(value) + '.png',dpi=200)
-	print 'Saved Voronoi @ t=' + str(value)
-
-def laplacian(density,name,imgdpi):
-	gx,gy = np.gradient(density)
-	g2x,gxgy = np.gradient(gx)
-	gygx,g2y = np.gradient(gy)
-	fig, ax = plt.subplots()
-	#f = plt.quiver(gx,gy)
-	f = plt.imshow((g2x**2 + g2y**2),cmap=plt.get_cmap('spectral'))
-	cbar = fig.colorbar(f)
-	plt.savefig(name + "_laplacian.png",dpi=imgdpi)
-	plt.close()
-	f = plt.imshow((gxgy - gygx),cmap=plt.get_cmap('spectral'))
-	cbar = fig.colorbar(f)
-	plt.savefig(name + "_dxdy.png",dpi=imgdpi)
-	plt.close()
-
-def struct_fact(density,name,imgdpi):
-	fig, ax = plt.subplots()
-	#f = plt.quiver(gx,gy)
-	f = plt.imshow((np.abs(np.fft.fftshift(np.fft.fft2(density)))),cmap=plt.get_cmap('prism'))
-	cbar = fig.colorbar(f)
-	cbar.set_clim(1e6,1e11)
-	plt.jet()
-	plt.savefig(name + "_struct_log10.png",dpi=imgdpi)
-	plt.close()
-
-def opPot(dataName,imgdpi):
-	data = open(dataName).read().splitlines()
-	a = numpy.asanyarray(data,dtype='f8')
-	b = np.reshape(a,(xDim,yDim))
-	fig, ax = plt.subplots()
-	f = plt.imshow((b))
-	plt.gca().invert_yaxis()
-	cbar = fig.colorbar(f)
-	plt.jet()
-	plt.savefig(dataName + ".png",dpi=imgdpi)
-	plt.close()
-
-def hist_gen(name,value,num_bins):
-	v_arr=genfromtxt('vort_arr_' + str(value),delimiter=',' )
-	H=[]
-	count=0
-
-	for i1 in range(0,v_arr.size/2):
-		for i2 in range(i1,v_arr.size/2):
-			H.append(m.sqrt( abs(v_arr[i1][0]*sep - v_arr[i2][0]*sep)**2  +  abs(v_arr[i1][1]*sep - v_arr[i2][1]*sep)**2 ))
-			count = count + 1
-	plt.title('Vortex lattice @ t=' + str(value*dt))
-	plt.ticklabel_format(style='scientific')
-	plt.ticklabel_format(style='scientific',axis='x', scilimits=(0,0))
-	h = plt.hist(H, bins=num_bins)
-	plt.savefig(name + "_" + str(value) + ".pdf")
-	plt.close()
-
-def image_gen(dataName, initValue, finalValue, increment,imgdpi):
-	for i in range(initValue,finalValue,increment):
-		if not os.path.exists(dataName+"r_"+str(i)+"_abspsi2.png"):
-			real=open(dataName + '_' + str(i)).read().splitlines()
-			img=open(dataName + 'i_' + str(i)).read().splitlines()
-			a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
-			a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
-			a = a_r[:] + 1j*a_i[:]
-			b = np.reshape(a,(xDim,yDim))
-			f = plt.imshow(abs(b)**2)
-			plt.jet()
-			plt.gca().invert_yaxis()
-			plt.savefig(dataName+"r_"+str(i)+"_abspsi2.png",dpi=imgdpi)
-			plt.close()
-			g = plt.imshow(np.angle(b))
-			plt.gca().invert_yaxis()
-			plt.savefig(dataName+"r_"+str(i)+"_phi.png",dpi=imgdpi)
-			plt.close()
-			f = plt.imshow(abs(np.fft.fftshift(np.fft.fft2(b)))**2)
-			plt.gca().invert_yaxis()
-			plt.jet()
-			plt.savefig(dataName+"p_"+str(i)+"_abspsi2.png",dpi=imgdpi)
-			plt.close()
-			g = plt.imshow(np.angle(np.fft.fftshift(np.fft.fft2(b))))
-			plt.gca().invert_yaxis()
-			plt.savefig(dataName+"p_"+str(i)+"_phi.png",dpi=imgdpi)
-			plt.close()
-			print "Saved figure: " + str(i) + ".png"
-			plt.close()
-		else:
-			print "File(s) " + str(i) +".png already exist."
 
 def image_gen_single(dataName, value, imgdpi,opmode, x_dat, cbarOn=True, plot_vtx=False):
     real=open(dataName + '_' + str(0)).read().splitlines()
@@ -190,7 +91,8 @@ def image_gen_single(dataName, value, imgdpi,opmode, x_dat, cbarOn=True, plot_vt
         a_i = numpy.asanyarray(img,dtype='f8') #128-bit complex
         a = a_r[:] + 1j*a_i[:]
         b = np.transpose(np.reshape(a,(xDim,yDim))) #Transpose to match matlab plots
-        m_val=np.max(np.abs(b)**2)
+        if value=0:
+            maxDensityVal=np.max(np.abs(a)**2)
         startBit = 0x00
 
         try:
@@ -205,18 +107,14 @@ def image_gen_single(dataName, value, imgdpi,opmode, x_dat, cbarOn=True, plot_vt
             nameStr = dataName+"r_"+str(value)
 
             fig, ax = plt.subplots()
-            f = plt.imshow( (abs(b)**2),
-                                cmap='hot', vmin=0, vmax=5.4e7,
-                                interpolation='none',)
+            f = plt.imshow( (abs(b)**2), cmap='hot', vmin=0, vmax=maxDensityVal, interpolation='none',)
                                 #extent=[-xMax, xMax, -xMax, xMax])
             tstr =  str(value*dt)
             plt.title('t=' + tstr + " s", fontsize=28)
-		    #plt.title(r'$\\rho \left( r,t \right),\,t=$' + str(value*dt))
 
             if cbarOn==True:
                 tbar = fig.colorbar(f)
-            #plt.gca().set_xlabel(r'$\times x 10^{}$ '+ str((dx)))
-            #plt.gca().set_ylabel('x '+ str(dx))
+
             plt.gca().invert_yaxis()
             if plot_vtx==True:
                 if startBit==0x00:
@@ -238,100 +136,10 @@ def image_gen_single(dataName, value, imgdpi,opmode, x_dat, cbarOn=True, plot_vt
                 plt.savefig(dataName+"r_"+str(value)+"_abspsi2_nonum.png",dpi=imgdpi, bbox_inches='tight')
             plt.close()
 
-        if opmode & 0b010000 > 0:
-            fig, ax = plt.subplots()
-            g = plt.imshow(np.angle(b))
-            cbar = fig.colorbar(g)
-            plt.gca().invert_yaxis()
-            plt.title('theta(r) @ t=' + str(value*dt))
-            plt.savefig(dataName+"r_"+str(value)+"_phi.png",dpi=imgdpi)
-            plt.close()
-
-        if opmode & 0b001000 > 0:
-            fig, ax = plt.subplots()
-            f = plt.imshow(abs(np.fft.fftshift(np.fft.fft2(b)))**2)
-            cbar = fig.colorbar(f)
-            plt.gca().invert_yaxis()
-            plt.jet()
-            plt.title('rho(p) @ t=' + str(value*dt))
-            plt.savefig(dataName+"p_"+str(value)+"_abspsi2.png",dpi=imgdpi)
-            plt.close()
-
-        if opmode & 0b000100 > 0:
-            fig, ax = plt.subplots()
-            g = plt.imshow(np.angle(np.fft.fftshift(np.fft.fft2(b))))
-            cbar = fig.colorbar(g)
-            plt.gca().invert_yaxis()
-            plt.title('theta(p) @ t=' + str(value*dt))
-            plt.savefig(dataName+"p_"+str(value)+"_phi.png",dpi=imgdpi)
-            plt.close()
-
-        if opmode & 0b000010 > 0:
-            struct_fact(abs(b)**2,dataName+"_" + str(value),imgdpi)
-
-        if opmode & 0b000001 > 0:
-		    laplacian(abs(b)**2,dataName+"_" + str(value),imgdpi)
-
         print "Saved figure: " + str(value) + ".png"
         plt.close()
     else:
         print "File(s) " + str(value) +".png already exist."
-
-def vort_traj(name,imgdpi):
-	evMaxVal_l = evMaxVal
-	H=genfromtxt('vort_arr_0',delimiter=',' )
-	count=0
-	for i1 in range(incr,evMaxVal_l,incr):
-		try:
-			v_arr=genfromtxt('vort_lsq_' + str(i1) + '.csv',delimiter=',' )
-			H=np.column_stack((H,v_arr))
-		except:
-			evMaxVal_l = i1
-			break
-	X=np.zeros((evMaxVal_l/incr),dtype=np.float64)
-	Y=np.zeros((evMaxVal_l/incr),dtype=np.float64)
-	H=np.reshape(H,([num_vort,2,evMaxVal_l/incr]),order='F')
-	for i1 in range(0, num_vort):
-		for i2 in range(0,evMaxVal_l/incr):
-			X[i2]=(H[i1,0,i2]*dx) - xMax
-			Y[i2]=(H[i1,1,i2]*dx) - yMax
-		h = plt.plot(X,Y,color=(r.random(),r.random(),r.random(),0.85),linewidth=0.1)
-	plt.axis('equal')
-	plt.title('Vort(x,y) from t=0 to t='+str(evMaxVal_l*dt)+" s")
-
-	plt.axis((-xMax/2.0, xMax/2.0, -yMax/2.0, yMax/2.0))
-	plt.ticklabel_format(style='scientific')
-	plt.ticklabel_format(style='scientific',axis='x', scilimits=(0,0))
-	plt.ticklabel_format(style='scientific',axis='y', scilimits=(0,0))
-	plt.savefig(name +".pdf")
-	plt.close()
-	print "Trajectories plotted."
-
-def scaleAxis(data,dataName,label,value,imgdpi):
-	fig, ax = plt.subplots()
-	ax.xaxis.set_major_locator(ScaledLocator(dx=dx))
-	ax.xaxis.set_major_formatter(ScaledLocator(dx=dx))
-	f = plt.imshow(abs(data)**2)
-	cbar = fig.colorbar(f)
-	plt.gca().invert_yaxis()
-	plt.jet()
-	plt.savefig(dataName+"r_"+str(value)+"_"+label +".png",dpi=imgdpi)
-	plt.close()
-
-def overlap(dataName, initValue, finalValue, increment):
-	real=open(dataName + '_' + str(0)).read().splitlines()
-	img=open(dataName + 'i_' + str(0)).read().splitlines()
-	a_r = numpy.asanyarray(real,dtype='f8') #128-bit complex
-	a_i = numpy.asanyarray(img,dtype='f8') #128-bit complex
-	wfc0 = a_r[:] + 1j*a_i[:]
-	for i in range(initValue,finalValue,increment):
-		real=open(dataName + '_' + str(value)).read().splitlines()
-		img=open(dataName + 'i_' + str(value)).read().splitlines()
-		a_r = numpy.asanyarray(real,dtype='f8') #128-bit complex
-		a_i = numpy.asanyarray(img,dtype='f8') #128-bit complex
-		a = a_r[:] + 1j*a_i[:]
-		b = np.dot(wfc0,a)
-		print i, np.sum(b)
 
 if __name__ == '__main__':
     import sys
@@ -354,12 +162,26 @@ if __name__ == '__main__':
     for i in arrE[rank]:
         evImgList.append(i)
 
-	while gndImgList:
-		i=gndImgList.pop()
-		image_gen_single("wfc_0_ramp",i,300,0b110000)
-		image_gen_single("wfc_0_const",i,300,0b110000)
+    while gndImgList:
+
+        print "Processing data index=%d on rank=%d"%(i,rank)
+        i=gndImgList.pop()
+
+        try:
+            image_gen_single("wfc_0_ramp", i, 400, 0b100000, x_coord, cbarOn, plot_vtx)
+        except Exception as e:
+            print "Unable to process wfc_0_ramp data index=%d on rank=%d"%(i,rank)            
+        try:
+            image_gen_single("wfc_0_const", i, 400, 0b100000, x_coord, cbarOn, plot_vtx)
+        except Exception as e:
+            print "Unable to process wfc_0_const data index=%d on rank=%d"%(i,rank)
+
     while evImgList:
         print "Processing data index=%d on rank=%d"%(i,rank)
         i=evImgList.pop()
-        image_gen_single("wfc_ev", i, 400, 0b100000, x_coord, cbarOn, plot_vtx)
-        print "Processed data index=%d on rank=%d"%(i,rank)
+        try:
+            image_gen_single("wfc_ev", i, 400, 0b100000, x_coord, cbarOn, plot_vtx)
+            print "Processed data index=%d on rank=%d"%(i,rank)
+
+        except Exception as e:
+            print "Unable to process wfc_ev data index=%d on rank=%d"%(i,rank)
