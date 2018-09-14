@@ -108,7 +108,3 @@ def plot_hist_pcolor(start,fin,incr, barcolor):
         ax.set_aspect('auto')
 #        plt.jet()
 	fig.savefig("HIST_PCOLOR.pdf")
-
-#plot_xyz_histogram(0,100000,100,'b')
-#plot_hist_pcolor(0,100000,100,'b')
-

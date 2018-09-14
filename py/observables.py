@@ -74,9 +74,9 @@ omega = (c.getfloat('Params','omega'))
 omegaX = (c.getfloat('Params','omegaX'))
 
 try:
-	num_vort = int(c.getfloat('Params','Num_vort'))
+    num_vort = int(c.getfloat('Params','Num_vort'))
 except:
-	print '!num_vort undefined!'
+    print '!num_vort undefined!'
 N = int(c.getfloat('Params','atoms'))
 
 data = numpy.ndarray(shape=(xDim,yDim))
@@ -125,8 +125,8 @@ def kinertrum(Psi, dx, i, quOn):
     u_y = np.multiply(np.abs(Psi),v_y)
 
     if quOn:
-    	u_x = np.multiply(u_x,np.exp(1j*np.angle(Psi)))
-    	u_y = np.multiply(u_y,np.exp(1j*np.angle(Psi)))
+        u_x = np.multiply(u_x,np.exp(1j*np.angle(Psi)))
+        u_y = np.multiply(u_y,np.exp(1j*np.angle(Psi)))
 
     u_kx = np.fft.fftn(u_x)
     u_ky = np.fft.fftn(u_y)
@@ -168,7 +168,7 @@ def kinertrum(Psi, dx, i, quOn):
 #        Ei_ky = np.sum(np.sum(np.abs(ui_ky[iX]**2*k[iX]))
         ekc[i1] = (0.5*m*k_mag[i1]) * (np.sum(np.abs(uc_kx[iX]**2 + uc_ky[iX]**2)))/len(iX)
         eki[i1] = (0.5*m*k_mag[i1]) * (np.sum(np.abs(ui_kx[iX]**2 + ui_ky[iX]**2)))/len(iX)
-	print i1
+    print i1
     np.savetxt('ekc_' + str(i) + '.csv',ekc,delimiter=',')
     np.savetxt('eki_' + str(i) + '.csv',eki,delimiter=',')
     fig, ax = plt.subplots()
@@ -181,46 +181,46 @@ def kinertrum(Psi, dx, i, quOn):
 
 
 def kinertrum_loop(dataName, initValue, finalValue, incr):
-	for i in range(initValue,incr*(finalValue/incr),incr):
-		if os.path.exists(dataName + '_' + str(i)):
-			real=open(dataName + '_' + str(i)).read().splitlines()
-			img=open(dataName + 'i_' + str(i)).read().splitlines()
-			a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
-			a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
-			a = a_r[:] + 1j*a_i[:]
+    for i in range(initValue,incr*(finalValue/incr),incr):
+        if os.path.exists(dataName + '_' + str(i)):
+            real=open(dataName + '_' + str(i)).read().splitlines()
+            img=open(dataName + 'i_' + str(i)).read().splitlines()
+            a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
+            a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
+            a = a_r[:] + 1j*a_i[:]
 
-			kinertrum(np.reshape(a,(xDim,yDim)),dx,i,1)
+            kinertrum(np.reshape(a,(xDim,yDim)),dx,i,1)
 
 def dens_struct_fact(dataName, initValue, finalValue,incr):
-	n_k=np.zeros(finalValue/incr)
-	n_k_t=np.zeros((finalValue/incr,xDim,yDim),dtype=np.complex128)
-	for i in range(initValue,incr*(finalValue/incr),incr):
-		if os.path.exists(dataName + '_' + str(i)):
-			real=open(dataName + '_' + str(i)).read().splitlines()
-			img=open(dataName + 'i_' + str(i)).read().splitlines()
-			a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
-			a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
-			a = a_r[:] + 1j*a_i[:]
-			n = np.abs(a)**2
+    n_k=np.zeros(finalValue/incr)
+    n_k_t=np.zeros((finalValue/incr,xDim,yDim),dtype=np.complex128)
+    for i in range(initValue,incr*(finalValue/incr),incr):
+        if os.path.exists(dataName + '_' + str(i)):
+            real=open(dataName + '_' + str(i)).read().splitlines()
+            img=open(dataName + 'i_' + str(i)).read().splitlines()
+            a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
+            a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
+            a = a_r[:] + 1j*a_i[:]
+            n = np.abs(a)**2
 
-			kinertrum(np.reshape(a,(xDim,yDim)),dx,i,0)
-			sf = np.fft.fftshift(np.fft.fft2(np.reshape(n,(xDim,yDim))))
-			n_k_t[i/incr][:][:] = sf[:][:];
-			n_k[i/incr]=(abs(np.sum(np.sum(sf))*dkx**2))
+            kinertrum(np.reshape(a,(xDim,yDim)),dx,i,0)
+            sf = np.fft.fftshift(np.fft.fft2(np.reshape(n,(xDim,yDim))))
+            n_k_t[i/incr][:][:] = sf[:][:];
+            n_k[i/incr]=(abs(np.sum(np.sum(sf))*dkx**2))
 
-			fig, ax = plt.subplots()
-			f = plt.imshow(np.log10(abs(sf)),cmap=plt.get_cmap('gnuplot2'))
-			cbar = fig.colorbar(f)
-			plt.gca().invert_yaxis()
-			plt.savefig("struct_" + str(i/incr) + ".png",vmin=0,vmax=12,dpi=200)
-			plt.close()
-			print i/incr
+            fig, ax = plt.subplots()
+            f = plt.imshow(np.log10(abs(sf)),cmap=plt.get_cmap('gnuplot2'))
+            cbar = fig.colorbar(f)
+            plt.gca().invert_yaxis()
+            plt.savefig("struct_" + str(i/incr) + ".png",vmin=0,vmax=12,dpi=200)
+            plt.close()
+            print i/incr
 
-	np.savetxt('Struct' + '.csv',n_k,delimiter=',')
-	plt.plot(range(initValue,finalValue,incr),n_k)
-	sp.io.savemat('Struct_t.mat',mdict={'n_k_t',n_k_t})
-	plt.savefig("Struct.pdf",dpi=200)
-	plt.close()
+    np.savetxt('Struct' + '.csv',n_k,delimiter=',')
+    plt.plot(range(initValue,finalValue,incr),n_k)
+    sp.io.savemat('Struct_t.mat',mdict={'n_k_t',n_k_t})
+    plt.savefig("Struct.pdf",dpi=200)
+    plt.close()
 
 V = np.array(open('V_0').read().splitlines(),dtype='f8')
 V = np.reshape(V,(xDim,yDim))
@@ -233,186 +233,182 @@ yPx = np.reshape(yPx,(xDim,yDim))
 g = (0.5*N)*4.0*HBAR*HBAR*PI*(4.67e-9/mass)*np.sqrt(mass*omegaZ/(2.0*PI*HBAR))
 
 def energy_total(dataName, initValue, finalValue, increment):
-	E=np.zeros((finalValue,1))
-	E_k=np.zeros((finalValue,1))
-	E_vi=np.zeros((finalValue,1))
-	E_l=np.zeros((finalValue,1))
-	for i in range(initValue,incr*(finalValue/incr),incr):
-		if os.path.exists(dataName + '_' + str(i)):
-			real=open(dataName + '_' + str(i)).read().splitlines()
-			img=open(dataName + 'i_' + str(i)).read().splitlines()
-			a_r = np.array(real,dtype='f8') #64-bit double
-			a_i = np.array(img,dtype='f8') #64-bit double
-			wfcr = np.reshape(a_r[:] + 1j*a_i[:],(xDim,yDim))
-			wfcp = np.array(np.fft.fft2(wfcr))
-			wfcr_c = np.conj(wfcr)
-			
-			E1 = np.fft.ifft2(K*wfcp)
-			E2 = (V + 0.5*g*np.abs(wfcr)**2)*wfcr
-			E3 = -(omega*omegaX)*(np.fft.ifft(xPy*np.fft.fft(wfcr,axis=0),axis=0) - np.fft.ifft(yPx*np.fft.fft(wfcr,axis=1),axis=1)  )
-			
-			E_k[i/incr] = np.trapz(np.trapz(wfcr_c*E1))*dx*dy
-			E_vi[i/incr] = np.trapz(np.trapz(wfcr_c*E2))*dx*dy
-			E_l[i/incr] = np.trapz(np.trapz(wfcr_c*E3))*dx*dy
-			E[i/incr] = E_k[i/incr] + E_vi[i/incr] + E_l[i/incr]
-			print (i/float(evMaxVal))
-	np.savetxt('E_'+ str(i) + '.csv',E,delimiter=',')
-	np.savetxt('E_k_'+ str(i) + '.csv',E_k,delimiter=',')
-	np.savetxt('E_vi_'+ str(i) + '.csv',E_vi,delimiter=',')
-	np.savetxt('E_l_'+ str(i) + '.csv',E_l,delimiter=',')
-	t = np.array(range(initValue,finalValue,incr))/dt
-	plt.plot(t,E,'r-',t,E_k,'g-',t,E_vi,'b-',t,E_l,'y-')
-	plt.savefig("EnergyVst.pdf",dpi=200)
-	plt.close()
+    E=np.zeros((finalValue,1))
+    E_k=np.zeros((finalValue,1))
+    E_vi=np.zeros((finalValue,1))
+    E_l=np.zeros((finalValue,1))
+    for i in range(initValue,incr*(finalValue/incr),incr):
+        if os.path.exists(dataName + '_' + str(i)):
+            real=open(dataName + '_' + str(i)).read().splitlines()
+            img=open(dataName + 'i_' + str(i)).read().splitlines()
+            a_r = np.array(real,dtype='f8') #64-bit double
+            a_i = np.array(img,dtype='f8') #64-bit double
+            wfcr = np.reshape(a_r[:] + 1j*a_i[:],(xDim,yDim))
+            wfcp = np.array(np.fft.fft2(wfcr))
+            wfcr_c = np.conj(wfcr)
+            
+            E1 = np.fft.ifft2(K*wfcp)
+            E2 = (V + 0.5*g*np.abs(wfcr)**2)*wfcr
+            E3 = -(omega*omegaX)*(np.fft.ifft(xPy*np.fft.fft(wfcr,axis=0),axis=0) - np.fft.ifft(yPx*np.fft.fft(wfcr,axis=1),axis=1)  )
+            
+            E_k[i/incr] = np.trapz(np.trapz(wfcr_c*E1))*dx*dy
+            E_vi[i/incr] = np.trapz(np.trapz(wfcr_c*E2))*dx*dy
+            E_l[i/incr] = np.trapz(np.trapz(wfcr_c*E3))*dx*dy
+            E[i/incr] = E_k[i/incr] + E_vi[i/incr] + E_l[i/incr]
+            print (i/float(evMaxVal))
+    np.savetxt('E_'+ str(i) + '.csv',E,delimiter=',')
+    np.savetxt('E_k_'+ str(i) + '.csv',E_k,delimiter=',')
+    np.savetxt('E_vi_'+ str(i) + '.csv',E_vi,delimiter=',')
+    np.savetxt('E_l_'+ str(i) + '.csv',E_l,delimiter=',')
+    t = np.array(range(initValue,finalValue,incr))/dt
+    plt.plot(t,E,'r-',t,E_k,'g-',t,E_vi,'b-',t,E_l,'y-')
+    plt.savefig("EnergyVst.pdf",dpi=200)
+    plt.close()
 
 def energy_kinetic(dataName, initValue, finalValue, increment):
-	px1 = np.fft.fftshift(px)
-	py1 = np.fft.fftshift(py)
-	dk=[]
-	dk2[:] = (px1[:]**2 + py1[:]**2)
-	Lz = np.zeros( (finalValue/incr))
-	for i in range(initValue,incr*(finalValue/incr),incr):
-		if os.path.exists(dataName + '_' + str(i)):
-			real=open(dataName + '_' + str(i)).read().splitlines()
-			img=open(dataName + 'i_' + str(i)).read().splitlines()
-			a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
-			a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
-			a = a_r[:] + 1j*a_i[:]
-			wfcp = np.fft.fft2(np.reshape(a,(xDim,yDim)))
-			conjwfcp = np.conj(wfcp)
-			E_k = np.zeros(len(px1))
-			for ii in range(0,len(px1)):
-				E_k[ii] = np.sum( np.sum( np.multiply(wfcp,conjwfcp) )  )*dk2[ii]
+    px1 = np.fft.fftshift(px)
+    py1 = np.fft.fftshift(py)
+    dk=[]
+    dk2[:] = (px1[:]**2 + py1[:]**2)
+    Lz = np.zeros( (finalValue/incr))
+    for i in range(initValue,incr*(finalValue/incr),incr):
+        if os.path.exists(dataName + '_' + str(i)):
+            real=open(dataName + '_' + str(i)).read().splitlines()
+            img=open(dataName + 'i_' + str(i)).read().splitlines()
+            a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
+            a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
+            a = a_r[:] + 1j*a_i[:]
+            wfcp = np.fft.fft2(np.reshape(a,(xDim,yDim)))
+            conjwfcp = np.conj(wfcp)
+            E_k = np.zeros(len(px1))
+            for ii in range(0,len(px1)):
+                E_k[ii] = np.sum( np.sum( np.multiply(wfcp,conjwfcp) )  )*dk2[ii]
 
-		np.savetxt('E_k_' + str(i) + '.csv',E_k,delimiter=',')
-		print i
+        np.savetxt('E_k_' + str(i) + '.csv',E_k,delimiter=',')
+        print i
 
 def energy_potential(dataName, initValue, finalValue, increment):
-	print 'energy'
+    print 'energy'
 
 def ang_mom(dataName, initValue, finalValue, incr, ev_type, imgdpi):
-	xm, ym = np.meshgrid(x,y)
-	pxm, pym = np.meshgrid(px,py)
-	dx2=dx**2
-	Lz = np.zeros( (finalValue/incr))
-	for i in range(initValue,incr*(finalValue/incr),incr):
-		if os.path.exists(dataName + '_' + str(i)):
-			real=open(dataName + '_' + str(i)).read().splitlines()
-			img=open(dataName + 'i_' + str(i)).read().splitlines()
-			a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
-			a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
-			a = a_r[:] + 1j*a_i[:]
-			wfc = np.reshape(a,(xDim,yDim))
-			conjwfc = np.conj(wfc)
+    xm, ym = np.meshgrid(x,y)
+    pxm, pym = np.meshgrid(px,py)
+    dx2=dx**2
+    Lz = np.zeros( (finalValue/incr))
+    for i in range(initValue,incr*(finalValue/incr),incr):
+        if os.path.exists(dataName + '_' + str(i)):
+            real=open(dataName + '_' + str(i)).read().splitlines()
+            img=open(dataName + 'i_' + str(i)).read().splitlines()
+            a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
+            a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
+            a = a_r[:] + 1j*a_i[:]
+            wfc = np.reshape(a,(xDim,yDim))
+            conjwfc = np.conj(wfc)
 
-			wfc_ypx = np.multiply(ym,np.fft.ifft(np.multiply(pxm,np.fft.fft(wfc,axis=1)),axis=1))
-			wfc_xpy = np.multiply(xm,np.fft.ifft(np.multiply(pym,np.fft.fft(wfc,axis=0)),axis=0))
-			result = np.sum( np.sum( np.multiply(conjwfc,wfc_xpy - wfc_ypx) ) )*dx2
-		else:
-			print "Skipped " + dataName + "_"+ str(i)
-			result = np.nan
+            wfc_ypx = np.multiply(ym,np.fft.ifft(np.multiply(pxm,np.fft.fft(wfc,axis=1)),axis=1))
+            wfc_xpy = np.multiply(xm,np.fft.ifft(np.multiply(pym,np.fft.fft(wfc,axis=0)),axis=0))
+            result = np.sum( np.sum( np.multiply(conjwfc,wfc_xpy - wfc_ypx) ) )*dx2
+        else:
+            print "Skipped " + dataName + "_"+ str(i)
+            result = np.nan
 
-		print i, incr
-		Lz[(i/incr)] = np.real(result)
-	type=""
-	if ev_type == 0:
-		type = "gnd"
-	else:
-		type = "ev"
-	np.savetxt('Lz.csv',Lz,delimiter=',')
+        print i, incr
+        Lz[(i/incr)] = np.real(result)
+    type=""
+    if ev_type == 0:
+        type = "gnd"
+    else:
+        type = "ev"
+    np.savetxt('Lz.csv',Lz,delimiter=',')
 
-	plt.plot(Lz)
-	plt.savefig("Lz_"+type+".pdf",dpi=imgdpi)
-	plt.axis('off')
-	plt.savefig("Lz_"+type+"_axis0.pdf",bbox_inches='tight',dpi=imgdpi)
-	plt.close()
+    plt.plot(Lz)
+    plt.savefig("Lz_"+type+".pdf",dpi=imgdpi)
+    plt.axis('off')
+    plt.savefig("Lz_"+type+"_axis0.pdf",bbox_inches='tight',dpi=imgdpi)
+    plt.close()
 
 def expec_val_monopole(dataName, initValue, finalValue, incr):
-	x=np.asarray(open('x_0').read().splitlines(),dtype='f8')
-	y=np.asarray(open('y_0').read().splitlines(),dtype='f8')
-#	px=open('px_0')
-#	py=open('py_0')
-	xm, ym = np.meshgrid(x, y)
-	result = []
-	for i in range(initValue,finalValue,incr):
-		if not os.path.exists(dataName):
-			real=open(dataName + '_' + str(i)).read().splitlines()
-			img=open(dataName + 'i_' + str(i)).read().splitlines()
-			a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
-			a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
-			a = a_r[:] + 1j*a_i[:]
-			wfc = np.reshape(a,(xDim,yDim))
-			conjwfc = np.conj(wfc)
+    x=np.asarray(open('x_0').read().splitlines(),dtype='f8')
+    y=np.asarray(open('y_0').read().splitlines(),dtype='f8')
+#   px=open('px_0')
+#   py=open('py_0')
+    xm, ym = np.meshgrid(x, y)
+    result = []
+    for i in range(initValue,finalValue,incr):
+        if not os.path.exists(dataName):
+            real=open(dataName + '_' + str(i)).read().splitlines()
+            img=open(dataName + 'i_' + str(i)).read().splitlines()
+            a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
+            a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
+            a = a_r[:] + 1j*a_i[:]
+            wfc = np.reshape(a,(xDim,yDim))
+            conjwfc = np.conj(wfc)
 
-			d1 = np.multiply( np.square(xm) + np.square(ym), wfc )
-			d2 = np.multiply( conjwfc, d1)
-			result.append( np.real( np.sum( np.sum( d2  ) ) )*dx*dx )
-		print str(100*float(i)/finalValue) + '%'
-	np.savetxt('monopole.csv',result,delimiter=',')
-	plt.plot(range(initValue,finalValue,incr),result)
-	plt.savefig("Monopole.png",dpi=200)
-	plt.close()
+            d1 = np.multiply( np.square(xm) + np.square(ym), wfc )
+            d2 = np.multiply( conjwfc, d1)
+            result.append( np.real( np.sum( np.sum( d2  ) ) )*dx*dx )
+        print str(100*float(i)/finalValue) + '%'
+    np.savetxt('monopole.csv',result,delimiter=',')
+    plt.plot(range(initValue,finalValue,incr),result)
+    plt.savefig("Monopole.png",dpi=200)
+    plt.close()
 
 def expec_val_quadrupole(dataName, initValue, finalValue, incr):
-	x=np.asarray(open('x_0').read().splitlines(),dtype='f8')
-	y=np.asarray(open('y_0').read().splitlines(),dtype='f8')
-#	px=open('px_0')
-#	py=open('py_0')
-	xm, ym = np.meshgrid(x, y)
-	result = []
-	for i in range(initValue,finalValue,incr):
-		if not os.path.exists(dataName):
-			real=open(dataName + '_' + str(i)).read().splitlines()
-			img=open(dataName + 'i_' + str(i)).read().splitlines()
-			a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
-			a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
-			a = a_r[:] + 1j*a_i[:]
-			wfc = np.reshape(a,(xDim,yDim))
-			conjwfc = np.conj(wfc)
+    x=np.asarray(open('x_0').read().splitlines(),dtype='f8')
+    y=np.asarray(open('y_0').read().splitlines(),dtype='f8')
+#   px=open('px_0')
+#   py=open('py_0')
+    xm, ym = np.meshgrid(x, y)
+    result = []
+    for i in range(initValue,finalValue,incr):
+        if not os.path.exists(dataName):
+            real=open(dataName + '_' + str(i)).read().splitlines()
+            img=open(dataName + 'i_' + str(i)).read().splitlines()
+            a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
+            a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
+            a = a_r[:] + 1j*a_i[:]
+            wfc = np.reshape(a,(xDim,yDim))
+            conjwfc = np.conj(wfc)
 
-			d1 = np.multiply( np.square(xm) - np.square(ym), wfc )
-			d2 = np.multiply( conjwfc, d1)
-			result.append( np.real( np.sum( np.sum( d2  ) ) )*dx*dx )
-		print str(100*float(i)/finalValue) + '%'
-	np.savetxt('quadrupole.csv',result,delimiter=',')
-	plt.plot(range(initValue,finalValue,incr),result)
-	plt.savefig("Quadrupole.png",dpi=200)
-	plt.close()
+            d1 = np.multiply( np.square(xm) - np.square(ym), wfc )
+            d2 = np.multiply( conjwfc, d1)
+            result.append( np.real( np.sum( np.sum( d2  ) ) )*dx*dx )
+        print str(100*float(i)/finalValue) + '%'
+    np.savetxt('quadrupole.csv',result,delimiter=',')
+    plt.plot(range(initValue,finalValue,incr),result)
+    plt.savefig("Quadrupole.png",dpi=200)
+    plt.close()
 
 def expec_val_(quant_name, quantity, dataName, initValue, finalValue, incr):
-	x=np.asarray(open('x_0').read().splitlines(),dtype='f8')
-	y=np.asarray(open('y_0').read().splitlines(),dtype='f8')
-#	px=open('px_0')
-#	py=open('py_0')
-	xm, ym = np.meshgrid(x, y)
-	result = []
-	for i in range(initValue,finalValue,incr):
-		if not os.path.exists(dataName):
-			real=open(dataName + '_' + str(i)).read().splitlines()
-			img=open(dataName + 'i_' + str(i)).read().splitlines()
-			a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
-			a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
-			a = a_r[:] + 1j*a_i[:]
-			wfc = np.reshape(a,(xDim,yDim))
-			conjwfc = np.conj(wfc)
+    x=np.asarray(open('x_0').read().splitlines(),dtype='f8')
+    y=np.asarray(open('y_0').read().splitlines(),dtype='f8')
+    xm, ym = np.meshgrid(x, y)
+    result = []
+    for i in range(initValue,finalValue,incr):
+        if not os.path.exists(dataName):
+            real=open(dataName + '_' + str(i)).read().splitlines()
+            img=open(dataName + 'i_' + str(i)).read().splitlines()
+            a_r = numpy.asanyarray(real,dtype='f8') #64-bit double
+            a_i = numpy.asanyarray(img,dtype='f8') #64-bit double
+            a = a_r[:] + 1j*a_i[:]
+            wfc = np.reshape(a,(xDim,yDim))
+            conjwfc = np.conj(wfc)
 
-			d1 = np.multiply( quantity, wfc )
-			d2 = np.multiply( conjwfc, d1)
-			result.append( np.real( np.sum( np.sum( d2  ) ) )*dx*dx )
-		print str(100*float(i)/finalValue) + '%'
-	np.savetxt(quant_name + '.csv',result,delimiter=',')
-	plt.plot(range(initValue,finalValue,incr),result)
-	plt.savefig(quant_name + ".pdf",dpi=200)
-	plt.close()
+            d1 = np.multiply( quantity, wfc )
+            d2 = np.multiply( conjwfc, d1)
+            result.append( np.real( np.sum( np.sum( d2  ) ) )*dx*dx )
+        print str(100*float(i)/finalValue) + '%'
+    np.savetxt(quant_name + '.csv',result,delimiter=',')
+    plt.plot(range(initValue,finalValue,incr),result)
+    plt.savefig(quant_name + ".pdf",dpi=200)
+    plt.close()
 
 if __name__ == '__main__':
-	kinertrum_loop('wfc_ev', 0, evMaxVal, incr)
-	exit()
-	energy_total('wfc_ev',0,evMaxVal,incr)
-	dens_struct_fact('wfc_ev', 0, evMaxVal, 500)
-	
-	energy_kinetic('wfc_ev', 0, evMaxVal, 200)
-#	ang_mom('wfc_0_ramp', 0, gndMaxVal, incr, 0, 200)
-	ang_mom('wfc_ev', 0, evMaxVal, incr, 1, 200)
-	expec_val_monopole('wfc_ev',0,evMaxVal,incr)
-	expec_val_quadrupole('wfc_ev',0,evMaxVal,incr)
+    kinertrum_loop('wfc_ev', 0, evMaxVal, incr)
+    energy_total('wfc_ev',0,evMaxVal,incr)
+    dens_struct_fact('wfc_ev', 0, evMaxVal, 500)
+    
+    energy_kinetic('wfc_ev', 0, evMaxVal, 200)
+    ang_mom('wfc_ev', 0, evMaxVal, incr, 1, 200)
+    expec_val_monopole('wfc_ev',0,evMaxVal,incr)
+    expec_val_quadrupole('wfc_ev',0,evMaxVal,incr)
