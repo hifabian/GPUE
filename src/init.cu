@@ -5,6 +5,7 @@ void check_memory(Grid &par){
     int xDim = par.ival("xDim");
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
+    int wfc_num = par.ival("wfc_num");
 
     int gSize = xDim*yDim*zDim;
     size_t free = 0;
@@ -15,7 +16,7 @@ void check_memory(Grid &par){
     // Note that this check is specifically for the case where we need to keep
     // 8 double2* values on the GPU. This is not the case for dynamic fields
     // and the test should be updated accordingly as these are used more.
-    size_t req_memory = 16*8*(size_t)gSize;
+    size_t req_memory = 16*8*(size_t)gSize*(size_t)wfc_num;
     if (free < req_memory){
         std::cout << "Not enough GPU memory for gridsize!\n";
         std::cout << "Free memory is: " << free << '\n';
@@ -65,9 +66,9 @@ int init(Grid &par){
     double *r;
     double *V_opt;
     double *Energy_gpu;
-    cufftDoubleComplex *wfc;
+    cufftDoubleComplex *wfc_array;
     if (par.bval("read_wfc") == true){
-        wfc = par.cufftDoubleComplexval("wfc");
+        wfc_array = par.cufftDoubleComplexval("wfc_array");
     }
     cufftDoubleComplex *EV_opt;
     cufftDoubleComplex *wfc_backup;
@@ -221,11 +222,11 @@ int init(Grid &par){
     double2 *GK = par.cufftDoubleComplexval("GK");
     double2 *EK = par.cufftDoubleComplexval("EK");
 
-    wfc = par.cufftDoubleComplexval("wfc");
+    wfc_array = par.cufftDoubleComplexval("wfc_array");
 
     int index = 0;
     for(int i=0; i < gSize; i++ ){
-        sum+=sqrt(wfc[i].x*wfc[i].x + wfc[i].y*wfc[i].y);
+        sum+=sqrt(wfc_array[i].x*wfc_array[i].x+wfc_array[i].y*wfc_array[i].y);
     }
 
     if (write_file){
@@ -283,7 +284,7 @@ int init(Grid &par){
         FileIO::writeOutDouble(buffer, data_dir + "x",x,xDim,0);
         FileIO::writeOutDouble(buffer, data_dir + "y",y,yDim,0);
         FileIO::writeOutDouble(buffer, data_dir + "z",z,zDim,0);
-        FileIO::writeOut(buffer, data_dir + "WFC",wfc,gSize,0);
+        FileIO::writeOut(buffer, data_dir + "WFC",wfc_array,gSize,0);
         FileIO::writeOut(buffer, data_dir + "EpAz",EpAz,gSize,0);
         FileIO::writeOut(buffer, data_dir + "EpAy",EpAy,gSize,0);
         FileIO::writeOut(buffer, data_dir + "EpAx",EpAx,gSize,0);
@@ -297,8 +298,8 @@ int init(Grid &par){
     if (par.bval("read_wfc") == false){
         sum=sqrt(sum*dx*dy*dz);
         for (int i = 0; i < gSize; i++){
-            wfc[i].x = (wfc[i].x)/(sum);
-            wfc[i].y = (wfc[i].y)/(sum);
+            wfc_array[i].x = (wfc_array[i].x)/(sum);
+            wfc_array[i].y = (wfc_array[i].y)/(sum);
         }
     }
 
@@ -340,7 +341,7 @@ int init(Grid &par){
     par.store("Energy", Energy);
     par.store("r", r);
     par.store("Energy_gpu", Energy_gpu);
-    par.store("wfc", wfc);
+    par.store("wfc_array", wfc_array);
     par.store("EV_opt", EV_opt);
     par.store("V_opt", V_opt);
     par.store("wfc_backup", wfc_backup);
@@ -381,8 +382,9 @@ void set_variables(Grid &par, bool ev_type){
     double2 *pAz_gpu;
     double2 *V_gpu;
     double2 *K_gpu;
-    cufftDoubleComplex *wfc = par.cufftDoubleComplexval("wfc");
-    cufftDoubleComplex *wfc_gpu = par.cufftDoubleComplexval("wfc_gpu");
+    cufftDoubleComplex *wfc_array = par.cufftDoubleComplexval("wfc_array");
+    cufftDoubleComplex *wfc_gpu_array =
+         par.cufftDoubleComplexval("wfc_gpu_array");
     cudaError_t err;
     int dimnum = par.ival("dimnum");
     int xDim = par.ival("xDim");
@@ -444,7 +446,8 @@ void set_variables(Grid &par, bool ev_type){
                 exit(1);
             }
         }
-        err=cudaMemcpy(wfc_gpu, wfc, sizeof(cufftDoubleComplex)*gsize,
+        err=cudaMemcpy(wfc_gpu_array, wfc_array,
+                       sizeof(cufftDoubleComplex)*gsize,
                        cudaMemcpyHostToDevice);
         if(err!=cudaSuccess){
             std::cout << "ERROR: Could not copy wfc_gpu to device" << '\n';
@@ -452,7 +455,7 @@ void set_variables(Grid &par, bool ev_type){
         }
         par.store("K_gpu", K_gpu);
         par.store("V_gpu", V_gpu);
-        par.store("wfc_gpu", wfc_gpu);
+        par.store("wfc_gpu_array", wfc_gpu_array);
         par.store("pAy_gpu", pAy_gpu);
         par.store("pAx_gpu", pAx_gpu);
 
@@ -519,14 +522,15 @@ void set_variables(Grid &par, bool ev_type){
             }
             par.store("V_gpu", V_gpu);
         }
-        err=cudaMemcpy(wfc_gpu, wfc, sizeof(cufftDoubleComplex)*gsize,
+        err=cudaMemcpy(wfc_gpu_array, wfc_array,
+                       sizeof(cufftDoubleComplex)*gsize,
                        cudaMemcpyHostToDevice);
         if(err!=cudaSuccess){
             std::cout << "ERROR: Could not copy wfc_gpu to device" << '\n';
             exit(1);
         }
 
-        par.store("wfc_gpu", wfc_gpu);
+        par.store("wfc_gpu_array", wfc_gpu_array);
 
         // Special variables / instructions for 2/3d case
         if (dimnum > 1 && !par.bval("Ay_time")){
@@ -586,16 +590,16 @@ int main(int argc, char **argv){
 
         // Initializing the wfc
         int gSize = xDim * yDim * zDim;
-        cufftDoubleComplex *wfc;
+        cufftDoubleComplex *wfc_array;
 
         std::string infile = par.sval("infile");
         std::string infilei = par.sval("infilei");
         printf("Loading wavefunction...");
-        wfc=FileIO::readIn(infile,infilei,gSize);
-        par.store("wfc",wfc);
+        wfc_array=FileIO::readIn(infile,infilei,gSize);
+        par.store("wfc_array",wfc_array);
         printf("Wavefunction loaded.\n");
         //std::string data_dir = par.sval("data_dir");
-        //FileIO::writeOut(buffer, data_dir + "WFC_CHECK",wfc,gSize,0);
+        //FileIO::writeOut(buffer, data_dir + "WFC_CHECK",wfc_array,gSize,0);
     }
 
     init(par);

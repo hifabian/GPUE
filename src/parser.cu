@@ -55,6 +55,7 @@ Grid parseArgs(int argc, char** argv){
     par.store("use_param_file", false);
     par.store("param_file","param.cfg");
     par.store("cyl_coord",false);
+    par.store("wfc_num",1);
     par.Afn = "rotation";
     par.Kfn = "rotation_K";
     par.Vfn = "2d";
@@ -168,6 +169,14 @@ Grid parseArgs(int argc, char** argv){
                 int device = atoi(optarg);
                 printf("Argument for device (Card) is given as %d\n",device);
                 par.store("device",(int)device);
+                break;
+            }
+            case 'N':
+            {
+                int wfc_num = atoi(optarg);
+                printf("Argument for condensate number is given as %d\n",
+                        wfc_num);
+                par.store("wfc_num",(int)wfc_num);
                 break;
             }
             case 'n':

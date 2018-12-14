@@ -701,7 +701,7 @@ void find_edges(Grid &par,
     dim3 grid = par.grid;
     dim3 threads = par.threads;
 
-    double2 *wfc_gpu = par.cufftDoubleComplexval("wfc_gpu");
+    double2 *wfc_gpu_array = par.cufftDoubleComplexval("wfc_gpu_array");
     int xDim = par.ival("xDim");
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
@@ -742,7 +742,7 @@ void find_edges(Grid &par,
     cufftHandle plan_3d = par.ival("plan_3d");
 
     // now to perform the complexMagnitudeSquared operation
-    complexMagnitudeSquared<<<grid,threads>>>(wfc_gpu, density_d);
+    complexMagnitudeSquared<<<grid,threads>>>(wfc_gpu_array, density_d);
 
     // Pulling operators from find_sobel(par)
     double2 *sobel_x_gpu = par.cufftDoubleComplexval("sobel_x_gpu");

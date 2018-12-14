@@ -30,7 +30,8 @@ Options:
 -L 0            Set l, vortex winding [2*pi*L]
 -l              Set ang_mom flag to use angular momentum
 -m              Set 2d_mask for vortex tracking
--n 1            Set N, number of particles in simulation
+-N 1            Set N, number of wavefunctions to simulate
+-n 1            Set n, number of particles in simulation
 -O 0            Set angle_sweep, kicking potential rotation angle
 -P 0            Set laser_power, strength of kicking [hbar * omega_perp]
 -p 100          Set printSteps, frequency of printing

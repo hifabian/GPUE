@@ -739,23 +739,23 @@ void generate_fields(Grid &par){
 
     // Generating wfc
 
-    double2 *wfc, *wfc_gpu;
+    double2 *wfc_array, *wfc_gpu_array;
     double *phi, *phi_gpu;
 
-    wfc = (double2 *)malloc(sizeof(double2)*gSize);
+    wfc_array = (double2 *)malloc(sizeof(double2)*gSize);
     phi = (double *)malloc(sizeof(double)*gSize);
 
-    cudaMalloc((void**) &wfc_gpu, sizeof(double2)*gSize);
+    cudaMalloc((void**) &wfc_gpu_array, sizeof(double2)*gSize);
     cudaMalloc((void**) &phi_gpu, sizeof(double)*gSize);
 
     if (par.bval("read_wfc")){
-        wfc = par.cufftDoubleComplexval("wfc");
-        cudaMemcpy(wfc_gpu, wfc, sizeof(double2)*gSize, cudaMemcpyHostToDevice);
+        wfc_array = par.cufftDoubleComplexval("wfc_array");
+        cudaMemcpy(wfc_gpu_array, wfc_array, sizeof(double2)*gSize, cudaMemcpyHostToDevice);
     }
     else{
         par.wfc_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, items_gpu,
-                                              winding, phi_gpu, wfc_gpu);
-        cudaMemcpy(wfc, wfc_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
+                                              winding, phi_gpu, wfc_gpu_array);
+        cudaMemcpy(wfc_array, wfc_gpu_array, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
     }
 
     cudaMemcpy(phi, phi_gpu, sizeof(double)*gSize, cudaMemcpyDeviceToHost);
@@ -867,8 +867,8 @@ void generate_fields(Grid &par){
     par.store("V",V);
     par.store("items", items);
     //par.store("items_gpu", items_gpu);
-    par.store("wfc", wfc);
-    par.store("wfc_gpu", wfc_gpu);
+    par.store("wfc_array", wfc_array);
+    par.store("wfc_gpu_array", wfc_gpu_array);
     par.store("Phi", phi);
     par.store("Phi_gpu", phi_gpu);
 
@@ -935,7 +935,7 @@ __global__ void ktorus_V(double *x, double *y, double *z, double* items,
 }
 
 __global__ void kstd_wfc(double *x, double *y, double *z, double *items,
-                         double winding, double *phi, double2 *wfc){
+                         double winding, double *phi, double2 *wfc_array){
 
     int gid = getGid3d3d();
     int xid = blockDim.x*blockIdx.x + threadIdx.x;
@@ -944,11 +944,11 @@ __global__ void kstd_wfc(double *x, double *y, double *z, double *items,
 
     phi[gid] = fmod(winding*atan2(y[yid], x[xid]),2*PI);
 
-    wfc[gid].x = exp(-(x[xid]*x[xid]/(items[14]*items[14]*items[15]*items[15]) 
+    wfc_array[gid].x = exp(-(x[xid]*x[xid]/(items[14]*items[14]*items[15]*items[15]) 
                      + y[yid]*y[yid]/(items[14]*items[14]*items[16]*items[16]) 
                      + z[zid]*z[zid]/(items[14]*items[14]*items[17]*items[17])))
                      * cos(phi[gid]);
-    wfc[gid].y = -exp(-(x[xid]*x[xid]/(items[14]*items[14]*items[15]*items[15]) 
+    wfc_array[gid].y = -exp(-(x[xid]*x[xid]/(items[14]*items[14]*items[15]*items[15]) 
                      + y[yid]*y[yid]/(items[14]*items[14]*items[16]*items[16]) 
                      + z[zid]*z[zid]/(items[14]*items[14]*items[17]*items[17])))
                      * sin(phi[gid]);
@@ -956,7 +956,7 @@ __global__ void kstd_wfc(double *x, double *y, double *z, double *items,
 }
 
 __global__ void ktorus_wfc(double *x, double *y, double *z, double *items,
-                           double winding, double *phi, double2 *wfc){
+                           double winding, double *phi, double2 *wfc_array){
 
     int gid = getGid3d3d();
     int xid = blockDim.x*blockIdx.x + threadIdx.x;
@@ -967,9 +967,9 @@ __global__ void ktorus_wfc(double *x, double *y, double *z, double *items,
                       + (y[yid] - items[7]) * (y[yid] - items[7])) 
                       - 0.5*items[0]*items[12];
 
-    wfc[gid].x = exp(-( pow((rad)/(items[14]*items[15]*0.5),2) +
+    wfc_array[gid].x = exp(-( pow((rad)/(items[14]*items[15]*0.5),2) +
                    pow((z[zid])/(items[14]*items[17]*0.5),2) ) );
-    wfc[gid].y = 0.0;
+    wfc_array[gid].y = 0.0;
 }
 
 __global__ void aux_fields(double *V, double *K, double gdt, double dt,

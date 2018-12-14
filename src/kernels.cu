@@ -401,13 +401,13 @@ __global__ void vecConjugate(double2 *in, double2 *out){
     out[gid] = result;
 }
 
-__global__ void angularOp(double omega, double dt, double2* wfc, double* xpyypx, double2* out){
+__global__ void angularOp(double omega, double dt, double2* wfc_array, double* xpyypx, double2* out){
     unsigned int gid = getGid3d3d();
     double2 result;
     double op;
     op = exp( -omega*xpyypx[gid]*dt);
-    result.x=wfc[gid].x*op;
-    result.y=wfc[gid].y*op;
+    result.x=wfc_array[gid].x*op;
+    result.y=wfc_array[gid].y*op;
     out[gid]=result;
 }
 
@@ -484,24 +484,24 @@ __global__ void multipass(double* input, double* output){
 /*
 * Calculates all of the energy of the current state. sqrt_omegaz_mass = sqrt(omegaZ/mass), part of the nonlin interaction term
 */
-__global__ void energyCalc(double2 *wfc, double2 *op, double dt, double2 *energy, int gnd_state, int op_space, double sqrt_omegaz_mass, double gDenConst){
+__global__ void energyCalc(double2 *wfc_array, double2 *op, double dt, double2 *energy, int gnd_state, int op_space, double sqrt_omegaz_mass, double gDenConst){
     unsigned int gid = getGid3d3d();
     //double hbar_dt = HBAR/dt;
     double2 result;
     if(op_space == 0){
-        double g_local = gDenConst*sqrt_omegaz_mass*complexMagnitudeSquared(wfc[gid]);
+        double g_local = gDenConst*sqrt_omegaz_mass*complexMagnitudeSquared(wfc_array[gid]);
         op[gid].x += g_local;
     }
 
     if (op_space < 2){
-        result = braKetMult(wfc[gid], energy[gid]);
+        result = braKetMult(wfc_array[gid], energy[gid]);
         energy[gid].x += result.x;
         energy[gid].y += result.y;
     }
     else{
-        result = complexMultiply(op[gid],wfc[gid]);
+        result = complexMultiply(op[gid],wfc_array[gid]);
     }
-    result = braKetMult(wfc[gid], complexMultiply(op[gid],wfc[gid]));
+    result = braKetMult(wfc_array[gid], complexMultiply(op[gid],wfc_array[gid]));
     energy[gid].x += result.x;
     energy[gid].y += result.y;
 
