@@ -42,6 +42,7 @@ int init(Grid &par){
     int xDim = par.ival("xDim");
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
+    int wfc_num = par.ival("wfc_num");
     bool write_file = par.bval("write_file");
     bool cyl_coord = par.bval("cyl_coord");
     bool corotating = par.bval("corotating");
@@ -169,12 +170,13 @@ int init(Grid &par){
 
     /* Initialise wavefunction, momentum, position, angular momentum,
        imaginary and real-time evolution operators . */
-    Energy = (double*) malloc(sizeof(double) * gSize);
-    r = (double *) malloc(sizeof(double) * gSize);
-    V_opt = (double *) malloc(sizeof(double) * gSize);
-    EV_opt = (cufftDoubleComplex *) malloc(sizeof(cufftDoubleComplex) * gSize);
-    EappliedField = (cufftDoubleComplex *) malloc(sizeof(cufftDoubleComplex) *
-                                                         gSize);
+    Energy = (double*) malloc(sizeof(double) * gSize * wfc_num);
+    r = (double *) malloc(sizeof(double) * gSize * wfc_num);
+    V_opt = (double *) malloc(sizeof(double) * gSize * wfc_num);
+    EV_opt = (cufftDoubleComplex *)
+             malloc(sizeof(cufftDoubleComplex) * gSize * wfc_num);
+    EappliedField = (cufftDoubleComplex *) 
+                    malloc(sizeof(cufftDoubleComplex) * gSize * wfc_num);
 
     //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
 
@@ -392,6 +394,8 @@ void set_variables(Grid &par, bool ev_type){
     int zDim = par.ival("zDim");
     int gsize = xDim;
 
+    int wfc_num = par.ival("wfc_num");
+
     // Special variables for the 3d case
     if (dimnum > 1){
         gsize *= yDim;
@@ -400,19 +404,19 @@ void set_variables(Grid &par, bool ev_type){
         gsize *= zDim;
     }
     if(!par.bval("V_time")){
-        cudaMalloc((void**) &V_gpu, sizeof(double2)*gsize);
+        cudaMalloc((void**) &V_gpu, sizeof(double2)*gsize*wfc_num);
     }
     if(!par.bval("K_time")){
-        cudaMalloc((void**) &K_gpu, sizeof(double2)*gsize);
+        cudaMalloc((void**) &K_gpu, sizeof(double2)*gsize*wfc_num);
     }
     if(!par.bval("Ax_time")){
-        cudaMalloc((void**) &pAx_gpu, sizeof(double2)*gsize);
+        cudaMalloc((void**) &pAx_gpu, sizeof(double2)*gsize*wfc_num);
     }
     if(!par.bval("Ay_time") && dimnum > 1){
-        cudaMalloc((void**) &pAy_gpu, sizeof(double2)*gsize);
+        cudaMalloc((void**) &pAy_gpu, sizeof(double2)*gsize*wfc_num);
     }
     if(!par.bval("Az_time") && dimnum > 2){
-        cudaMalloc((void**) &pAz_gpu, sizeof(double2)*gsize);
+        cudaMalloc((void**) &pAz_gpu, sizeof(double2)*gsize*wfc_num);
     }
 
     if (ev_type == 0){
@@ -423,7 +427,7 @@ void set_variables(Grid &par, bool ev_type){
         cufftDoubleComplex *GpAz = nullptr;
 
         if(!par.bval("K_time")){
-            err=cudaMemcpy(K_gpu, GK, sizeof(cufftDoubleComplex)*gsize,
+            err=cudaMemcpy(K_gpu, GK, sizeof(cufftDoubleComplex)*gsize*wfc_num,
                            cudaMemcpyHostToDevice);
             if(err!=cudaSuccess){
                 std::cout << "ERROR: Could not copy K_gpu to device" << '\n';
@@ -431,7 +435,7 @@ void set_variables(Grid &par, bool ev_type){
             }
         }
         if(!par.bval("V_time")){
-            err=cudaMemcpy(V_gpu, GV, sizeof(cufftDoubleComplex)*gsize,
+            err=cudaMemcpy(V_gpu, GV, sizeof(cufftDoubleComplex)*gsize*wfc_num,
                            cudaMemcpyHostToDevice);
             if(err!=cudaSuccess){
                 std::cout << "ERROR: Could not copy V_gpu to device" << '\n';
@@ -439,7 +443,8 @@ void set_variables(Grid &par, bool ev_type){
             }
         }
         if(!par.bval("Ax_time")){
-            err=cudaMemcpy(pAx_gpu, GpAx, sizeof(cufftDoubleComplex)*gsize,
+            err=cudaMemcpy(pAx_gpu, GpAx,
+                           sizeof(cufftDoubleComplex)*gsize*wfc_num,
                            cudaMemcpyHostToDevice);
             if(err!=cudaSuccess){
                 std::cout << "ERROR: Could not copy pAx_gpu to device" << '\n';
@@ -447,7 +452,7 @@ void set_variables(Grid &par, bool ev_type){
             }
         }
         err=cudaMemcpy(wfc_gpu_array, wfc_array,
-                       sizeof(cufftDoubleComplex)*gsize,
+                       sizeof(cufftDoubleComplex)*gsize*wfc_num,
                        cudaMemcpyHostToDevice);
         if(err!=cudaSuccess){
             std::cout << "ERROR: Could not copy wfc_gpu to device" << '\n';
@@ -462,7 +467,8 @@ void set_variables(Grid &par, bool ev_type){
         // Special cases for 3d
         if (dimnum > 1 && !par.bval("Ay_time")){
             GpAy = par.cufftDoubleComplexval("GpAy");
-            err=cudaMemcpy(pAy_gpu, GpAy, sizeof(cufftDoubleComplex)*gsize,
+            err=cudaMemcpy(pAy_gpu, GpAy,
+                           sizeof(cufftDoubleComplex)*gsize*wfc_num,
                            cudaMemcpyHostToDevice);
 
             if(err!=cudaSuccess){
@@ -474,7 +480,8 @@ void set_variables(Grid &par, bool ev_type){
         }
         if (dimnum > 2 && !par.bval("Az_time")){
             GpAz = par.cufftDoubleComplexval("GpAz");
-            err=cudaMemcpy(pAz_gpu, GpAz, sizeof(cufftDoubleComplex)*gsize,
+            err=cudaMemcpy(pAz_gpu, GpAz,
+                           sizeof(cufftDoubleComplex)*gsize*wfc_num,
                            cudaMemcpyHostToDevice);
 
             if(err!=cudaSuccess){
@@ -494,7 +501,7 @@ void set_variables(Grid &par, bool ev_type){
         cufftDoubleComplex *EpAy = nullptr;
         cufftDoubleComplex *EpAz = nullptr;
         if (!par.bval("K_time")){
-            err=cudaMemcpy(K_gpu, EK, sizeof(cufftDoubleComplex)*gsize,
+            err=cudaMemcpy(K_gpu, EK, sizeof(cufftDoubleComplex)*gsize*wfc_num,
                            cudaMemcpyHostToDevice);
             if(err!=cudaSuccess){
                 std::cout << "ERROR: Could not copy K_gpu to device" << '\n';
@@ -503,7 +510,8 @@ void set_variables(Grid &par, bool ev_type){
             par.store("K_gpu", K_gpu);
         }
         if(!par.bval("Ax_time")){
-            err=cudaMemcpy(pAx_gpu, EpAx, sizeof(cufftDoubleComplex)*gsize,
+            err=cudaMemcpy(pAx_gpu, EpAx,
+                           sizeof(cufftDoubleComplex)*gsize*wfc_num,
                            cudaMemcpyHostToDevice);
             if(err!=cudaSuccess){
                 std::cout << "ERROR: Could not copy pAx_gpu to device" << '\n';
@@ -514,7 +522,7 @@ void set_variables(Grid &par, bool ev_type){
         }
 
         if (!par.bval("V_time")){
-            err=cudaMemcpy(V_gpu, EV, sizeof(cufftDoubleComplex)*gsize,
+            err=cudaMemcpy(V_gpu, EV, sizeof(cufftDoubleComplex)*gsize*wfc_num,
                            cudaMemcpyHostToDevice);
             if(err!=cudaSuccess){
                 std::cout << "ERROR: Could not copy V_gpu to device" << '\n';
@@ -523,7 +531,7 @@ void set_variables(Grid &par, bool ev_type){
             par.store("V_gpu", V_gpu);
         }
         err=cudaMemcpy(wfc_gpu_array, wfc_array,
-                       sizeof(cufftDoubleComplex)*gsize,
+                       sizeof(cufftDoubleComplex)*gsize*wfc_num,
                        cudaMemcpyHostToDevice);
         if(err!=cudaSuccess){
             std::cout << "ERROR: Could not copy wfc_gpu to device" << '\n';
@@ -535,7 +543,8 @@ void set_variables(Grid &par, bool ev_type){
         // Special variables / instructions for 2/3d case
         if (dimnum > 1 && !par.bval("Ay_time")){
             EpAy = par.cufftDoubleComplexval("EpAy");
-            err=cudaMemcpy(pAy_gpu, EpAy, sizeof(cufftDoubleComplex)*gsize,
+            err=cudaMemcpy(pAy_gpu, EpAy,
+                           sizeof(cufftDoubleComplex)*gsize*wfc_num,
                            cudaMemcpyHostToDevice);
             if(err!=cudaSuccess){
                 std::cout << "ERROR: Could not copy pAy_gpu to device" << '\n';
@@ -546,7 +555,8 @@ void set_variables(Grid &par, bool ev_type){
 
         if (dimnum > 2 && !par.bval("Az_time")){
             EpAz = par.cufftDoubleComplexval("EpAz");
-            err=cudaMemcpy(pAz_gpu, EpAz, sizeof(cufftDoubleComplex)*gsize,
+            err=cudaMemcpy(pAz_gpu, EpAz,
+                           sizeof(cufftDoubleComplex)*gsize*wfc_num,
                            cudaMemcpyHostToDevice);
             if(err!=cudaSuccess){
                 std::cout << "ERROR: Could not copy pAz_gpu to device" << '\n';
@@ -563,7 +573,6 @@ void set_variables(Grid &par, bool ev_type){
 int main(int argc, char **argv){
 
     Grid par = parseArgs(argc,argv);
-    //Grid par2 = parseArgs(argc,argv);
 
     int device = par.ival("device");
     int dimnum = par.ival("dimnum");

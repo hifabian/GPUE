@@ -42,6 +42,9 @@ void evolve(Grid &par,
     int xDim = par.ival("xDim");
     int yDim = 1;
     int zDim = 1;
+
+    int wfc_num = par.ival("wfc_num");
+
     cufftDoubleComplex *wfc_array = par.cufftDoubleComplexval("wfc_array");
     cufftDoubleComplex *gpuWfc_array =
          par.cufftDoubleComplexval("wfc_gpu_array");
@@ -179,7 +182,7 @@ void evolve(Grid &par,
             // If the unit_test flag is on, we need a special case
             printf("Step: %d    Omega: %lf\n", i, omega_0);
             cudaMemcpy(wfc_array, gpuWfc_array,
-                       sizeof(cufftDoubleComplex)*xDim*yDim*zDim, 
+                       sizeof(cufftDoubleComplex)*xDim*yDim*zDim*wfc_num, 
                        cudaMemcpyDeviceToHost);
 
             // Printing out time of iteration
@@ -296,7 +299,8 @@ void evolve(Grid &par,
                             if (kick_it == 2) {
                                 printf("Kicked it 1\n");
                                 cudaMemcpy(V_gpu, EV_opt,
-                                           sizeof(cufftDoubleComplex)*xDim*yDim,
+                                           sizeof(cufftDoubleComplex)*xDim
+                                               *yDim*wfc_num,
                                            cudaMemcpyHostToDevice);
                             }
                             // Write out the newly specified potential
@@ -373,7 +377,8 @@ void evolve(Grid &par,
                                             xDim);
     
                                         cudaMemcpy(Phi_gpu, Phi, 
-                                                   sizeof(double) * xDim * yDim, 
+                                                   sizeof(double) * xDim * yDim
+                                                       *wfc_num,
                                                    cudaMemcpyHostToDevice);
                                         cMultPhi <<<grid, threads>>>(
                                             gpuWfc_array,Phi_gpu,gpuWfc_array);
@@ -391,7 +396,8 @@ void evolve(Grid &par,
     
                                         // Sending to device for imprinting
                                         cudaMemcpy(Phi_gpu, Phi, 
-                                                   sizeof(double) * xDim * yDim, 
+                                                   sizeof(double) * xDim * yDim
+                                                       *wfc_num,
                                                    cudaMemcpyHostToDevice);
                                         cMultPhi <<<grid, threads>>>(
                                             gpuWfc_array,Phi_gpu,gpuWfc_array);
@@ -405,7 +411,8 @@ void evolve(Grid &par,
                                                 getData().getCoordsD().y,
                                             xDim);
                                         cudaMemcpy(Phi_gpu, Phi, 
-                                                   sizeof(double) * xDim * yDim, 
+                                                   sizeof(double) * xDim * yDim
+                                                       *wfc_num,
                                                    cudaMemcpyHostToDevice);
                                         cMultPhi <<<grid, threads>>>(
                                             gpuWfc_array,Phi_gpu,gpuWfc_array);

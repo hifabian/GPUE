@@ -358,6 +358,7 @@ void generate_K(Grid &par){
     double *pz_gpu = par.dsval("pz_gpu");
     double gSize = par.ival("gSize");
     double mass = par.dval("mass");
+    int wfc_num = par.ival("wfc_num");
 
     // Creating K to work with
     double *K, *K_gpu;
@@ -366,7 +367,7 @@ void generate_K(Grid &par){
 
     simple_K<<<par.grid, par.threads>>>(px_gpu, py_gpu, pz_gpu, mass, K_gpu);
 
-    cudaMemcpy(K, K_gpu, sizeof(double)*gSize, cudaMemcpyDeviceToHost);
+    cudaMemcpy(K, K_gpu, sizeof(double)*gSize*wfc_num, cudaMemcpyDeviceToHost);
     par.store("K",K);
     par.store("K_gpu",K_gpu);
     
@@ -389,6 +390,7 @@ void generate_gauge(Grid &par){
 
     int gSize = par.ival("gSize");
     int dimnum = par.ival("dimnum");
+    int wfc_num = par.ival("wfc_num");
 
     double *Ax, *Ay, *Az, *Ax_gpu, *Ay_gpu, *Az_gpu;
     double *x_gpu = par.dsval("x_gpu");
@@ -420,16 +422,19 @@ void generate_gauge(Grid &par){
 
     if (par.Afn == "file"){
         file_A(par.Axfile, Ax, omega);
-        cudaMemcpy(Ax_gpu, Ax, sizeof(double)*gSize, cudaMemcpyHostToDevice);
+        cudaMemcpy(Ax_gpu, Ax, sizeof(double)*gSize*wfc_num,
+                   cudaMemcpyHostToDevice);
 
         if (dimnum > 1){
             file_A(par.Ayfile, Ay, omega);
-            cudaMemcpy(Ay_gpu,Ay,sizeof(double)*gSize,cudaMemcpyHostToDevice);
+            cudaMemcpy(Ay_gpu,Ay,sizeof(double)*gSize*wfc_num,
+                       cudaMemcpyHostToDevice);
         }
 
         if (dimnum == 3){
             file_A(par.Azfile, Az, omega);
-            cudaMemcpy(Az_gpu,Az,sizeof(double)*gSize,cudaMemcpyHostToDevice);
+            cudaMemcpy(Az_gpu,Az,sizeof(double)*gSize*wfc_num,
+                       cudaMemcpyHostToDevice);
         }
 
         std::cout << "finished reading Ax / Ay / Az from file" << '\n';
@@ -637,6 +642,7 @@ void generate_fields(Grid &par){
     int gSize = par.ival("gSize");
     int dimnum = par.ival("dimnum");
     int winding = par.dval("winding");
+    int wfc_num = par.ival("wfc_num");
 
     bool energy_calc = par.bval("energy_calc");
 
@@ -742,23 +748,26 @@ void generate_fields(Grid &par){
     double2 *wfc_array, *wfc_gpu_array;
     double *phi, *phi_gpu;
 
-    wfc_array = (double2 *)malloc(sizeof(double2)*gSize);
-    phi = (double *)malloc(sizeof(double)*gSize);
+    wfc_array = (double2 *)malloc(sizeof(double2)*gSize*wfc_num);
+    phi = (double *)malloc(sizeof(double)*gSize*wfc_num);
 
-    cudaMalloc((void**) &wfc_gpu_array, sizeof(double2)*gSize);
-    cudaMalloc((void**) &phi_gpu, sizeof(double)*gSize);
+    cudaMalloc((void**) &wfc_gpu_array, sizeof(double2)*gSize*wfc_num);
+    cudaMalloc((void**) &phi_gpu, sizeof(double)*gSize*wfc_num);
 
     if (par.bval("read_wfc")){
         wfc_array = par.cufftDoubleComplexval("wfc_array");
-        cudaMemcpy(wfc_gpu_array, wfc_array, sizeof(double2)*gSize, cudaMemcpyHostToDevice);
+        cudaMemcpy(wfc_gpu_array, wfc_array, sizeof(double2)*gSize*wfc_num,
+                   cudaMemcpyHostToDevice);
     }
     else{
         par.wfc_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, items_gpu,
                                               winding, phi_gpu, wfc_gpu_array);
-        cudaMemcpy(wfc_array, wfc_gpu_array, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
+        cudaMemcpy(wfc_array, wfc_gpu_array, sizeof(double2)*gSize*wfc_num,
+                   cudaMemcpyDeviceToHost);
     }
 
-    cudaMemcpy(phi, phi_gpu, sizeof(double)*gSize, cudaMemcpyDeviceToHost);
+    cudaMemcpy(phi, phi_gpu, sizeof(double)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
 
     // generating aux fields.
     double2 *GV, *EV, *GK, *EK;
@@ -808,21 +817,34 @@ void generate_fields(Grid &par){
                                           GpAx_gpu, GpAy_gpu, GpAz_gpu,
                                           EpAx_gpu, EpAy_gpu, EpAz_gpu);
 
-    cudaMemcpy(GV, GV_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
-    cudaMemcpy(EV, EV_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
-    cudaMemcpy(GK, GK_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
-    cudaMemcpy(EK, EK_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
+    cudaMemcpy(GV, GV_gpu, sizeof(double2)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
+    cudaMemcpy(EV, EV_gpu, sizeof(double2)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
+    cudaMemcpy(GK, GK_gpu, sizeof(double2)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
+    cudaMemcpy(EK, EK_gpu, sizeof(double2)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
 
-    cudaMemcpy(GpAx, GpAx_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
-    cudaMemcpy(EpAx, EpAx_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
-    cudaMemcpy(GpAy, GpAy_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
-    cudaMemcpy(EpAy, EpAy_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
-    cudaMemcpy(GpAz, GpAz_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
-    cudaMemcpy(EpAz, EpAz_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost);
+    cudaMemcpy(GpAx, GpAx_gpu, sizeof(double2)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
+    cudaMemcpy(EpAx, EpAx_gpu, sizeof(double2)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
+    cudaMemcpy(GpAy, GpAy_gpu, sizeof(double2)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
+    cudaMemcpy(EpAy, EpAy_gpu, sizeof(double2)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
+    cudaMemcpy(GpAz, GpAz_gpu, sizeof(double2)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
+    cudaMemcpy(EpAz, EpAz_gpu, sizeof(double2)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
 
-    cudaMemcpy(pAx, pAx_gpu, sizeof(double)*gSize, cudaMemcpyDeviceToHost);
-    cudaMemcpy(pAy, pAy_gpu, sizeof(double)*gSize, cudaMemcpyDeviceToHost);
-    cudaMemcpy(pAz, pAz_gpu, sizeof(double)*gSize, cudaMemcpyDeviceToHost);
+    cudaMemcpy(pAx, pAx_gpu, sizeof(double)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
+    cudaMemcpy(pAy, pAy_gpu, sizeof(double)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
+    cudaMemcpy(pAz, pAz_gpu, sizeof(double)*gSize*wfc_num,
+               cudaMemcpyDeviceToHost);
 
     // Storing variables
     cudaFree(items_gpu);
