@@ -35,19 +35,8 @@ namespace FileIO{
     /*
      * Writes out the parameter file.
      */
-    void writeOutParam(std::string buffer, Grid &par, std::string file){
+    void writeOutParam(Grid &par, std::string file){
         par.write(file);
-        /*
-        FILE *f;
-        sprintf((char *)buffer.c_str(), "%s", file.c_str());
-        f = fopen(file.c_str(),"w");
-        fprintf(f,"[Params]\n");
-        for (size_t i = 0; i < arr.used(); ++i){
-            fprintf(f,"%s=",arr.array[i].title);
-            fprintf(f,"%e\n",arr.array[i].data);
-        }
-        fclose(f);
-        */
     }
 
     /*

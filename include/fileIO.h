@@ -118,11 +118,10 @@ namespace FileIO {
     * @brief	Writes the parameter file
     * @ingroup	helper
     *
-    * @param	*buffer Char buffer for use by function internals. char[100] usually
     * @param	arr struct Array holding the parameter values to be written out
     * @param	*file Name of data file name for saving to
     */
-    void writeOutParam(std::string buffer, Grid &par, std::string file);
+    void writeOutParam(Grid &par, std::string file);
 
 	/*
 	 * @brief	Opens and closes file. Nothing more. Nothing less.

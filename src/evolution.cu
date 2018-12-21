@@ -314,7 +314,7 @@ void evolve(Grid &par,
                                                  xDim * yDim, 0);
     
                                 //Store necessary parameters to Params.dat file.
-                                FileIO::writeOutParam(buffer, par,
+                                FileIO::writeOutParam(par,
                                                       data_dir + "Params.dat");
                             }
                         }

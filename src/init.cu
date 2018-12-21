@@ -619,7 +619,7 @@ int main(int argc, char **argv){
     std::cout << "variables re-established" << '\n';
 
     if (par.bval("write_file")){
-        FileIO::writeOutParam(buffer, par, data_dir + "Params.dat");
+        FileIO::writeOutParam(par, data_dir + "Params.dat");
     }
 
     if(gsteps > 0){

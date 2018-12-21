@@ -1201,7 +1201,7 @@ void evolve_test(){
         init(par);
 
         if (par.bval("write_file")){
-            FileIO::writeOutParam(buffer, par, "data/Params.dat");
+            FileIO::writeOutParam(par, "data/Params.dat");
         }
 
         double omegaX = par.dval("omegaX");

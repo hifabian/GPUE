@@ -22,7 +22,6 @@ unsigned int LatticeGraph::Edge::suid = 0;
 unsigned int LatticeGraph::Node::suid = 0;
 //std::size_t Vtx::Vortex::suid = 0;
 
-char buffer[100]; //Buffer for printing out. Need to replace by a better write-out procedure. Consider binary or HDF.
 int verbose; //Print more info. Not curently implemented.
 int device; //GPU ID choice.
 int kick_it; //Kicking mode: 0 = off, 1 = multiple, 2 = single
@@ -198,7 +197,6 @@ void optLatSetup(std::shared_ptr<Vtx::Vortex> centre, const double* V,
 
     double2 *r_opt = (double2*) malloc(sizeof(double2)*xDim);
 
-    //FileIO::writeOut(buffer,data_dir + "r_opt",r_opt,xDim,0);
     par.store("k[0].x",(double)k[0].x);
     par.store("k[0].y",(double)k[0].y);
     par.store("k[1].x",(double)k[1].x);
