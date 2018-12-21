@@ -253,9 +253,9 @@ int init(Grid &par){
             double *Br = curl3d_r(par, Bx, By);
             double *Bphi = curl3d_phi(par, Bx, By);
 
-            FileIO::writeOutDouble(buffer, data_dir + "Br",Br,gSize,0);
-            FileIO::writeOutDouble(buffer, data_dir + "Bphi",Bphi,gSize,0);
-            FileIO::writeOutDouble(buffer, data_dir + "Bz",Bz,gSize,0);
+            FileIO::writeOutDouble(data_dir + "Br",Br,gSize,0);
+            FileIO::writeOutDouble(data_dir + "Bphi",Bphi,gSize,0);
+            FileIO::writeOutDouble(data_dir + "Bz",Bz,gSize,0);
 
             free(Br);
             free(Bx);
@@ -265,27 +265,27 @@ int init(Grid &par){
         }
         else{
             if (dimnum > 1){
-                FileIO::writeOutDouble(buffer, data_dir + "Bz",Bz,gSize,0);
+                FileIO::writeOutDouble(data_dir + "Bz",Bz,gSize,0);
                 free(Bz);
             }
             if (dimnum > 2){
-                FileIO::writeOutDouble(buffer, data_dir + "Bx",Bx,gSize,0);
-                FileIO::writeOutDouble(buffer, data_dir + "By",By,gSize,0);
+                FileIO::writeOutDouble(data_dir + "Bx",Bx,gSize,0);
+                FileIO::writeOutDouble(data_dir + "By",By,gSize,0);
                 free(Bx);
                 free(By);
             }
         }
 
-        FileIO::writeOutDouble(buffer, data_dir + "V",V,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "K",K,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "pAy",pAy,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "pAx",pAx,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "Ax",Ax,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "Ay",Ay,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "Az",Az,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "x",x,xDim,0);
-        FileIO::writeOutDouble(buffer, data_dir + "y",y,yDim,0);
-        FileIO::writeOutDouble(buffer, data_dir + "z",z,zDim,0);
+        FileIO::writeOutDouble(data_dir + "V",V,gSize,0);
+        FileIO::writeOutDouble(data_dir + "K",K,gSize,0);
+        FileIO::writeOutDouble(data_dir + "pAy",pAy,gSize,0);
+        FileIO::writeOutDouble(data_dir + "pAx",pAx,gSize,0);
+        FileIO::writeOutDouble(data_dir + "Ax",Ax,gSize,0);
+        FileIO::writeOutDouble(data_dir + "Ay",Ay,gSize,0);
+        FileIO::writeOutDouble(data_dir + "Az",Az,gSize,0);
+        FileIO::writeOutDouble(data_dir + "x",x,xDim,0);
+        FileIO::writeOutDouble(data_dir + "y",y,yDim,0);
+        FileIO::writeOutDouble(data_dir + "z",z,zDim,0);
         FileIO::writeOut(buffer, data_dir + "WFC",wfc_array,gSize,0);
         FileIO::writeOut(buffer, data_dir + "EpAz",EpAz,gSize,0);
         FileIO::writeOut(buffer, data_dir + "EpAy",EpAy,gSize,0);

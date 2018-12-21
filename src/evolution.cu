@@ -224,7 +224,7 @@ void evolve(Grid &par,
 
                         // Now we need to output everything
                         if (write_it){
-                            FileIO::writeOutDouble(buffer, data_dir+"Edges",
+                            FileIO::writeOutDouble(data_dir+"Edges",
                                                    edges, gridSize, i);
                         }
                         free(edges);
@@ -306,8 +306,7 @@ void evolve(Grid &par,
                             // Write out the newly specified potential
                             // and exp potential to files
                             if(write_it){
-                                FileIO::writeOutDouble(buffer,
-                                                       data_dir+"V_opt_1",
+                                FileIO::writeOutDouble(data_dir+"V_opt_1",
                                                        V_opt, xDim * yDim, 0);
                                 FileIO::writeOut(buffer, data_dir+"EV_opt_1",
                                                  EV_opt,

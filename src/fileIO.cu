@@ -63,29 +63,27 @@ namespace FileIO{
     /*
      * Writes out double type data files.
      */
-    void writeOutDouble(std::string buffer, std::string file, double *data,
-                            int length, int step){
-        FILE *f;
-        sprintf ((char *)buffer.c_str(), "%s_%d", file.c_str(), step);
-        f = fopen (buffer.c_str(),"w");
-        int i;
-        for (i = 0; i < length; i++)
-            fprintf (f, "%.16e\n",data[i]);
-        fclose (f);
+    void writeOutDouble(std::string file, double *data, int length, int step){
+        std::ofstream output;
+        output.open(file + "_" + std::to_string(step));
+        for (int i = 0; i < length; ++i){
+            output << data[i] << '\n';
+        }
+
+        output.close();
     }
 
     /*
      * Writes out bool type data files.
      */
-    void writeOutBool(std::string buffer, std::string file, bool *data,
-                            int length, int step){
-        FILE *f;
-        sprintf ((char *)buffer.c_str(), "%s_%d", file.c_str(), step);
-        f = fopen (buffer.c_str(),"w");
-        int i;
-        for (i = 0; i < length; i++)
-            fprintf (f, "%u\n",data[i]);
-        fclose (f);
+    void writeOutBool(std::string file, bool *data,int length, int step){
+        std::ofstream output;
+        output.open(file + "_" + std::to_string(step));
+        for (int i = 0; i < length; ++i){
+            output << data[i] << '\n';
+        }
+
+        output.close();
     }
 
     /*

@@ -53,28 +53,23 @@ namespace FileIO {
     * @brief	Writes the specified double array to a text file
     * @ingroup	helper
     *
-    * @param	*buffer Char buffer for use by function internals. char[100] usually
     * @param	*file Name of data file name for saving to
     * @param	*data double array to be written out
     * @param	length Overall length of the file to write out
     * @param	step Index for the filename. file_step
     */
-    void writeOutDouble(std::string buffer, std::string file, double *data,
-                        int length, int step);
+    void writeOutDouble(std::string file, double *data, int length, int step);
 
         /**
     * @brief    Writes the specified double array to a text file
     * @ingroup  helper
     *
-    * @param    *buffer Char buffer for use by function internals. char[100] usually
     * @param    *file Name of data file name for saving to
     * @param    *data bool array to be written out
     * @param    length Overall length of the file to write out
     * @param    step Index for the filename. file_step
     */
-    void writeOutBool(std::string buffer, std::string file, bool *data,
-                        int length, int step);
-
+    void writeOutBool(std::string file, bool *data, int length, int step);
 
 	/**
     * @brief	Writes the specified int array to a text file
