@@ -308,7 +308,7 @@ void evolve(Grid &par,
                             if(write_it){
                                 FileIO::writeOutDouble(data_dir+"V_opt_1",
                                                        V_opt, xDim * yDim, 0);
-                                FileIO::writeOut(buffer, data_dir+"EV_opt_1",
+                                FileIO::writeOut(data_dir+"EV_opt_1",
                                                  EV_opt,
                                                  xDim * yDim, 0);
     
@@ -331,8 +331,7 @@ void evolve(Grid &par,
                                                         vortCoordsP->
                                                             getVortices());
                                     if(write_it){
-                    		        FileIO::writeOutInt(buffer,
-                                                            data_dir + "vLoc_",
+                    		        FileIO::writeOutInt(data_dir + "vLoc_",
                                                             vortexLocation,
                                                             xDim * yDim, i);
                                     }
@@ -485,7 +484,7 @@ void evolve(Grid &par,
 
             //std::cout << "writing" << '\n';
             if (write_it) {
-                FileIO::writeOut(buffer, data_dir + fileName,
+                FileIO::writeOut(data_dir + fileName,
                                  wfc_array, xDim*yDim*zDim, i);
             }
             //std::cout << "written" << '\n';

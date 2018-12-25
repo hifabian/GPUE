@@ -286,15 +286,15 @@ int init(Grid &par){
         FileIO::writeOutDouble(data_dir + "x",x,xDim,0);
         FileIO::writeOutDouble(data_dir + "y",y,yDim,0);
         FileIO::writeOutDouble(data_dir + "z",z,zDim,0);
-        FileIO::writeOut(buffer, data_dir + "WFC",wfc_array,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "EpAz",EpAz,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "EpAy",EpAy,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "EpAx",EpAx,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "GK",GK,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "GV",GV,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "GpAx",GpAx,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "GpAy",GpAy,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "GpAz",GpAz,gSize,0);
+        FileIO::writeOut(data_dir + "WFC",wfc_array,gSize,0);
+        FileIO::writeOut(data_dir + "EpAz",EpAz,gSize,0);
+        FileIO::writeOut(data_dir + "EpAy",EpAy,gSize,0);
+        FileIO::writeOut(data_dir + "EpAx",EpAx,gSize,0);
+        FileIO::writeOut(data_dir + "GK",GK,gSize,0);
+        FileIO::writeOut(data_dir + "GV",GV,gSize,0);
+        FileIO::writeOut(data_dir + "GpAx",GpAx,gSize,0);
+        FileIO::writeOut(data_dir + "GpAy",GpAy,gSize,0);
+        FileIO::writeOut(data_dir + "GpAz",GpAz,gSize,0);
     }
 
     if (par.bval("read_wfc") == false){

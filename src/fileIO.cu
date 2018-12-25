@@ -42,21 +42,21 @@ namespace FileIO{
     /*
      * Writes out double2 complex data files.
      */
-    void writeOut(std::string buffer, std::string file, double2 *data,
-                      int length, int step){
-        FILE *f;
-        sprintf ((char *)buffer.c_str(), "%s_%d", file.c_str(), step);
-        f = fopen (buffer.c_str(),"w");
-        int i;
-        for (i = 0; i < length; i++)
-            fprintf (f, "%.16e\n",data[i].x);
-        fclose (f);
+    void writeOut(std::string file, double2 *data, int length, int step){
+        std::ofstream output;
+        output.open(file + "_" + std::to_string(step));
+        for (int i = 0; i < length; ++i){
+            output << data[i].x << '\n';
+        }
 
-        sprintf ((char *)buffer.c_str(), "%si_%d", file.c_str(), step);
-        f = fopen (buffer.c_str(),"w");
-        for (i = 0; i < length; i++)
-            fprintf (f, "%.16e\n",data[i].y);
-        fclose (f);
+        output.close();
+
+        output.open(file + "i_" + std::to_string(step));
+        for (int i = 0; i < length; ++i){
+            output << data[i].y << '\n';
+        }
+
+        output.close();
 
     }
 
@@ -89,29 +89,27 @@ namespace FileIO{
     /*
      * Writes out int type data files.
      */
-    void writeOutInt(std::string buffer, std::string file, int *data,
-                         int length, int step){
-        FILE *f;
-        sprintf ((char *)buffer.c_str(), "%s_%d", file.c_str(), step);
-        f = fopen (buffer.c_str(),"w");
-        int i;
-        for (i = 0; i < length; i++)
-            fprintf (f, "%d\n",data[i]);
-        fclose (f);
+    void writeOutInt(std::string file, int *data, int length, int step){
+        std::ofstream output;
+        output.open(file + "_" + std::to_string(step));
+        for (int i = 0; i < length; ++i){
+            output << data[i] << '\n';
+        }
+
+        output.close();
     }
 
     /*
      * Writes out int2 data type.
      */
-    void writeOutInt2(std::string buffer, std::string file, int2 *data,
-                          int length, int step){
-        FILE *f;
-        sprintf ((char *)buffer.c_str(), "%s_%d", file.c_str(), step);
-        f = fopen (buffer.c_str(),"w");
-        int i;
-        for (i = 0; i < length; i++)
-            fprintf (f, "%d,%d\n",data[i].x,data[i].y);
-        fclose (f);
+    void writeOutInt2(std::string file, int2 *data, int length, int step){
+        std::ofstream output;
+        output.open(file + "_" + std::to_string(step));
+        for (int i = 0; i < length; ++i){
+            output << data[i].x << "," << data[i].y  << '\n';
+        }
+
+        output.close();
     }
 
     /*
