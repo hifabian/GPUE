@@ -115,19 +115,21 @@ namespace FileIO{
     /*
      * Writes out tracked vortex data.
      */
-    void writeOutVortex(std::string buffer, std::string file,
-                            std::vector<std::shared_ptr<Vtx::Vortex>> &data, int step){
-        FILE *f;
-        sprintf ((char *)buffer.c_str(), "%s_%d", file.c_str(), step);
+    void writeOutVortex(std::string file,
+                        std::vector<std::shared_ptr<Vtx::Vortex>> &data,
+                        int step){
+        std::ofstream output;
+        output.open(file + "_" + std::to_string(step));
+        for (int i = 0; i < data.size(); ++i){
+            output << data[i]->getCoords().x << "," 
+                   << data[i]->getCoordsD().x << ","
+                   << data[i]->getCoords().y << ","
+                   << data[i]->getCoordsD().y << ","
+                   << data[i]->getWinding() << '\n';
+        }
 
-        f = fopen (buffer.c_str(),"w");
-        int i;
+        output.close();
 
-        fprintf (f, "#UID,X,Xd,Y,Yd,WINDING,isOn\n");
-        for (i = 0; i < data.size(); i++)
-            //fprintf (f, "%d,%d,%e,%d,%e,%d\n",data[i]->getUID(),data[i]->getCoords().x,data[i]->getCoordsD().x,data[i]->getCoords().y,data[i]->getCoordsD().y,data[i]->getWinding());
-            fprintf (f, "%d,%e,%d,%e,%d\n",data[i]->getCoords().x,data[i]->getCoordsD().x,data[i]->getCoords().y,data[i]->getCoordsD().y,data[i]->getWinding());
-        fclose (f);
     }
 
     /*
@@ -143,62 +145,62 @@ namespace FileIO{
     /*
      * Outputs the adjacency matrix to a file
      */
-    void writeOutAdjMat(std::string buffer, std::string file, int *mat, unsigned int *uids, int dim, int step){
-        FILE *f;
-        sprintf ((char *)buffer.c_str(), "%s_%d", file.c_str(), step);
-        f = fopen (buffer.c_str(),"w");
-        fprintf (f, "(*");
-        for(int ii = 0; ii<dim; ++ii){
-            fprintf (f, "%d",uids[ii]);
+    void writeOutAdjMat(std::string file, int *mat, unsigned int *uids,
+                        int dim, int step){
+        std::ofstream output;
+        output.open(file + "_" + std::to_string(step));
+        output << "(*";
+        for (int i = 0; i < dim; ++i){
+            output << uids[i] << ",";
         }
-        fprintf (f, "*)\n");
-        fprintf (f, "{\n");
-        for(int ii = 0; ii < dim; ++ii){
-            fprintf (f, "{");
-            for(int jj = 0; jj < dim; ++jj){
-                fprintf (f, "%i",mat[ii*dim + jj]);
-                if(jj<dim-1)
-                    fprintf (f, ",");
-                else
-                    fprintf (f, "}");
-            }
-            if(ii<dim-1)
-                fprintf (f, ",");
-            fprintf (f, "\n");
-        }
-        fprintf (f, "}\n");
-        fclose(f);
-    }
-    void writeOutAdjMat(std::string buffer, std::string file, double *mat,
-                        unsigned int *uids, int dim, int step){
-        FILE *f;
-        sprintf ((char *)buffer.c_str(), "%s_%d", file.c_str(), step);
-        f = fopen (buffer.c_str(),"w");
-        fprintf (f, "(*");
-        for(int ii = 0; ii<dim; ++ii){
-            fprintf (f, "%d",uids[ii]);
-            if(ii!=dim-1)
-               /* I am not sure what Lee wants here, but I think...
-                           fprintf (f, ",",uids[ii]); */
-                           fprintf (f, ",");
 
-        }
-        fprintf (f, "*)\n");
-        fprintf (f, "{\n");
-        for(int ii = 0; ii < dim; ++ii){
-            fprintf (f, "{");
-            for(int jj = 0; jj < dim; ++jj){
-                fprintf (f, "%e",mat[ii*dim + jj]);
-                if(jj<dim-1)
-                    fprintf (f, ",");
+        output << "*)\n";
+        output << "{\n";
+
+        for(int i = 0; i < dim; ++i){
+            output << "{";
+            for(int j = 0; j < dim; ++j){
+                output << mat[i*dim + j];
+                if(j<dim-1)
+                    output << ",";
                 else
-                    fprintf (f, "}");
+                    output << "}";
             }
-            if(ii<dim-1)
-                fprintf (f, ",");
-            fprintf (f, "\n");
+            if(i<dim-1)
+                output << ",";
+            output << "\n";
         }
-        fprintf (f, "}\n");
-        fclose(f);
+        output << "}\n";
+
+        output.close();
+    }
+    void writeOutAdjMat(std::string file, double *mat, unsigned int *uids,
+                        int dim, int step){
+        std::ofstream output;
+        output.open(file + "_" + std::to_string(step));
+        output << "(*";
+        for (int i = 0; i < dim; ++i){
+            output << uids[i] << ",";
+        }
+
+        output << "*)\n";
+        output << "{\n";
+
+        for(int i = 0; i < dim; ++i){
+            output << "{";
+            for(int j = 0; j < dim; ++j){
+                output << mat[i*dim + j];
+                if(j<dim-1)
+                    output << ",";
+                else
+                    output << "}";
+            }
+            if(i<dim-1)
+                output << ",";
+            output << "\n";
+        }
+        output << "}\n";
+
+        output.close();
     }
 }

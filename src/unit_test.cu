@@ -1166,7 +1166,6 @@ void evolve_test(){
 
 
     double thresh = 0.01;
-    std::string buffer;
     int gsteps = 30001;
     int esteps = 30001;
 
@@ -1208,7 +1207,7 @@ void evolve_test(){
         set_variables(par, 0);
 
         // Evolve and find the energy
-        evolve(par, gsteps, 0, buffer);
+        evolve(par, gsteps, 0);
 
         // Check that the energy is correct
         double energy = par.dval("energy");
@@ -1223,7 +1222,7 @@ void evolve_test(){
 
         // Run in real time to make sure that the energy is constant
         set_variables(par, 1);
-        evolve(par, esteps, 1, buffer);
+        evolve(par, esteps, 1);
         double energy_ev = par.dval("energy");
 
         if (abs(energy - energy_ev) > thresh*energy_check){

@@ -53,7 +53,6 @@
  */
 void evolve(Grid &par,
             int numSteps,
-            unsigned int gstate,
-            std::string buffer);
+            unsigned int gstate);
 
 #endif

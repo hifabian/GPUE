@@ -578,7 +578,6 @@ int main(int argc, char **argv){
     int dimnum = par.ival("dimnum");
     cudaSetDevice(device);
 
-    std::string buffer;
     time_t start,fin;
     time(&start);
     printf("Start: %s\n", ctime(&start));
@@ -608,7 +607,7 @@ int main(int argc, char **argv){
         par.store("wfc_array",wfc_array);
         printf("Wavefunction loaded.\n");
         //std::string data_dir = par.sval("data_dir");
-        //FileIO::writeOut(buffer, data_dir + "WFC_CHECK",wfc_array,gSize,0);
+        //FileIO::writeOut(data_dir + "WFC_CHECK",wfc_array,gSize,0);
     }
 
     init(par);
@@ -626,13 +625,13 @@ int main(int argc, char **argv){
         std::cout << "Imaginary-time evolution started..." << '\n';
         set_variables(par, 0);
 
-        evolve(par, gsteps, 0, buffer);
+        evolve(par, gsteps, 0);
     }
 
     if(esteps > 0){
         std::cout << "real-time evolution started..." << '\n';
         set_variables(par, 1);
-        evolve(par, esteps, 1, buffer);
+        evolve(par, esteps, 1);
     }
 
     std::cout << "done evolving" << '\n';

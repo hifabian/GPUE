@@ -97,13 +97,13 @@ namespace FileIO {
     * @brief	Writes the specified Vtx::Vortex array to a text file
     * @ingroup	helper
     *
-    * @param	*buffer Char buffer for use by function internals. char[100] usually
     * @param	*file Name of data file name for saving to
     * @param	*data Vtx::Vortex array to be written out
     * @param	step Index for the filename. file_step
     */
-    void writeOutVortex(std::string buffer, std::string file,
-                        std::vector<std::shared_ptr<Vtx::Vortex>> &data, int step);
+    void writeOutVortex(std::string file,
+                        std::vector<std::shared_ptr<Vtx::Vortex>> &data,
+                        int step);
 
 	/**
     * @brief	Writes the parameter file
@@ -125,14 +125,14 @@ namespace FileIO {
     * @brief	Write adjacency matrix of ints to a file in Mathematica readable format
     * @ingroup	graph
     *
-    * @param	*buffer Char buffer for use by function internals. char[100] usually
     * @param	*file Name of data file name for saving to
 	* @param	*mat Int Array holding the parameter values to be written out
 	* @param	*uids UID array
 	* @param	dim Dimension/length of the grid (xDim*yDim)
 	* @param	step Index for the filename.
     */
-    void writeOutAdjMat(std::string buffer, std::string file, int *mat, unsigned int *uids, int dim, int step);
+    void writeOutAdjMat(std::string file, int *mat, unsigned int *uids,
+                        int dim, int step);
 
 	/**
     * @brief	Write adjacency matrix of doubles to a file in Mathematica readable format
@@ -145,7 +145,7 @@ namespace FileIO {
 	* @param	dim Dimension/length of the grid (xDim*yDim)
 	* @param	step Index for the filename.
     */
-    void writeOutAdjMat(std::string buffer, std::string file, double *mat,
-                        unsigned int *uids, int dim, int step);
+    void writeOutAdjMat(std::string file, double *mat, unsigned int *uids,
+                        int dim, int step);
 }
 #endif

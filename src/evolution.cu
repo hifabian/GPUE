@@ -3,8 +3,7 @@
 
 void evolve(Grid &par,
             int numSteps,
-            unsigned int gstate,
-            std::string buffer){
+            unsigned int gstate){
 
     // Re-establishing variables from parsed Grid class
     std::string data_dir = par.sval("data_dir");
@@ -437,22 +436,21 @@ void evolve(Grid &par,
                                                        sizeof(double));
                             lattice.genAdjMat(adjMat);
                             if (write_it){
-                                FileIO::writeOutAdjMat(buffer, data_dir+"graph",
+                                FileIO::writeOutAdjMat(data_dir+"graph",
                                     adjMat, uids,
                                     lattice.getVortices().size(), i);
-                           }
+                            }
     
                             //Free and clear all memory blocks
                             free(adjMat);
                             free(uids);
                             lattice.getVortices().clear();
                             lattice.getEdges().clear();
-                            //exit(0);
                         }
 
                         //Write out the vortex locations
                         if(write_it){
-                            FileIO::writeOutVortex(buffer, data_dir+"vort_arr",
+                            FileIO::writeOutVortex(data_dir+"vort_arr",
                                                    vortCoords->getVortices(),i);
                         }
                         printf("Located %d vortices\n", 
