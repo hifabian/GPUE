@@ -98,8 +98,10 @@ class Grid{
         std::unordered_map<std::string, int> param_int;
         std::unordered_map<std::string, double> param_double;
         std::unordered_map<std::string, double*> param_dstar;
+        std::unordered_map<std::string, std::vector<double*>> param_dsvec;
         std::unordered_map<std::string, bool> param_bool;
         std::unordered_map<std::string, cufftDoubleComplex*> sobel;
+        std::unordered_map<std::string, std::vector<double2*>> param_d2svec;
         std::unordered_map<std::string, std::string> param_string;
         std::unordered_map<std::string, EqnNode_gpu*> param_ast;
         std::unordered_map<std::string, EqnNode> param_ast_cpu;
@@ -144,6 +146,12 @@ class Grid{
         // Function to store asts into data_dir
         void store(std::string id, EqnNode astparam);
 
+        // Function to store std::vector<double *> values
+        void store(std::string id, std::vector<double *> dvec);
+
+        // Function to store std::vector<double2 *> values
+        void store(std::string id, std::vector<double2 *> d2vec);
+
         // Function to retrieve integer value from param_int
         int ival(std::string id);
 
@@ -153,6 +161,9 @@ class Grid{
         // Function to retrieve double star values from param_dstar
         double *dsval(std::string id);
 
+        // Function to retrieve double star values from param_dstar
+        std::vector<double *> dsvecval(std::string id);
+
         // Function to retrieve bool from param_bool
         bool bval(std::string id);
 
@@ -161,6 +172,9 @@ class Grid{
 
         // Function to call back the sobel operators
         cufftDoubleComplex *cufftDoubleComplexval(std::string id);
+
+        // Function to retrieve double star values from param_dstar
+        std::vector<double2 *> d2svecval(std::string id);
 
         // Function to call back ast
         EqnNode_gpu *astval(std::string id);

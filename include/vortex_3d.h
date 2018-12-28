@@ -29,6 +29,6 @@ void transfer_sobel(Grid &par);
 
 // We need a central kernel with just inputs and outputs
 void find_edges(Grid &par,
-                double2* wfc, double* edges);
+                double2* wfc, std::vector<double*> edges);
 
 #endif

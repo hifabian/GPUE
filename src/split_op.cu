@@ -238,8 +238,8 @@ void optLatSetup(std::shared_ptr<Vtx::Vortex> centre, const double* V,
 }
 
 double energy_calc(Grid &par, double2* wfc){
-    double* K = par.dsval("K_gpu");
-    double* V = par.dsval("V_gpu");
+    std::vector<double*> K = par.dsvecval("K_gpu");
+    std::vector<double*> V = par.dsvecval("V_gpu");
 
     dim3 grid = par.grid;
     dim3 threads = par.threads;
@@ -286,7 +286,7 @@ double energy_calc(Grid &par, double2* wfc){
     cufftExecZ2Z(plan, wfc, wfc_k, CUFFT_FORWARD);
     scalarMult<<<grid, threads>>>(wfc_k, renorm_factor, wfc_k);
 
-    vecMult<<<grid, threads>>>(wfc_k, K, energy_k);
+    vecMult<<<grid, threads>>>(wfc_k, K[0], energy_k);
 
     cufftExecZ2Z(plan, energy_k, energy_k, CUFFT_INVERSE);
     scalarMult<<<grid, threads>>>(energy_k, renorm_factor, energy_k);
@@ -294,7 +294,7 @@ double energy_calc(Grid &par, double2* wfc){
     cMult<<<grid, threads>>>(wfc_c, energy_k, energy_k);
 
     // Position-space energy
-    vecMult<<<grid, threads>>>(wfc, V, energy_r);
+    vecMult<<<grid, threads>>>(wfc, V[0], energy_r);
     cMult<<<grid, threads>>>(wfc_c, energy_r, energy_r);
 
     complexAbsSum<<<grid, threads>>>(energy_r, energy_k, energy);

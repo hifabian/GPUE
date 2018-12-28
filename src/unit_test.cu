@@ -1185,6 +1185,7 @@ void evolve_test(){
     par.store("xDim", 64);
     par.store("yDim", 1);
     par.store("zDim", 1);
+    par.store("wfc_num", 1);
 
 
 
