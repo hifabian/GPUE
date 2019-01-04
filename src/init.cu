@@ -69,7 +69,9 @@ int init(Grid &par){
     double *Energy_gpu;
     std::vector<cufftDoubleComplex *> wfc_array(wfc_num);
     if (par.bval("read_wfc") == true){
-        wfc_array[0] = par.cufftDoubleComplexval("wfc_array");
+        for (int i = 0; i < wfc_array.size(); ++i){
+            wfc_array[i] = par.cufftDoubleComplexval("wfc_array");
+        }
     }
     std::vector<cufftDoubleComplex *> EV_opt(wfc_num);
     cufftDoubleComplex *wfc_backup;
@@ -172,9 +174,11 @@ int init(Grid &par){
        imaginary and real-time evolution operators . */
     Energy = (double*) malloc(sizeof(double) * gSize);
     r = (double *) malloc(sizeof(double) * gSize);
-    V_opt[0] = (double *) malloc(sizeof(double) * gSize);
-    EV_opt[0] = (cufftDoubleComplex *)
-             malloc(sizeof(cufftDoubleComplex) * gSize);
+    for (int i = 0; i < wfc_array.size(); ++i){
+        V_opt[i] = (double *) malloc(sizeof(double) * gSize);
+        EV_opt[i] = (cufftDoubleComplex *)
+                 malloc(sizeof(cufftDoubleComplex) * gSize);
+    }
     EappliedField = (cufftDoubleComplex *) 
                     malloc(sizeof(cufftDoubleComplex) * gSize);
 
@@ -227,10 +231,11 @@ int init(Grid &par){
     wfc_array = par.d2svecval("wfc_array");
 
 
-    int index = 0;
-    for(int i=0; i < gSize; i++ ){
-        sum+=sqrt(wfc_array[0][i].x*wfc_array[0][i].x
-                  +wfc_array[0][i].y*wfc_array[0][i].y);
+    for(int i=0; i < wfc_array.size(); i++ ){
+        for (int j = 0; j < gSize; ++j){
+            sum+=sqrt(wfc_array[i][j].x*wfc_array[i][j].x
+                      +wfc_array[i][j].y*wfc_array[i][j].y);
+        }
     }
 
     if (write_file){
@@ -238,14 +243,18 @@ int init(Grid &par){
         std::vector<double *> Bx(wfc_num);
         std::vector<double *> By(wfc_num);
         if (dimnum == 2){
-            Bz[0] = curl2d(par, Ax[0], Ay[0]);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                Bz[i] = curl2d(par, Ax[i], Ay[i]);
+            }
         }
         if (dimnum == 3){
             std::cout << "Calculating the 3d curl..." << '\n';
-                    Bx[0] = curl3d_x(par, Ax[0], Ay[0], Az[0]);
-                    By[0] = curl3d_y(par, Ax[0], Ay[0], Az[0]);
-                    Bz[0] = curl3d_z(par, Ax[0], Ay[0], Az[0]);
-                    std::cout << "Finished calculating Curl" << '\n';
+            for (int i = 0; i < wfc_array.size(); ++i){
+                Bx[i] = curl3d_x(par, Ax[i], Ay[i], Az[i]);
+                By[i] = curl3d_y(par, Ax[i], Ay[i], Az[i]);
+                Bz[i] = curl3d_z(par, Ax[i], Ay[i], Az[i]);
+            }
+            std::cout << "Finished calculating Curl" << '\n';
         }
         std::cout << "writing initial variables to file..." << '\n';
         //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
@@ -253,59 +262,92 @@ int init(Grid &par){
         //hdfWriteComplex(xDim, wfc, 0, "wfc_0");
         if (cyl_coord && dimnum > 2){
             std::vector<double *> Br(wfc_num);
-            Br[0] = curl3d_r(par, Bx[0], By[0]);
             std::vector<double *> Bphi(wfc_num);
-            Bphi[0] = curl3d_phi(par, Bx[0], By[0]);
 
-            FileIO::writeOutDouble(data_dir + "Br",Br[0],gSize,0);
-            FileIO::writeOutDouble(data_dir + "Bphi",Bphi[0],gSize,0);
-            FileIO::writeOutDouble(data_dir + "Bz",Bz[0],gSize,0);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                Br[i] = curl3d_r(par, Bx[i], By[i]);
+                Bphi[i] = curl3d_phi(par, Bx[i], By[i]);
 
-            free(Br[0]);
-            free(Bx[0]);
-            free(By[0]);
-            free(Bz[0]);
-            free(Bphi[0]);
+                FileIO::writeOutDouble(data_dir + "Br_" + std::to_string(i),
+                                       Br[i],gSize,0);
+                FileIO::writeOutDouble(data_dir + "Bphi_" + std::to_string(i),
+                                       Bphi[i],gSize,0);
+                FileIO::writeOutDouble(data_dir + "Bz_" + std::to_string(i),
+                                       Bz[i],gSize,0);
+
+                free(Br[i]);
+                free(Bx[i]);
+                free(By[i]);
+                free(Bz[i]);
+                free(Bphi[i]);
+            }
         }
         else{
             if (dimnum > 1){
-                FileIO::writeOutDouble(data_dir + "Bz",Bz[0],gSize,0);
-                free(Bz[0]);
+                for (int i = 0; i < wfc_array.size(); ++i){
+                    FileIO::writeOutDouble(data_dir + "Bz_" + std::to_string(i),
+                                           Bz[i],gSize,0);
+                    free(Bz[i]);
+                }
             }
             if (dimnum > 2){
-                FileIO::writeOutDouble(data_dir + "Bx",Bx[0],gSize,0);
-                FileIO::writeOutDouble(data_dir + "By",By[0],gSize,0);
-                free(Bx[0]);
-                free(By[0]);
+                for (int i = 0; i < wfc_array.size(); ++i){
+                    FileIO::writeOutDouble(data_dir + "Bx_"+std::to_string(i),
+                                           Bx[i],gSize,0);
+                    FileIO::writeOutDouble(data_dir + "By_"+std::to_string(i),
+                                           By[i],gSize,0);
+                    free(Bx[i]);
+                    free(By[i]);
+                }
             }
         }
 
-        FileIO::writeOutDouble(data_dir + "V",V[0],gSize,0);
-        FileIO::writeOutDouble(data_dir + "K",K[0],gSize,0);
-        FileIO::writeOutDouble(data_dir + "pAy",pAy[0],gSize,0);
-        FileIO::writeOutDouble(data_dir + "pAx",pAx[0],gSize,0);
-        FileIO::writeOutDouble(data_dir + "Ax",Ax[0],gSize,0);
-        FileIO::writeOutDouble(data_dir + "Ay",Ay[0],gSize,0);
-        FileIO::writeOutDouble(data_dir + "Az",Az[0],gSize,0);
-        FileIO::writeOutDouble(data_dir + "x",x,xDim,0);
-        FileIO::writeOutDouble(data_dir + "y",y,yDim,0);
-        FileIO::writeOutDouble(data_dir + "z",z,zDim,0);
-        FileIO::writeOut(data_dir + "WFC",wfc_array[0],gSize,0);
-        FileIO::writeOut(data_dir + "EpAz",EpAz[0],gSize,0);
-        FileIO::writeOut(data_dir + "EpAy",EpAy[0],gSize,0);
-        FileIO::writeOut(data_dir + "EpAx",EpAx[0],gSize,0);
-        FileIO::writeOut(data_dir + "GK",GK[0],gSize,0);
-        FileIO::writeOut(data_dir + "GV",GV[0],gSize,0);
-        FileIO::writeOut(data_dir + "GpAx",GpAx[0],gSize,0);
-        FileIO::writeOut(data_dir + "GpAy",GpAy[0],gSize,0);
-        FileIO::writeOut(data_dir + "GpAz",GpAz[0],gSize,0);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            FileIO::writeOutDouble(data_dir + "V_"+std::to_string(i),
+                                   V[i],gSize,0);
+            FileIO::writeOutDouble(data_dir + "K_"+std::to_string(i),
+                                   K[i],gSize,0);
+            FileIO::writeOutDouble(data_dir+"pAy_"+std::to_string(i),
+                                   pAy[i],gSize,0);
+            FileIO::writeOutDouble(data_dir+"pAx_"+std::to_string(i),
+                                   pAx[i],gSize,0);
+            FileIO::writeOutDouble(data_dir + "Ax_"+std::to_string(i),
+                                   Ax[i],gSize,0);
+            FileIO::writeOutDouble(data_dir + "Ay_"+std::to_string(i),
+                                   Ay[i],gSize,0);
+            FileIO::writeOutDouble(data_dir + "Az_"+std::to_string(i),
+                                   Az[i],gSize,0);
+            FileIO::writeOutDouble(data_dir + "x",x,xDim,0);
+            FileIO::writeOutDouble(data_dir + "y",y,yDim,0);
+            FileIO::writeOutDouble(data_dir + "z",z,zDim,0);
+            FileIO::writeOut(data_dir+"WFC_"+std::to_string(i),
+                             wfc_array[i],gSize,0);
+            FileIO::writeOut(data_dir + "EpAz_"+std::to_string(i),
+                             EpAz[i],gSize,0);
+            FileIO::writeOut(data_dir + "EpAy_"+std::to_string(i),
+                             EpAy[i],gSize,0);
+            FileIO::writeOut(data_dir + "EpAx_"+std::to_string(i),
+                             EpAx[i],gSize,0);
+            FileIO::writeOut(data_dir + "GK_"+std::to_string(i),
+                             GK[i],gSize,0);
+            FileIO::writeOut(data_dir + "GV_"+std::to_string(i),
+                             GV[i],gSize,0);
+            FileIO::writeOut(data_dir + "GpAx_"+std::to_string(i),
+                             GpAx[i],gSize,0);
+            FileIO::writeOut(data_dir + "GpAy_"+std::to_string(i),
+                             GpAy[i],gSize,0);
+            FileIO::writeOut(data_dir + "GpAz_"+std::to_string(i),
+                             GpAz[i],gSize,0);
+        }
     }
 
     if (par.bval("read_wfc") == false){
         sum=sqrt(sum*dx*dy*dz);
-        for (int i = 0; i < gSize; i++){
-            wfc_array[0][i].x = (wfc_array[0][i].x)/(sum);
-            wfc_array[0][i].y = (wfc_array[0][i].y)/(sum);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            for (int j = 0; j < gSize; j++){
+                wfc_array[i][j].x = (wfc_array[i][j].x)/(sum);
+                wfc_array[i][j].y = (wfc_array[i][j].y)/(sum);
+            }
         }
     }
 
@@ -407,19 +449,29 @@ void set_variables(Grid &par, bool ev_type){
         gsize *= zDim;
     }
     if(!par.bval("V_time")){
-        cudaMalloc((void**) &V_gpu[0], sizeof(double2)*gsize*wfc_num);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            cudaMalloc((void**) &V_gpu[i], sizeof(double2)*gsize*wfc_num);
+        }
     }
     if(!par.bval("K_time")){
-        cudaMalloc((void**) &K_gpu[0], sizeof(double2)*gsize*wfc_num);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            cudaMalloc((void**) &K_gpu[i], sizeof(double2)*gsize*wfc_num);
+        }
     }
     if(!par.bval("Ax_time")){
-        cudaMalloc((void**) &pAx_gpu[0], sizeof(double2)*gsize*wfc_num);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            cudaMalloc((void**) &pAx_gpu[i], sizeof(double2)*gsize*wfc_num);
+        }
     }
     if(!par.bval("Ay_time") && dimnum > 1){
-        cudaMalloc((void**) &pAy_gpu[0], sizeof(double2)*gsize*wfc_num);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            cudaMalloc((void**) &pAy_gpu[i], sizeof(double2)*gsize*wfc_num);
+        }
     }
     if(!par.bval("Az_time") && dimnum > 2){
-        cudaMalloc((void**) &pAz_gpu[0], sizeof(double2)*gsize*wfc_num);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            cudaMalloc((void**) &pAz_gpu[i], sizeof(double2)*gsize*wfc_num);
+        }
     }
 
     if (ev_type == 0){
@@ -430,36 +482,49 @@ void set_variables(Grid &par, bool ev_type){
         std::vector<double2 *> GpAz(wfc_num);
 
         if(!par.bval("K_time")){
-            err=cudaMemcpy(K_gpu[0], GK[0], sizeof(cufftDoubleComplex)*gsize,
-                           cudaMemcpyHostToDevice);
-            if(err!=cudaSuccess){
-                std::cout << "ERROR: Could not copy K_gpu to device" << '\n';
-                exit(1);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                err=cudaMemcpy(K_gpu[i], GK[i],
+                               sizeof(cufftDoubleComplex)*gsize,
+                               cudaMemcpyHostToDevice);
+                if(err!=cudaSuccess){
+                    std::cout << "ERROR: Could not copy K_gpu to device"
+                              << '\n';
+                    exit(1);
+                }
             }
         }
         if(!par.bval("V_time")){
-            err=cudaMemcpy(V_gpu[0], GV[0], sizeof(cufftDoubleComplex)*gsize,
-                           cudaMemcpyHostToDevice);
-            if(err!=cudaSuccess){
-                std::cout << "ERROR: Could not copy V_gpu to device" << '\n';
-                exit(1);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                err=cudaMemcpy(V_gpu[i], GV[i],
+                               sizeof(cufftDoubleComplex)*gsize,
+                               cudaMemcpyHostToDevice);
+                if(err!=cudaSuccess){
+                    std::cout << "ERROR: Could not copy V_gpu to device"
+                              << '\n';
+                    exit(1);
+                }
             }
         }
         if(!par.bval("Ax_time")){
-            err=cudaMemcpy(pAx_gpu[0], GpAx[0],
-                           sizeof(cufftDoubleComplex),
-                           cudaMemcpyHostToDevice);
-            if(err!=cudaSuccess){
-                std::cout << "ERROR: Could not copy pAx_gpu to device" << '\n';
-                exit(1);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                err=cudaMemcpy(pAx_gpu[i], GpAx[i],
+                               sizeof(cufftDoubleComplex),
+                               cudaMemcpyHostToDevice);
+                if(err!=cudaSuccess){
+                    std::cout << "ERROR: Could not copy pAx_gpu to device"
+                              << '\n';
+                    exit(1);
+                }
             }
         }
-        err=cudaMemcpy(wfc_gpu_array[0], wfc_array[0],
-                       sizeof(cufftDoubleComplex)*gsize,
-                       cudaMemcpyHostToDevice);
-        if(err!=cudaSuccess){
-            std::cout << "ERROR: Could not copy wfc_gpu to device" << '\n';
-            exit(1);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            err=cudaMemcpy(wfc_gpu_array[i], wfc_array[i],
+                           sizeof(cufftDoubleComplex)*gsize,
+                           cudaMemcpyHostToDevice);
+            if(err!=cudaSuccess){
+                std::cout << "ERROR: Could not copy wfc_gpu to device" << '\n';
+                exit(1);
+            }
         }
         par.store("K_gpu", K_gpu);
         par.store("V_gpu", V_gpu);
@@ -470,31 +535,40 @@ void set_variables(Grid &par, bool ev_type){
         // Special cases for 3d
         if (dimnum > 1 && !par.bval("Ay_time")){
             GpAy = par.d2svecval("GpAy");
-            err=cudaMemcpy(pAy_gpu[0], GpAy[0],
-                           sizeof(cufftDoubleComplex)*gsize,
-                           cudaMemcpyHostToDevice);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                err=cudaMemcpy(pAy_gpu[i], GpAy[i],
+                               sizeof(cufftDoubleComplex)*gsize,
+                               cudaMemcpyHostToDevice);
 
-            if(err!=cudaSuccess){
-                std::cout << "ERROR: Could not copy pAy_gpu to device" << '\n';
-                exit(1);
+                if(err!=cudaSuccess){
+                    std::cout << "ERROR: Could not copy pAy_gpu to device"
+                              << '\n';
+                    exit(1);
+                }
             }
             par.store("pAy_gpu", pAy_gpu);
 
         }
         if (dimnum > 2 && !par.bval("Az_time")){
             GpAz = par.d2svecval("GpAz");
-            err=cudaMemcpy(pAz_gpu[0], GpAz[0],
-                           sizeof(cufftDoubleComplex)*gsize,
-                           cudaMemcpyHostToDevice);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                err=cudaMemcpy(pAz_gpu[i], GpAz[i],
+                               sizeof(cufftDoubleComplex)*gsize,
+                               cudaMemcpyHostToDevice);
 
-            if(err!=cudaSuccess){
-                std::cout << "ERROR: Could not copy pAz_gpu to device" << '\n';
-                exit(1);
+                if(err!=cudaSuccess){
+                    std::cout << "ERROR: Could not copy pAz_gpu to device"
+                              << '\n';
+                    exit(1);
+                }
             }
             par.store("pAz_gpu", pAz_gpu);
 
         }
-        free(GV[0]); free(GK[0]); free(GpAy[0]); free(GpAx[0]); free(GpAz[0]);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            free(GV[i]); free(GK[i]); free(GpAy[i]);
+            free(GpAx[i]); free(GpAz[i]);
+        }
     }
     else if (ev_type == 1){
 
@@ -504,41 +578,54 @@ void set_variables(Grid &par, bool ev_type){
         std::vector<double2 *> EpAy(wfc_num);
         std::vector<double2 *> EpAz(wfc_num);
         if (!par.bval("K_time")){
-            err=cudaMemcpy(K_gpu[0], EK[0], sizeof(cufftDoubleComplex)*gsize,
-                           cudaMemcpyHostToDevice);
-            if(err!=cudaSuccess){
-                std::cout << "ERROR: Could not copy K_gpu to device" << '\n';
-                exit(1);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                err=cudaMemcpy(K_gpu[i], EK[i],
+                               sizeof(cufftDoubleComplex)*gsize,
+                               cudaMemcpyHostToDevice);
+                if(err!=cudaSuccess){
+                    std::cout << "ERROR: Could not copy K_gpu to device"
+                              << '\n';
+                    exit(1);
+                }
+                par.store("K_gpu", K_gpu);
             }
-            par.store("K_gpu", K_gpu);
         }
         if(!par.bval("Ax_time")){
-            err=cudaMemcpy(pAx_gpu[0], EpAx[0],
-                           sizeof(cufftDoubleComplex)*gsize,
-                           cudaMemcpyHostToDevice);
-            if(err!=cudaSuccess){
-                std::cout << "ERROR: Could not copy pAx_gpu to device" << '\n';
-                std::cout << err << '\n';
-                exit(1);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                err=cudaMemcpy(pAx_gpu[i], EpAx[i],
+                               sizeof(cufftDoubleComplex)*gsize,
+                               cudaMemcpyHostToDevice);
+                if(err!=cudaSuccess){
+                    std::cout << "ERROR: Could not copy pAx_gpu to device"
+                              << '\n';
+                    std::cout << err << '\n';
+                    exit(1);
+                }
+                par.store("pAx_gpu", pAx_gpu);
             }
-            par.store("pAx_gpu", pAx_gpu);
         }
 
         if (!par.bval("V_time")){
-            err=cudaMemcpy(V_gpu[0], EV[0], sizeof(cufftDoubleComplex)*gsize,
+            for (int i = 0; i < wfc_array.size(); ++i){
+                err=cudaMemcpy(V_gpu[i], EV[i],
+                               sizeof(cufftDoubleComplex)*gsize,
+                               cudaMemcpyHostToDevice);
+                if(err!=cudaSuccess){
+                    std::cout << "ERROR: Could not copy V_gpu to device"
+                              << '\n';
+                    exit(1);
+                }
+                par.store("V_gpu", V_gpu);
+            }
+        }
+        for (int i = 0; i < wfc_array.size(); ++i){
+            err=cudaMemcpy(wfc_gpu_array[i], wfc_array[i],
+                           sizeof(cufftDoubleComplex)*gsize,
                            cudaMemcpyHostToDevice);
             if(err!=cudaSuccess){
-                std::cout << "ERROR: Could not copy V_gpu to device" << '\n';
+                std::cout << "ERROR: Could not copy wfc_gpu to device" << '\n';
                 exit(1);
             }
-            par.store("V_gpu", V_gpu);
-        }
-        err=cudaMemcpy(wfc_gpu_array[0], wfc_array[0],
-                       sizeof(cufftDoubleComplex)*gsize,
-                       cudaMemcpyHostToDevice);
-        if(err!=cudaSuccess){
-            std::cout << "ERROR: Could not copy wfc_gpu to device" << '\n';
-            exit(1);
         }
 
         par.store("wfc_gpu_array", wfc_gpu_array);
@@ -546,29 +633,38 @@ void set_variables(Grid &par, bool ev_type){
         // Special variables / instructions for 2/3d case
         if (dimnum > 1 && !par.bval("Ay_time")){
             EpAy = par.d2svecval("EpAy");
-            err=cudaMemcpy(pAy_gpu[0], EpAy[0],
-                           sizeof(cufftDoubleComplex)*gsize,
-                           cudaMemcpyHostToDevice);
-            if(err!=cudaSuccess){
-                std::cout << "ERROR: Could not copy pAy_gpu to device" << '\n';
-                exit(1);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                err=cudaMemcpy(pAy_gpu[i], EpAy[i],
+                               sizeof(cufftDoubleComplex)*gsize,
+                               cudaMemcpyHostToDevice);
+                if(err!=cudaSuccess){
+                    std::cout << "ERROR: Could not copy pAy_gpu to device"
+                              << '\n';
+                    exit(1);
+                }
+                par.store("pAy_gpu", pAy_gpu);
             }
-            par.store("pAy_gpu", pAy_gpu);
         }
 
         if (dimnum > 2 && !par.bval("Az_time")){
             EpAz = par.d2svecval("EpAz");
-            err=cudaMemcpy(pAz_gpu[0], EpAz[0],
-                           sizeof(cufftDoubleComplex)*gsize,
-                           cudaMemcpyHostToDevice);
-            if(err!=cudaSuccess){
-                std::cout << "ERROR: Could not copy pAz_gpu to device" << '\n';
-                exit(1);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                err=cudaMemcpy(pAz_gpu[i], EpAz[i],
+                               sizeof(cufftDoubleComplex)*gsize,
+                               cudaMemcpyHostToDevice);
+                if(err!=cudaSuccess){
+                    std::cout << "ERROR: Could not copy pAz_gpu to device"
+                              << '\n';
+                    exit(1);
+                }
+                par.store("pAz_gpu", pAz_gpu);
             }
-            par.store("pAz_gpu", pAz_gpu);
         }
 
-        free(EV[0]); free(EK[0]); free(EpAy[0]); free(EpAx[0]); free(EpAz[0]);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            free(EV[i]); free(EK[i]); free(EpAy[i]);
+            free(EpAx[i]); free(EpAz[i]);
+        }
     }
 
 }
