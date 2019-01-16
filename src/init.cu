@@ -43,6 +43,7 @@ int init(Grid &par){
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
     int wfc_num = par.ival("wfc_num");
+    int step_offset = par.ival("step_offset");
     bool write_file = par.bval("write_file");
     bool cyl_coord = par.bval("cyl_coord");
     bool corotating = par.bval("corotating");
@@ -269,11 +270,11 @@ int init(Grid &par){
                 Bphi[i] = curl3d_phi(par, Bx[i], By[i]);
 
                 FileIO::writeOutDouble(data_dir + "Br_" + std::to_string(i),
-                                       Br[i],gSize,0);
+                                       Br[i],gSize,step_offset);
                 FileIO::writeOutDouble(data_dir + "Bphi_" + std::to_string(i),
-                                       Bphi[i],gSize,0);
+                                       Bphi[i],gSize,step_offset);
                 FileIO::writeOutDouble(data_dir + "Bz_" + std::to_string(i),
-                                       Bz[i],gSize,0);
+                                       Bz[i],gSize,step_offset);
 
                 free(Br[i]);
                 free(Bx[i]);
@@ -286,16 +287,16 @@ int init(Grid &par){
             if (dimnum > 1){
                 for (int i = 0; i < wfc_array.size(); ++i){
                     FileIO::writeOutDouble(data_dir + "Bz_" + std::to_string(i),
-                                           Bz[i],gSize,0);
+                                           Bz[i],gSize,step_offset);
                     free(Bz[i]);
                 }
             }
             if (dimnum > 2){
                 for (int i = 0; i < wfc_array.size(); ++i){
                     FileIO::writeOutDouble(data_dir + "Bx_"+std::to_string(i),
-                                           Bx[i],gSize,0);
+                                           Bx[i],gSize,step_offset);
                     FileIO::writeOutDouble(data_dir + "By_"+std::to_string(i),
-                                           By[i],gSize,0);
+                                           By[i],gSize,step_offset);
                     free(Bx[i]);
                     free(By[i]);
                 }
@@ -304,40 +305,40 @@ int init(Grid &par){
 
         for (int i = 0; i < wfc_array.size(); ++i){
             FileIO::writeOutDouble(data_dir + "V_"+std::to_string(i),
-                                   V[i],gSize,0);
+                                   V[i],gSize,step_offset);
             FileIO::writeOutDouble(data_dir + "K_"+std::to_string(i),
-                                   K[i],gSize,0);
+                                   K[i],gSize,step_offset);
             FileIO::writeOutDouble(data_dir+"pAy_"+std::to_string(i),
-                                   pAy[i],gSize,0);
+                                   pAy[i],gSize,step_offset);
             FileIO::writeOutDouble(data_dir+"pAx_"+std::to_string(i),
-                                   pAx[i],gSize,0);
+                                   pAx[i],gSize,step_offset);
             FileIO::writeOutDouble(data_dir + "Ax_"+std::to_string(i),
-                                   Ax[i],gSize,0);
+                                   Ax[i],gSize,step_offset);
             FileIO::writeOutDouble(data_dir + "Ay_"+std::to_string(i),
-                                   Ay[i],gSize,0);
+                                   Ay[i],gSize,step_offset);
             FileIO::writeOutDouble(data_dir + "Az_"+std::to_string(i),
-                                   Az[i],gSize,0);
-            FileIO::writeOutDouble(data_dir + "x",x,xDim,0);
-            FileIO::writeOutDouble(data_dir + "y",y,yDim,0);
-            FileIO::writeOutDouble(data_dir + "z",z,zDim,0);
+                                   Az[i],gSize,step_offset);
+            FileIO::writeOutDouble(data_dir + "x",x,xDim,step_offset);
+            FileIO::writeOutDouble(data_dir + "y",y,yDim,step_offset);
+            FileIO::writeOutDouble(data_dir + "z",z,zDim,step_offset);
             FileIO::writeOut(data_dir+"WFC_"+std::to_string(i),
-                             wfc_array[i],gSize,0);
+                             wfc_array[i],gSize,step_offset);
             FileIO::writeOut(data_dir + "EpAz_"+std::to_string(i),
-                             EpAz[i],gSize,0);
+                             EpAz[i],gSize,step_offset);
             FileIO::writeOut(data_dir + "EpAy_"+std::to_string(i),
-                             EpAy[i],gSize,0);
+                             EpAy[i],gSize,step_offset);
             FileIO::writeOut(data_dir + "EpAx_"+std::to_string(i),
-                             EpAx[i],gSize,0);
+                             EpAx[i],gSize,step_offset);
             FileIO::writeOut(data_dir + "GK_"+std::to_string(i),
-                             GK[i],gSize,0);
+                             GK[i],gSize,step_offset);
             FileIO::writeOut(data_dir + "GV_"+std::to_string(i),
-                             GV[i],gSize,0);
+                             GV[i],gSize,step_offset);
             FileIO::writeOut(data_dir + "GpAx_"+std::to_string(i),
-                             GpAx[i],gSize,0);
+                             GpAx[i],gSize,step_offset);
             FileIO::writeOut(data_dir + "GpAy_"+std::to_string(i),
-                             GpAy[i],gSize,0);
+                             GpAy[i],gSize,step_offset);
             FileIO::writeOut(data_dir + "GpAz_"+std::to_string(i),
-                             GpAz[i],gSize,0);
+                             GpAz[i],gSize,step_offset);
         }
     }
 
@@ -707,7 +708,7 @@ int main(int argc, char **argv){
         par.store("wfc_array",wfc_array);
         printf("Wavefunction loaded.\n");
         //std::string data_dir = par.sval("data_dir");
-        //FileIO::writeOut(data_dir + "WFC_CHECK",wfc_array,gSize,0);
+        //FileIO::writeOut(data_dir + "WFC_CHECK",wfc_array,gSize,step_offset);
     }
 
     init(par);

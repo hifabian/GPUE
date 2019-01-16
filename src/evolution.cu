@@ -38,6 +38,7 @@ void evolve(Grid &par,
     bool lz = par.bval("corotating");
     bool ramp = par.bval("ramp");
     int ramp_type = par.ival("ramp_type");
+    int step_offset = par.ival("step_offset");
     int xDim = par.ival("xDim");
     int yDim = 1;
     int zDim = 1;
@@ -225,7 +226,8 @@ void evolve(Grid &par,
                             // Now we need to output everything
                             if (write_it){
                                 FileIO::writeOutDouble(data_dir+"Edges",
-                                                       edges[w], gridSize, i);
+                                                       edges[w], gridSize,
+                                                       i+step_offset);
                             }
                             free(edges[w]);
     
@@ -312,10 +314,10 @@ void evolve(Grid &par,
                                 if(write_it){
                                     FileIO::writeOutDouble(data_dir+"V_opt_1",
                                                            V_opt[w],xDim * yDim,
-                                                           0);
+                                                           step_offset);
                                     FileIO::writeOut(data_dir+"EV_opt_1",
                                                      EV_opt[w],
-                                                     xDim * yDim, 0);
+                                                     xDim * yDim, step_offset);
         
                                     FileIO::writeOutParam(par,
                                                           data_dir
@@ -341,7 +343,8 @@ void evolve(Grid &par,
                     		            FileIO::writeOutInt(data_dir
                                                                 + "vLoc_",
                                                                 vortexLocation,
-                                                                xDim * yDim, i);
+                                                                xDim * yDim,
+                                                                i+step_offset);
                                         }
                                  }
                             }
@@ -455,7 +458,8 @@ void evolve(Grid &par,
                                 if (write_it){
                                     FileIO::writeOutAdjMat(data_dir+"graph",
                                         adjMat, uids,
-                                        lattice.getVortices().size(), i);
+                                        lattice.getVortices().size(),
+                                        i+step_offset);
                                 }
         
                                 //Free and clear all memory blocks
@@ -468,7 +472,7 @@ void evolve(Grid &par,
                             //Write out the vortex locations
                             if(write_it){
                                 FileIO::writeOutVortex(data_dir+"vort_arr",
-                                    vortCoords->getVortices(),i);
+                                    vortCoords->getVortices(),i+step_offset);
                             }
                             printf("Located %d vortices\n", 
                                    vortCoords->getVortices().size());
@@ -500,7 +504,8 @@ void evolve(Grid &par,
                 //std::cout << "writing" << '\n';
                 if (write_it) {
                     FileIO::writeOut(data_dir + fileName,
-                                     wfc_array[w], xDim*yDim*zDim, i);
+                                     wfc_array[w], xDim*yDim*zDim,
+                                     i+step_offset);
                 }
                 //std::cout << "written" << '\n';
                 if (par.bval("energy_calc")){

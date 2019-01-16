@@ -166,16 +166,16 @@ void parSum(double2* gpuWfc, Grid &par){
 ** Moire super-lattice project.
 **/
 void optLatSetup(std::shared_ptr<Vtx::Vortex> centre, const double* V,
-                 std::vector<std::shared_ptr<Vtx::Vortex>> &vArray, double theta_opt,
-                 double intensity, double* v_opt, const double *x, const double *y,
-                 Grid &par){
+                 std::vector<std::shared_ptr<Vtx::Vortex>> &vArray,
+                 double theta_opt, double intensity, double* v_opt,
+                 const double *x, const double *y, Grid &par){
     std::string data_dir = par.sval("data_dir");
     int xDim = par.ival("xDim");
     int yDim = par.ival("yDim");
     double dx = par.dval("dx");
     double dy = par.dval("dy");
     double dt = par.dval("dt");
-    cufftDoubleComplex *EV_opt = par.cufftDoubleComplexval("EV_opt");
+    std::vector<double2 *> EV_opt = par.d2svecval("EV_opt");
     int i,j;
     double sepMin = Tracker::vortSepAvg(vArray,centre);
     sepMin = sepMin*(1 + sepMinEpsilon);
@@ -224,9 +224,9 @@ void optLatSetup(std::shared_ptr<Vtx::Vortex> centre, const double* V,
                                 pow( ( cos( k[2].x*( x[i] + x_shift ) +
                                        k[2].y*( y[j] + y_shift ) ) ), 2)
                                 );
-            EV_opt[(j*xDim + i)].x=cos( -(V[(j*xDim + i)] +
+            EV_opt[0][(j*xDim + i)].x=cos( -(V[(j*xDim + i)] +
                                    v_opt[j*xDim + i])*(dt/(2*HBAR)));
-            EV_opt[(j*xDim + i)].y=sin( -(V[(j*xDim + i)] +
+            EV_opt[0][(j*xDim + i)].y=sin( -(V[(j*xDim + i)] +
                                    v_opt[j*xDim + i])*(dt/(2*HBAR)));
         }
     }

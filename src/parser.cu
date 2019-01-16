@@ -56,6 +56,7 @@ Grid parseArgs(int argc, char** argv){
     par.store("param_file","param.cfg");
     par.store("cyl_coord",false);
     par.store("wfc_num",1);
+    par.store("step_offset",0);
     par.Afn = "rotation";
     par.Kfn = "rotation_K";
     par.Vfn = "2d";
@@ -68,7 +69,7 @@ Grid parseArgs(int argc, char** argv){
     optind = 1;
 
     while ((opt = getopt (argc, argv, 
-           "b:d:D:C:x:y:w:m:G:g:e:T:t:n:p:rQ:L:Elsi:P:X:Y:O:k:WU:V:S:ahz:H:uA:v:Z:fc:F:K:R:q:I:j:J;")) !=-1)
+           "b:d:D:C:x:y:w:m:G:g:e:T:t:n:p:rQ:L:Elsi:P:X:Y:O:k:WU:V:S:ahz:H:uA:v:Z:fc:F:K:R:q:I:j:Jo:;")) !=-1)
     {
         switch (opt)
         {
@@ -162,6 +163,13 @@ Grid parseArgs(int argc, char** argv){
                 double dt = atof(optarg);
                 printf("Argument for Timestep is given as %E\n",dt);
                 par.store("dt",(double)dt);
+                break;
+            }
+            case 'o':
+            {
+                int step_offset = atoi(optarg);
+                printf("Argument for step offset is given as %d\n",step_offset);
+                par.store("step_offset",(int)step_offset);
                 break;
             }
             case 'C':
