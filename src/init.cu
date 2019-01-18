@@ -71,7 +71,7 @@ int init(Grid &par){
     std::vector<cufftDoubleComplex *> wfc_array(wfc_num);
     if (par.bval("read_wfc") == true){
         for (int i = 0; i < wfc_array.size(); ++i){
-            wfc_array[i] = par.cufftDoubleComplexval("wfc_array");
+            wfc_array = par.d2svecval("wfc_array");
         }
     }
     std::vector<cufftDoubleComplex *> EV_opt(wfc_num);
