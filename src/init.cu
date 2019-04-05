@@ -7,6 +7,8 @@ void check_memory(Grid &par){
     int zDim = par.ival("zDim");
     int wfc_num = par.ival("wfc_num");
 
+    bool energy_calc = par.bval("energy_calc");
+
     int gSize = xDim*yDim*zDim;
     size_t free = 0;
     size_t total = 0;
@@ -17,10 +19,17 @@ void check_memory(Grid &par){
     // 8 double2* values on the GPU. This is not the case for dynamic fields
     // and the test should be updated accordingly as these are used more.
     size_t req_memory = 16*8*(size_t)gSize*(size_t)wfc_num;
+    if (energy_calc){
+        req_memory += 4*16*(size_t)gSize*(size_t)wfc_num;
+    }
     if (free < req_memory){
         std::cout << "Not enough GPU memory for gridsize!\n";
         std::cout << "Free memory is: " << free << '\n';
-        std::cout << "Required memory memory is: " << req_memory << '\n';
+        std::cout << "Required memory is: " << req_memory << '\n';
+        if (energy_calc){
+            std::cout << "Required memory for energy calc is: "
+                      << 4*16*(size_t)gSize << '\n';
+        }
         std::cout << "xDim is: " << xDim << '\n';
         std::cout << "yDim is: " << yDim << '\n';
         std::cout << "zDim is: " << zDim << '\n';
@@ -55,14 +64,13 @@ int init(Grid &par){
     if (dimnum > 2){
         gSize *= zDim;
     }
-    double omega = par.dval("omega");
     double gdt = par.dval("gdt");
     double dt = par.dval("dt");
     double omegaX = par.dval("omegaX");
     double omegaY = par.dval("omegaY");
     double omegaZ = par.dval("omegaZ");
     double gammaY = par.dval("gammaY"); //Aspect ratio of trapping geometry.
-    double l = par.dval("winding");
+    double winding = par.dval("winding");
     double box_size = par.dval("box_size");
     double *Energy;
     double *r;

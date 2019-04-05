@@ -21,6 +21,15 @@
 #include <unordered_map>
 //#include <boost/math/special_functions.hpp>
 
+// Laplacian functions
+void laplacian(Grid &par, double2 *data, double2* out, int xDim, int yDim,
+              int zDim, double dx, double dy, double dz);
+
+void laplacian(Grid &par, double2 *data, double2* out, int xDim, int yDim,
+              double dx, double dy);
+
+void laplacian(Grid &par, double2 *data, double2* out, int xDim, double dx);
+
 // function to find Bz, the curl of the gauge field
  /**
  * @brief       Finds Bz, the curl of the gauge field
@@ -245,4 +254,5 @@ __global__ void aux_fields(double *V, double *K, double gdt, double dt,
                            double2* EpAx, double2* EpAy, double2* EpAz);
 // Function to generate grid and treads
 void generate_grid(Grid &par);
+
 #endif

@@ -18,6 +18,32 @@
 #include<stdio.h>
 
 /**
+* @brief        derivative of data
+* @param        input data
+* @param        output data
+* @param        stride of derivative, for (xDim, yDim, zDim) derivative,
+                use stride (1, xDim, xDim*yDim)
+* @param        grid size for simulation
+* @param        dx value for derivative
+* @ingroup      gpu
+*/
+__global__ void derive(double *data, double *out, int stride, int gsize,
+                       double dx);
+
+/**
+* @brief        derivative of data
+* @param        input data
+* @param        output data
+* @param        stride of derivative, for (xDim, yDim, zDim) derivative,
+                use stride (1, xDim, xDim*yDim)
+* @param        grid size for simulation
+* @param        dx value for derivative
+* @ingroup      gpu
+*/
+__global__ void derive(double2 *data, double2 *out, int stride, int gsize,
+                       double dx);
+
+/**
 * @brief	subtraction operation for 2 double2 values
 * @ingroup	gpu
 */
@@ -121,6 +147,15 @@ __host__ __device__ double2 complexMultiply(double2 in1, double2 in2);
 __device__ double2 make_complex(double in, int evolution_type);
 
 /**
+* @brief        copies a double2 value
+* @ingroup      gpu
+* @param        complex input
+* @return       complex output
+*/
+
+__global__ void copy(double2 *in, double2 *out);
+
+/**
 * @brief        Sums the absolute value of two complex arrays
 * @ingroup      gpu
 * @param        Array 1
@@ -128,6 +163,44 @@ __device__ double2 make_complex(double in, int evolution_type);
 * @param        Output
 */
 __global__ void complexAbsSum(double2 *in1, double2 *in2, double *out);
+
+/**
+* @brief        Sums double2* and double2* energies
+* @ingroup      gpu
+* @param        Array 1
+* @param        Array 2
+* @param        Output
+*/
+__global__ void energy_sum(double2 *in1, double2 *in2, double *out);
+
+/**
+* @brief        Sums double* and double2* energies for angular momentum
+* @ingroup      gpu
+* @param        Array 1
+* @param        Array 2
+* @param        Output
+*/
+__global__ void energy_lsum(double *in1, double2 *in2, double *out);
+
+/**
+* @brief        Sums double2* and double2* to an output double2
+* @ingroup      gpu
+* @param        Array 1
+* @param        Array 2
+* @param        Output
+*/
+__global__ void sum(double2 *in1, double2 *in2, double2 *out);
+
+/**
+* @brief        Sums the absolute value of two complex arrays
+* @ingroup      gpu
+* @param        Array 1
+* @param        Array 2
+* @param        Array 3
+* @param        Output
+*/
+__global__ void complexAbsSum(double2 *in1, double2 *in2, double2 *in3,
+                              double *out);
 
 /**
 * @brief        Complex magnitude of a double2 array
@@ -203,11 +276,10 @@ __global__ void cMultPhi(double2* in1, double* in2, double2* out);
 * @param	in2 Evolution operator input
 * @param	out Pass by reference output for multiplication result
 * @param	dt Timestep for evolution
-* @param	mass Atomic species mass
 * @param	gState If performing real (1) or imaginary (0) time evolution
 * @param	gDenConst a constant for evolution
 */
-__global__ void cMultDensity(double2* in1, double2* in2, double2* out, double dt, double mass, int gstate, double gDenConst);
+__global__ void cMultDensity(double2* in1, double2* in2, double2* out, double dt, int gstate, double gDenConst);
 
 /**
 * @brief        Kernel for complex multiplication with nonlinear density term
@@ -221,14 +293,13 @@ __global__ void cMultDensity(double2* in1, double2* in2, double2* out, double dt
 * @param        time
 * @param        element number in AST
 * @param        dt Timestep for evolution
-* @param        mass Atomic species mass
 * @param        gState If performing real (1) or imaginary (0) time evolution
 * @param        gDenConst a constant for evolution
 */
 
 __global__ void cMultDensity_ast(EqnNode_gpu *eqn, double2* in, double2* out,
                                  double dx, double dy, double dz, double time,
-                                 int e_num, double dt, double mass, int gstate,
+                                 int e_num, double dt, int gstate,
                                  double gDenConst);
 
 
@@ -250,6 +321,33 @@ __global__ void pinVortex(double2* in1, double2* in2, double2* out);
 * @param        out Pass by reference output for result
 */
 __global__ void vecMult(double2 *in, double *factor, double2 *out);
+
+/**
+* @brief        Complex field Summation
+* @ingroup      gpu
+* @param        in Complex field to be scaled (divided, not multiplied)
+* @param        factor Scaling vector to be used
+* @param        out Pass by reference output for result
+*/
+__global__ void vecSum(double2 *in, double *factor, double2 *out);
+
+/**
+* @brief        field scaling
+* @ingroup      gpu
+* @param        in field to be scaled (divided, not multiplied)
+* @param        factor Scaling vector to be used
+* @param        out Pass by reference output for result
+*/
+__global__ void vecMult(double *in, double *factor, double *out);
+
+/**
+* @brief        field Summation
+* @ingroup      gpu
+* @param        in field to be scaled (divided, not multiplied)
+* @param        factor Scaling vector to be used
+* @param        out Pass by reference output for result
+*/
+__global__ void vecSum(double *in, double *factor, double *out);
 
 /**
 * @brief        performs the l2 normalization of the provided terms
@@ -297,10 +395,29 @@ __global__ void scalarDiv(double* in, double factor, double* out);
 * @brief        Complex field scaling and renormalisation. Used mainly post-FFT.
 * @ingroup      gpu
 * @param        in Complex field to be scaled (multiplied, not divided)
-* @param        factor Scaling factor to be used
+* @param        scaling factor to be used
 * @param        out Pass by reference output for result
 */
 __global__ void scalarMult(double2* in, double factor, double2* out);
+
+/**
+* @brief        field scaling and renormalisation. Used mainly post-FFT.
+* @ingroup      gpu
+* @param        in field to be scaled (multiplied, not divided)
+* @param        scalaing factor to be used
+* @param        out Pass by reference output for result
+*/
+__global__ void scalarMult(double* in, double factor, double* out);
+
+/**
+* @brief        Complex field scaling and renormalisation. Used mainly post-FFT.
+* @ingroup      gpu
+* @param        in Complex field to be scaled (multiplied, not divided)
+* @param        complex scaling factor to be used
+* @param        out Pass by reference output for result
+*/
+__global__ void scalarMult(double2* in, double2 factor, double2* out);
+
 
 /**
 * @brief        Complex field raised to a power
@@ -428,7 +545,11 @@ __device__ double2 im_ast(double val, double dt);
 * @brief        Sets boolean array to 0
 * @ingroup      gpu
 */
-__global__ void zeros(bool *in, bool *out);
+__global__ void zeros(bool *out);
+
+__global__ void zeros(double *out);
+
+__global__ void zeros(double2 *out);
 
 /**
 * @brief        Sets in2 to be equal to in1

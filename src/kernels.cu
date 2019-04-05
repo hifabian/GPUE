@@ -34,6 +34,42 @@ __device__ unsigned int getGid3d3d(){
     return threadId;
 }
 
+// global kernel to perform derivative
+// For xDim derivative, stride = 1
+// For yDim derivative, stride = xDim
+// For zDim derivative, stride = xDim*yDim
+__global__ void derive(double *data, double *out, int stride, int gsize,
+                       double dx){
+    int gid = getGid3d3d();
+    if (gid < gsize){
+        if (gid + stride < gsize){
+            out[gid] = (data[gid+stride] - data[gid])/dx;
+        }
+        else{
+            out[gid] = data[gid]/dx;
+        }
+    }
+}
+
+// global kernel to perform derivative
+// For xDim derivative, stride = 1
+// For yDim derivative, stride = xDim
+// For zDim derivative, stride = xDim*yDim
+__global__ void derive(double2 *data, double2 *out, int stride, int gsize,
+                       double dx){
+    int gid = getGid3d3d();
+    if (gid < gsize){
+        if (gid + stride < gsize){
+            out[gid].x = (data[gid+stride].x - data[gid].x)/dx;
+            out[gid].y = (data[gid+stride].y - data[gid].y)/dx;
+        }
+        else{
+            out[gid].x = data[gid].x/dx;
+            out[gid].y = data[gid].y/dx;
+        }
+    }
+}
+
 __global__ void is_eq(bool *a, bool *b, bool *ans){
     int gid = getGid3d3d();
     ans[0] = true;
@@ -49,6 +85,13 @@ __global__ void make_cufftDoubleComplex(double *in, double2 *out){
     out[gid].x = in[gid];
     out[gid].y = 0;
 }
+
+// Function to copy double2* values
+__global__ void copy(double2 *in, double2 *out){
+    int gid = getGid3d3d();
+    out[gid] = in[gid];
+}
+
 
 // function to perform a transposition (2d) or permutation (3d)
 // Note: The 3 ints represent the final placement of that data direction
@@ -160,11 +203,36 @@ __device__ double complexMagnitude(double2 in){
     return sqrt(in.x*in.x + in.y*in.y);
 }
 
+__global__ void energy_sum(double2 *in1, double2 *in2, double *out){
+    int gid = getGid3d3d();
+    out[gid] = in1[gid].x + in2[gid].x;
+}
+
+__global__ void energy_lsum(double *in1, double2 *in2, double *out){
+    int gid = getGid3d3d();
+    out[gid] = in1[gid] + in2[gid].x;
+}
+
+__global__ void sum(double2 *in1, double2 *in2, double2 *out){
+    int gid = getGid3d3d();
+    out[gid].x = in1[gid].x + in2[gid].x;
+    out[gid].y = in1[gid].y + in2[gid].y;
+}
+
 __global__ void complexAbsSum(double2 *in1, double2 *in2, double *out){
     int gid = getGid3d3d();
     double2 temp;
     temp.x = in1[gid].x + in2[gid].x;
     temp.y = in1[gid].y + in2[gid].y;
+    out[gid] = sqrt(temp.x*temp.x + temp.y*temp.y);
+}
+
+__global__ void complexAbsSum(double2 *in1, double2 *in2, double2 *in3,
+                              double *out){
+    int gid = getGid3d3d();
+    double2 temp;
+    temp.x = in1[gid].x + in2[gid].x + in3[gid].x;
+    temp.y = in1[gid].y + in2[gid].y + in3[gid].y;
     out[gid] = sqrt(temp.x*temp.x + temp.y*temp.y);
 }
 
@@ -240,6 +308,30 @@ __global__ void vecMult(double2 *in, double *factor, double2 *out){
     out[gid] = result;
 }
 
+__global__ void vecMult(double *in, double *factor, double *out){
+    double result;
+    unsigned int gid = getGid3d3d();
+    result = in[gid] * factor[gid];
+    out[gid] = result;
+}
+
+
+__global__ void vecSum(double2 *in, double *factor, double2 *out){
+    double2 result;
+    unsigned int gid = getGid3d3d();
+    result.x = in[gid].x + factor[gid];
+    result.y = in[gid].y + factor[gid];
+    out[gid] = result;
+}
+
+__global__ void vecSum(double *in, double *factor, double *out){
+    double result;
+    unsigned int gid = getGid3d3d();
+    result = in[gid] + factor[gid];
+    out[gid] = result;
+}
+
+
 __global__ void l2_norm(double *in1, double *in2, double *in3, double *out){
 
     int gid = getGid3d3d();
@@ -270,7 +362,7 @@ __global__ void l2_norm(double2 *in1, double2 *in2, double *out){
 /**
  * Performs the non-linear evolution term of Gross--Pitaevskii equation.
  */
-__global__ void cMultDensity(double2* in1, double2* in2, double2* out, double dt, double mass, int gstate, double gDenConst){
+__global__ void cMultDensity(double2* in1, double2* in2, double2* out, double dt, int gstate, double gDenConst){
     double2 result;
     double gDensity;
 
@@ -288,7 +380,6 @@ __global__ void cMultDensity(double2* in1, double2* in2, double2* out, double dt
         double2 tmp;
         tmp.x = tin1.x*cos(-gDensity) - tin1.y*sin(-gDensity);
         tmp.y = tin1.y*cos(-gDensity) + tin1.x*sin(-gDensity);
-        //printf("%d\t%f\t%f\t%f\t%f\t%f\n", gid, tin1.x, tin1.y, tmp.x, tmp.y, gDensity);
         
         result.x = (tmp.x)*tin2.x - (tmp.y)*tin2.y;
         result.y = (tmp.x)*tin2.y + (tmp.y)*tin2.x;
@@ -299,7 +390,7 @@ __global__ void cMultDensity(double2* in1, double2* in2, double2* out, double dt
 //cMultDensity for ast V
 __global__ void cMultDensity_ast(EqnNode_gpu *eqn, double2* in, double2* out, 
                                  double dx, double dy, double dz, double time,
-                                 int e_num, double dt, double mass, int gstate, 
+                                 int e_num, double dt, int gstate, 
                                  double gDenConst){
     double2 result;
     double gDensity;
@@ -364,6 +455,21 @@ __global__ void scalarMult(double2* in, double factor, double2* out){
     unsigned int gid = getGid3d3d();
     result.x = (in[gid].x * factor);
     result.y = (in[gid].y * factor);
+    out[gid] = result;
+}
+
+__global__ void scalarMult(double* in, double factor, double* out){
+    double result;
+    unsigned int gid = getGid3d3d();
+    result = (in[gid] * factor);
+    out[gid] = result;
+}
+
+__global__ void scalarMult(double2* in, double2 factor, double2* out){
+    double2 result;
+    unsigned int gid = getGid3d3d();
+    result.x = (in[gid].x * factor.x - in[gid].y*factor.y);
+    result.y = (in[gid].x * factor.y + in[gid].y*factor.x);
     out[gid] = result;
 }
 
@@ -571,9 +677,20 @@ __device__ double2 im_ast(double val, double dt){
     return {exp(-val*dt), 0};
 }
 
-__global__ void zeros(bool *in, bool *out){
+__global__ void zeros( bool *out){
     int gid = getGid3d3d();
     out[gid] = 0;
+}
+
+__global__ void zeros(double *out){
+    int gid = getGid3d3d();
+    out[gid] = 0;
+}
+
+__global__ void zeros(double2 *out){
+    int gid = getGid3d3d();
+    out[gid].x = 0;
+    out[gid].y = 0;
 }
 
 __global__ void set_eq(double *in1, double *in2){

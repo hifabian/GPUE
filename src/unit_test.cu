@@ -186,6 +186,77 @@ void math_operator_test(){
     }
 
     std::cout << "Complex addition, subtraction, multiplication, and powers have been tested\n";
+
+    cudaFree(da);
+    cudaFree(db);
+    cudaFree(dc);
+
+
+    std::cout << "Now testing the derive() kernels...\n";
+    // Now testing the derive function
+    int dim = 4;
+    double2 *darray, *darray_gpu, *darray_out;
+    darray = (double2 *)malloc(sizeof(double2)*dim*dim*dim);
+    cudaMalloc((void**) &darray_gpu, sizeof(double2)*dim*dim*dim);
+    cudaMalloc((void**) &darray_out, sizeof(double2)*dim*dim*dim);
+
+    for (int i = 0; i < dim; ++i){
+        for (int j = 0; j < dim; ++j){
+            for (int k = 0; k < dim; ++k){
+                int index = k + j*dim + i*dim*dim;
+                darray[index].x = i + j + k;
+                darray[index].y = i + j + k;
+            }
+        }
+    }
+
+    cudaMemcpy(darray_gpu, darray, sizeof(double2)*dim*dim*dim,
+               cudaMemcpyHostToDevice);
+
+    grid = {1, dim, dim};
+    threads = {dim, 1, 1};
+
+    derive<<<grid, threads>>>(darray_gpu, darray_out, 1, dim*dim*dim,1);
+    cudaMemcpy(darray, darray_out, sizeof(double2)*dim*dim*dim,
+               cudaMemcpyDeviceToHost);
+    for (int i = 0; i < dim-1; ++i){
+        for (int j = 0; j < dim-1; ++j){
+            for (int k = 0; k < dim-1; ++k){
+                int index = k + j*dim + i*dim*dim;
+                assert(darray[index].x == 1);
+                assert(darray[index].y == 1);
+            }
+        }
+    }
+
+    derive<<<grid, threads>>>(darray_gpu, darray_out, dim, dim*dim*dim,1);
+    cudaMemcpy(darray, darray_out, sizeof(double2)*dim*dim*dim,
+               cudaMemcpyDeviceToHost);
+    for (int i = 0; i < dim-1; ++i){
+        for (int j = 0; j < dim-1; ++j){
+            for (int k = 0; k < dim-1; ++k){
+                int index = k + j*dim + i*dim*dim;
+                assert(darray[index].x == 1);
+                assert(darray[index].y == 1);
+            }
+        }
+    }
+
+    derive<<<grid, threads>>>(darray_gpu, darray_out, dim*dim, dim*dim*dim,1);
+    cudaMemcpy(darray, darray_out, sizeof(double2)*dim*dim*dim,
+               cudaMemcpyDeviceToHost);
+    for (int i = 0; i < dim-1; ++i){
+        for (int j = 0; j < dim-1; ++j){
+            for (int k = 0; k < dim-1; ++k){
+                int index = k + j*dim + i*dim*dim;
+                assert(darray[index].x == 1);
+                assert(darray[index].y == 1);
+            }
+        }
+    }
+
+
+    std::cout << "derive functions passed!\n";
 }
 
 __global__ void add_test(double2 *a, double2 *b, double2 *c){
@@ -1127,6 +1198,7 @@ void evolve_test(){
     // Setting default values
     Grid par;
 
+    int res = 32;
     par.store("omega", 0.0);
     par.store("gammaY", 1.0);
     par.store("device", 0);
@@ -1181,8 +1253,10 @@ void evolve_test(){
     par.store("write_file", false);
     par.store("write_it", false);
     par.store("energy_calc", true);
+    par.store("corotating", true);
+    par.store("omega",0.0);
     par.store("box_size", 0.00007);
-    par.store("xDim", 64);
+    par.store("xDim", res);
     par.store("yDim", 1);
     par.store("zDim", 1);
     par.store("wfc_num", 1);
@@ -1192,10 +1266,10 @@ void evolve_test(){
     // Running through all the dimensions to check the energy
     for (int i = 1; i <= 3; ++i){
         if (i == 2){
-            par.store("yDim", 64);
+            par.store("yDim", res);
         }
         if (i == 3){
-            par.store("zDim", 64);
+            par.store("zDim", res);
         }
         par.store("dimnum",i);
         init(par);
@@ -1364,9 +1438,11 @@ void cMultPhi_test(){
 // Test for available amount of GPU memory
 void check_memory_test(){
     Grid par;
-    par.store("xDim",100);
-    par.store("yDim",100);
-    par.store("zDim",100);
+    par.store("xDim",10);
+    par.store("yDim",10);
+    par.store("zDim",10);
+
+    par.store("energy_calc",true);
 
     check_memory(par);
 

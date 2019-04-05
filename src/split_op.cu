@@ -1,4 +1,3 @@
-
 #include "../include/split_op.h"
 #include "../include/kernels.h"
 #include "../include/constants.h"
@@ -12,6 +11,7 @@
 #include "../include/edge.h"
 #include "../include/manip.h"
 #include "../include/vort.h"
+#include "../include/evolution.h"
 #include <string>
 #include <iostream>
 
@@ -249,27 +249,32 @@ double energy_calc(Grid &par, double2* wfc){
     int zDim = par.ival("zDim");
     int gsize = xDim*yDim*zDim;
 
+    int dimnum = par.ival("dimnum");
+
     double dx = par.dval("dx");
     double dy = par.dval("dy");
     double dz = par.dval("dz");
     double dg = dx*dy*dz;
 
+    bool corotating = par.bval("corotating");
+    bool gpe = par.bval("gpe");
+
     cufftHandle plan;
 
-    if (par.ival("dimnum") == 1){
+    if (dimnum == 1){
         plan = par.ival("plan_1d");
     }
-    if (par.ival("dimnum") == 2){
+    if (dimnum == 2){
         plan = par.ival("plan_2d");
     }
-    if (par.ival("dimnum") == 3){
+    if (dimnum == 3){
         plan = par.ival("plan_3d");
     }
 
     double renorm_factor = 1.0/pow(gsize,0.5);
 
     double2 *wfc_c, *wfc_k;
-    double2 *energy_r, *energy_k;
+    double2 *energy_r, *energy_k, *energy_l;
     double *energy;
 
     cudaMalloc((void **) &wfc_c, sizeof(double2)*gsize);
@@ -287,6 +292,7 @@ double energy_calc(Grid &par, double2* wfc){
     scalarMult<<<grid, threads>>>(wfc_k, renorm_factor, wfc_k);
 
     vecMult<<<grid, threads>>>(wfc_k, K[0], energy_k);
+    cudaFree(wfc_k);
 
     cufftExecZ2Z(plan, energy_k, energy_k, CUFFT_INVERSE);
     scalarMult<<<grid, threads>>>(energy_k, renorm_factor, energy_k);
@@ -294,10 +300,76 @@ double energy_calc(Grid &par, double2* wfc){
     cMult<<<grid, threads>>>(wfc_c, energy_k, energy_k);
 
     // Position-space energy
-    vecMult<<<grid, threads>>>(wfc, V[0], energy_r);
+    // Adding in the nonlinear step for GPE (related to cMultDensity)
+    if (gpe){
+        double interaction = par.dval("interaction");
+        double gDenConst  = par.dval("gDenConst");
+
+        double *real_comp;
+        cudaMalloc((void**) &real_comp, sizeof(double)*gsize);
+        complexMagnitudeSquared<<<grid, threads>>>(wfc, real_comp);
+        scalarMult<<<grid, threads>>>(real_comp,
+                                      0.5*gDenConst*interaction,
+                                      real_comp);
+        vecSum<<<grid, threads>>>(real_comp, V[0], real_comp);
+        vecMult<<<grid, threads>>>(wfc, real_comp, energy_r);
+
+        cudaFree(real_comp);
+    }
+    else{
+        vecMult<<<grid, threads>>>(wfc, V[0], energy_r);
+    }
+
     cMult<<<grid, threads>>>(wfc_c, energy_r, energy_r);
 
-    complexAbsSum<<<grid, threads>>>(energy_r, energy_k, energy);
+    energy_sum<<<grid, threads>>>(energy_r, energy_k, energy);
+    //zeros<<<grid, threads>>>(energy);
+
+    cudaFree(energy_r);
+    cudaFree(energy_k);
+
+    // Adding in angular momementum energy if -l flag is on
+    if (corotating && dimnum > 1){
+
+        double2 *energy_l, *dwfc;
+        double *A;
+        double *check;
+        check = (double *)malloc(sizeof(double)*10);
+
+        cudaMalloc((void **) &energy_l, sizeof(double2)*gsize);
+        cudaMalloc((void **) &dwfc, sizeof(double2)*gsize);
+
+        A = par.dsval("Ax_gpu");
+
+        derive<<<grid, threads>>>(wfc, energy_l, 1, gsize, dx);
+
+        vecMult<<<grid, threads>>>(energy_l, A, energy_l); 
+
+        A = par.dsval("Ay_gpu");
+        derive<<<grid, threads>>>(wfc, dwfc, xDim, gsize, dy);
+
+        vecMult<<<grid, threads>>>(dwfc, A, dwfc); 
+        sum<<<grid, threads>>>(dwfc,energy_l, energy_l);
+
+        if (dimnum == 3){
+            A = par.dsval("Az_gpu");
+
+            derive<<<grid, threads>>>(wfc, dwfc, xDim*yDim, gsize, dz);
+            vecMult<<<grid, threads>>>(dwfc, A, dwfc); 
+
+            sum<<<grid, threads>>>(dwfc,energy_l, energy_l);
+
+        }
+
+        cudaFree(dwfc);
+
+        double2 scale = {0, HBAR};
+        scalarMult<<<grid, threads>>>(energy_l, scale, energy_l);
+        cMult<<<grid, threads>>>(wfc_c, energy_l, energy_l);
+
+        energy_lsum<<<grid, threads>>>(energy, energy_l, energy);
+        cudaFree(energy_l);
+    }
 
     double *energy_cpu;
     energy_cpu = (double *)malloc(sizeof(double)*gsize);
@@ -311,11 +383,8 @@ double energy_calc(Grid &par, double2* wfc){
     }
 
     free(energy_cpu);
-    cudaFree(energy_r);
-    cudaFree(energy_k);
     cudaFree(energy);
     cudaFree(wfc_c);
-    cudaFree(wfc_k);
 
     return sum;
 }
