@@ -217,6 +217,7 @@ void apply_gauge(Grid &par, double2 *wfc, double2 *Ax, double2 *Ay,
 
 }
 
+
 void evolve(Grid &par,
             int numSteps,
             unsigned int gstate){
@@ -830,9 +831,8 @@ void evolve(Grid &par,
                     cMult<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
                                             gpuWfc_array[w]);
                 }
-    
             }
-    
+
             // Angular momentum pAy-pAx (if engaged)  //
             if(lz == true){
                 // Multiplying by ramping factor if necessary
@@ -852,48 +852,47 @@ void evolve(Grid &par,
                                                     (double2*) gpu1dpAz[w]);
                     }
                 }
-                int size = xDim*zDim;
-                if (dimnum == 3){
-                    apply_gauge(par, gpuWfc_array[w], gpu1dpAx[w],
-                                gpu1dpAy[w], gpu1dpAz[w], renorm_factor_x,
-                                renorm_factor_y, renorm_factor_z,
-                                i%2, plan_1d, plan_dim2, plan_dim3,
-                                dx, dy, dz, time, yDim, size);
-                }
-                else if (dimnum == 2){
-                    apply_gauge(par, gpuWfc_array[w], gpu1dpAx[w], gpu1dpAy[w],
-                                renorm_factor_x, renorm_factor_y, i%2, plan_1d,
-                                plan_other2d, dx, dy, dz, time);
-                }
-                else if (dimnum == 1){
-                    result = cufftExecZ2Z(plan_1d,gpuWfc_array[w],
-                                          gpuWfc_array[w],CUFFT_FORWARD);
-                    scalarMult<<<grid,threads>>>(gpuWfc_array[w],
-                                                 renorm_factor_x,
-                                                 gpuWfc_array[w]);
-                    if(par.bval("Ax_time")){
-                        EqnNode_gpu* Ax_eqn = par.astval("Ax");
-                        int e_num = par.ival("Ax_num");
-                        ast_cmult<<<grid,threads>>>(gpuWfc_array[w],
-                            gpuWfc_array[w], Ax_eqn, dx, dy, dz, time, e_num);
-                    }
-                    else{
-                        cMult<<<grid,threads>>>(gpuWfc_array[w],
-                            (cufftDoubleComplex*) gpu1dpAx[w], gpuWfc_array[w]);
-                    }
-    
-                    result = cufftExecZ2Z(plan_1d,gpuWfc_array[w],
-                                          gpuWfc_array[w], CUFFT_INVERSE);
-                    scalarMult<<<grid,threads>>>(gpuWfc_array[w],
-                                                 renorm_factor_x,
-                                                 gpuWfc_array[w]);
-                }
             }
-        
-            if(gstate==0){
-                parSum(gpuWfc_array[w], par);
+
+            int size = xDim*zDim;
+            if (dimnum == 3){
+                apply_gauge(par, gpuWfc_array[w], gpu1dpAx[w], gpu1dpAy[w],
+                            gpu1dpAz[w], renorm_factor_x, renorm_factor_y,
+                            renorm_factor_z, i%2, plan_1d, plan_dim2, plan_dim3,
+                            dx, dy, dz, time, yDim, size);
+            }
+            else if (dimnum == 2){
+                apply_gauge(par, gpuWfc_array[w], gpu1dpAx[w], gpu1dpAy[w],
+                            renorm_factor_x, renorm_factor_y, i%2, plan_1d,
+                            plan_other2d, dx, dy, dz, time);
+            }
+            else if (dimnum == 1){
+                result = cufftExecZ2Z(plan_1d,gpuWfc_array[w],
+                                      gpuWfc_array[w],CUFFT_FORWARD);
+                scalarMult<<<grid,threads>>>(gpuWfc_array[w],
+                                             renorm_factor_x,gpuWfc_array[w]);
+                if(par.bval("Ax_time")){
+                    EqnNode_gpu* Ax_eqn = par.astval("Ax");
+                    int e_num = par.ival("Ax_num");
+                    ast_cmult<<<grid,threads>>>(gpuWfc_array[w],
+                         gpuWfc_array[w], Ax_eqn, dx, dy, dz, time, e_num);
+                }
+                else{
+                    cMult<<<grid,threads>>>(gpuWfc_array[w],
+                        (cufftDoubleComplex*) gpu1dpAx[w], gpuWfc_array[w]);
+                }
+
+                result = cufftExecZ2Z(plan_1d,gpuWfc_array[w],
+                                      gpuWfc_array[w], CUFFT_INVERSE);
+                scalarMult<<<grid,threads>>>(gpuWfc_array[w],
+                                             renorm_factor_x, gpuWfc_array[w]);
             }
         }
+
+        if(gstate==0){
+                parSum(gpuWfc_array[w], par);
+        }
+    
     }
     par.store("wfc_array", wfc_array);
     par.store("wfc_gpu_array", gpuWfc_array);
