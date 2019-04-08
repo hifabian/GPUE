@@ -332,30 +332,30 @@ double energy_calc(Grid &par, double2* wfc){
     if (corotating && dimnum > 1){
 
         double2 *energy_l, *dwfc;
-        double *A;
+        std::vector<double *> A;
         double *check;
         check = (double *)malloc(sizeof(double)*10);
 
         cudaMalloc((void **) &energy_l, sizeof(double2)*gsize);
         cudaMalloc((void **) &dwfc, sizeof(double2)*gsize);
 
-        A = par.dsval("Ax_gpu");
+        A = par.dsvecval("Ax_gpu");
 
         derive<<<grid, threads>>>(wfc, energy_l, 1, gsize, dx);
 
-        vecMult<<<grid, threads>>>(energy_l, A, energy_l); 
+        vecMult<<<grid, threads>>>(energy_l, A[0], energy_l); 
 
-        A = par.dsval("Ay_gpu");
+        A = par.dsvecval("Ay_gpu");
         derive<<<grid, threads>>>(wfc, dwfc, xDim, gsize, dy);
 
-        vecMult<<<grid, threads>>>(dwfc, A, dwfc); 
+        vecMult<<<grid, threads>>>(dwfc, A[0], dwfc); 
         sum<<<grid, threads>>>(dwfc,energy_l, energy_l);
 
         if (dimnum == 3){
-            A = par.dsval("Az_gpu");
+            A = par.dsvecval("Az_gpu");
 
             derive<<<grid, threads>>>(wfc, dwfc, xDim*yDim, gsize, dz);
-            vecMult<<<grid, threads>>>(dwfc, A, dwfc); 
+            vecMult<<<grid, threads>>>(dwfc, A[0], dwfc); 
 
             sum<<<grid, threads>>>(dwfc,energy_l, energy_l);
 

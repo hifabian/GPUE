@@ -517,7 +517,7 @@ void set_variables(Grid &par, bool ev_type){
         if(!par.bval("Ax_time")){
             for (int i = 0; i < wfc_array.size(); ++i){
                 err=cudaMemcpy(pAx_gpu[i], GpAx[i],
-                               sizeof(cufftDoubleComplex),
+                               sizeof(cufftDoubleComplex)*gsize,
                                cudaMemcpyHostToDevice);
                 if(err!=cudaSuccess){
                     std::cout << "ERROR: Could not copy pAx_gpu to device"
@@ -538,7 +538,6 @@ void set_variables(Grid &par, bool ev_type){
         par.store("K_gpu", K_gpu);
         par.store("V_gpu", V_gpu);
         par.store("wfc_gpu_array", wfc_gpu_array);
-        par.store("pAy_gpu", pAy_gpu);
         par.store("pAx_gpu", pAx_gpu);
 
         // Special cases for 3d
