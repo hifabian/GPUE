@@ -444,7 +444,7 @@ void evolve(Grid &par,
                         free(edges);
 
                     }
-                    else if (dimnum == 2){
+                    else if (dimnum == 2 && mask_2d > 0){
                         vortexLocation = (int *) calloc(xDim * yDim, sizeof(int));
                         num_vortices[0] = Tracker::findVortex(vortexLocation, wfc,
                                                               mask_2d, xDim, x, i);

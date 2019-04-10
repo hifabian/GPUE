@@ -1,3 +1,7 @@
+#include <ctime>
+#include <ratio>
+#include <chrono>
+
 #include "../include/init.h"
 #include "../include/dynamic.h"
 
@@ -621,13 +625,33 @@ int main(int argc, char **argv){
         std::cout << "Imaginary-time evolution started..." << '\n';
         set_variables(par, 0);
 
+        std::chrono::high_resolution_clock::time_point
+            t1 = std::chrono::high_resolution_clock::now();
         evolve(par, gsteps, 0, buffer);
+        std::chrono::high_resolution_clock::time_point
+            t2 = std::chrono::high_resolution_clock::now();
+
+        std::chrono::duration<double> 
+            time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+        std::cout << "It took me " << time_span.count() << " seconds.\n";
     }
 
     if(esteps > 0){
         std::cout << "real-time evolution started..." << '\n';
         set_variables(par, 1);
+
+        std::cout << "Imaginary-time evolution started..." << '\n';
+        set_variables(par, 0);
+
+        std::chrono::high_resolution_clock::time_point
+            t1 = std::chrono::high_resolution_clock::now();
         evolve(par, esteps, 1, buffer);
+        std::chrono::high_resolution_clock::time_point
+            t2 = std::chrono::high_resolution_clock::now();
+
+        std::chrono::duration<double>
+            time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+        std::cout << "It took me " << time_span.count() << " seconds.\n";
     }
 
     std::cout << "done evolving" << '\n';
