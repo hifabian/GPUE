@@ -640,9 +640,6 @@ int main(int argc, char **argv){
         std::cout << "real-time evolution started..." << '\n';
         set_variables(par, 1);
 
-        std::cout << "Imaginary-time evolution started..." << '\n';
-        set_variables(par, 0);
-
         std::chrono::high_resolution_clock::time_point
             t1 = std::chrono::high_resolution_clock::now();
         evolve(par, esteps, 1, buffer);
