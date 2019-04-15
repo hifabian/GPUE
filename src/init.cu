@@ -633,7 +633,7 @@ int main(int argc, char **argv){
 
         std::chrono::duration<double> 
             time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-        std::cout << "It took me " << time_span.count() << " seconds.\n";
+        std::cout << "It took me " << time_span.count() << " seconds for imaginary time evolution.\n";
     }
 
     if(esteps > 0){
@@ -648,7 +648,7 @@ int main(int argc, char **argv){
 
         std::chrono::duration<double>
             time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-        std::cout << "It took me " << time_span.count() << " seconds.\n";
+        std::cout << "It took me " << time_span.count() << " seconds for real time evolution.\n";
     }
 
     std::cout << "done evolving" << '\n';
