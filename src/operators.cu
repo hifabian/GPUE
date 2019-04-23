@@ -1060,7 +1060,7 @@ __global__ void ktorus_wfc(double *x, double *y, double *z, double *items,
 
     double rad = sqrt((x[xid] - items[6]) * (x[xid] - items[6])
                       + (y[yid] - items[7]) * (y[yid] - items[7])) 
-                      - 0.5*items[0]*items[12];
+                      - 0.4*items[0];
 
     wfc_array[gid].x = exp(-( pow((rad)/(items[14]*items[15]*0.5),2) +
                    pow((z[zid])/(items[14]*items[17]*0.5),2) ) );
