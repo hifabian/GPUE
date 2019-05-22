@@ -413,12 +413,12 @@ void evolve(Grid &par,
                 switch (ramp | (gstate << 1)) {
                     case 0: //Groundstate solver, constant Omega value.
                     {
-                        fileName = "wfc_0_const";
+                        fileName = "wfc_"+std::to_string(w)+"_const";
                         break;
                     }
                     case 1: //Groundstate solver, ramped Omega value.
                     {
-                        fileName = "wfc_0_ramp";
+                        fileName = "wfc_"+std::to_string(w)+"_ramp";
                         break;
                     }
                     case 2: //Real-time evolution, constant Omega value.
@@ -705,7 +705,7 @@ void evolve(Grid &par,
 		                vortCoords->getVortices().clear();
         
                         }
-                        fileName = "wfc_ev";
+                        fileName = "wfc_" + std::to_string(w) + "_ev";
                         break;
                     }
                     case 3:

@@ -783,60 +783,9 @@ void generate_fields(Grid &par){
 
     std::vector<double *> V(wfc_num), V_gpu(wfc_num);
 
-    V[0] = (double *)malloc(sizeof(double)*gSize);
-
-    cudaMalloc((void **) &V_gpu[0], sizeof(double)*gSize);
-
-    if (par.is_ast_gpu("V")){
-        double dx = par.dval("dx");
-        double dy = par.dval("dy");
-        double dz = par.dval("dz");
-
-        double xMax = par.dval("xMax");
-        double yMax = par.dval("yMax");
-        double zMax = 0;
-        if (dimnum == 3){ 
-            zMax = par.dval("zMax");
-        }
-
-        EqnNode_gpu *eqn = par.astval("V");
-        find_field<<<par.grid, par.threads>>>(V_gpu[0], dx, dy, dz, 
-                                              xMax, yMax, zMax, 0, eqn);
-    }
-    else{
-        par.V_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, items_gpu,
-                                            Ax_gpu[0], Ay_gpu[0],
-                                            Az_gpu[0], V_gpu[0]);
-    }
-
-    cudaMemcpy(V[0], V_gpu[0], sizeof(double)*gSize, cudaMemcpyDeviceToHost);
-
     // Generating wfc
-
     std::vector<double2 *> wfc_array(wfc_num), wfc_gpu_array(wfc_num);
     std::vector<double *> phi(wfc_num), phi_gpu(wfc_num);
-
-    wfc_array[0] = (double2 *)malloc(sizeof(double2)*gSize);
-    phi[0] = (double *)malloc(sizeof(double)*gSize);
-
-    cudaMalloc((void**) &wfc_gpu_array[0], sizeof(double2)*gSize);
-    cudaMalloc((void**) &phi_gpu[0], sizeof(double)*gSize);
-
-    if (par.bval("read_wfc")){
-        wfc_array = par.d2svecval("wfc_array");
-        cudaMemcpy(wfc_gpu_array[0], wfc_array[0], sizeof(double2)*gSize,
-                   cudaMemcpyHostToDevice);
-    }
-    else{
-        par.wfc_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, items_gpu,
-                                              winding, phi_gpu[0],
-                                              wfc_gpu_array[0]);
-        cudaMemcpy(wfc_array[0], wfc_gpu_array[0], sizeof(double2)*gSize,
-                   cudaMemcpyDeviceToHost);
-    }
-
-    cudaMemcpy(phi[0], phi_gpu[0], sizeof(double)*gSize,
-               cudaMemcpyDeviceToHost);
 
     // generating aux fields.
     std::vector<double2 *> GV(wfc_num), EV(wfc_num), GK(wfc_num), EK(wfc_num);
@@ -849,114 +798,169 @@ void generate_fields(Grid &par){
                            EpAy_gpu(wfc_num), EpAz_gpu(wfc_num);
     std::vector<double *> pAx(wfc_num), pAy(wfc_num), pAz(wfc_num);
     std::vector<double *> pAx_gpu(wfc_num), pAy_gpu(wfc_num), pAz_gpu(wfc_num);
+    
+    for (int w = 0; w < wfc_num; ++w){
 
-    GV[0] = (double2 *)malloc(sizeof(double2)*gSize);
-    EV[0] = (double2 *)malloc(sizeof(double2)*gSize);
-    GK[0] = (double2 *)malloc(sizeof(double2)*gSize);
-    EK[0] = (double2 *)malloc(sizeof(double2)*gSize);
+        V[w] = (double *)malloc(sizeof(double)*gSize);
 
-    GpAx[0] = (double2 *)malloc(sizeof(double2)*gSize);
-    EpAx[0] = (double2 *)malloc(sizeof(double2)*gSize);
-    GpAy[0] = (double2 *)malloc(sizeof(double2)*gSize);
-    EpAy[0] = (double2 *)malloc(sizeof(double2)*gSize);
-    GpAz[0] = (double2 *)malloc(sizeof(double2)*gSize);
-    EpAz[0] = (double2 *)malloc(sizeof(double2)*gSize);
+        cudaMalloc((void **) &V_gpu[w], sizeof(double)*gSize);
 
-    pAx[0] = (double *)malloc(sizeof(double)*gSize);
-    pAy[0] = (double *)malloc(sizeof(double)*gSize);
-    pAz[0] = (double *)malloc(sizeof(double)*gSize);
+        if (par.is_ast_gpu("V")){
+            double dx = par.dval("dx");
+            double dy = par.dval("dy");
+            double dz = par.dval("dz");
 
-    cudaMalloc((void**) &GV_gpu[0], sizeof(double2)*gSize);
-    cudaMalloc((void**) &EV_gpu[0], sizeof(double2)*gSize);
-    cudaMalloc((void**) &GK_gpu[0], sizeof(double2)*gSize);
-    cudaMalloc((void**) &EK_gpu[0], sizeof(double2)*gSize);
+            double xMax = par.dval("xMax");
+            double yMax = par.dval("yMax");
+            double zMax = 0;
+            if (dimnum == 3){ 
+                zMax = par.dval("zMax");
+            }
 
-    cudaMalloc((void**) &GpAx_gpu[0], sizeof(double2)*gSize);
-    cudaMalloc((void**) &EpAx_gpu[0], sizeof(double2)*gSize);
-    cudaMalloc((void**) &GpAy_gpu[0], sizeof(double2)*gSize);
-    cudaMalloc((void**) &EpAy_gpu[0], sizeof(double2)*gSize);
-    cudaMalloc((void**) &GpAz_gpu[0], sizeof(double2)*gSize);
-    cudaMalloc((void**) &EpAz_gpu[0], sizeof(double2)*gSize);
+            EqnNode_gpu *eqn = par.astval("V");
+            find_field<<<par.grid, par.threads>>>(V_gpu[w], dx, dy, dz, 
+                                                  xMax, yMax, zMax, 0, eqn);
+        }
+        else{
+            par.V_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, items_gpu,
+                                                Ax_gpu[w], Ay_gpu[w],
+                                                Az_gpu[w], V_gpu[w]);
+        }
 
-    cudaMalloc((void**) &pAx_gpu[0], sizeof(double)*gSize);
-    cudaMalloc((void**) &pAy_gpu[0], sizeof(double)*gSize);
-    cudaMalloc((void**) &pAz_gpu[0], sizeof(double)*gSize);
+        cudaMemcpy(V[w], V_gpu[w], sizeof(double)*gSize,
+                   cudaMemcpyDeviceToHost);
 
-    aux_fields<<<par.grid, par.threads>>>(V_gpu[0], K_gpu[0], gdt, dt,
-                                          Ax_gpu[0], Ay_gpu[0], Az_gpu[0],
-                                          px_gpu, py_gpu, pz_gpu,
-                                          pAx_gpu[0], pAy_gpu[0], pAz_gpu[0],
-                                          GV_gpu[0], EV_gpu[0], GK_gpu[0],
-                                          EK_gpu[0], GpAx_gpu[0], GpAy_gpu[0],
-                                          GpAz_gpu[0], EpAx_gpu[0], EpAy_gpu[0],
-                                          EpAz_gpu[0]);
+        wfc_array[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        phi[w] = (double *)malloc(sizeof(double)*gSize);
 
-    cudaMemcpy(GV[0], GV_gpu[0], sizeof(double2)*gSize,
+        cudaMalloc((void**) &wfc_gpu_array[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &phi_gpu[w], sizeof(double)*gSize);
+
+        if (par.bval("read_wfc")){
+            wfc_array = par.d2svecval("wfc_array");
+            cudaMemcpy(wfc_gpu_array[w], wfc_array[w], sizeof(double2)*gSize,
+                       cudaMemcpyHostToDevice);
+        }
+        else{
+            par.wfc_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, items_gpu,
+                                                  winding, phi_gpu[w],
+                                                  wfc_gpu_array[w]);
+            cudaMemcpy(wfc_array[w], wfc_gpu_array[w], sizeof(double2)*gSize,
+                       cudaMemcpyDeviceToHost);
+        }
+    
+        cudaMemcpy(phi[w], phi_gpu[w], sizeof(double)*gSize,
+                   cudaMemcpyDeviceToHost);
+
+        GV[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        EV[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        GK[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        EK[w] = (double2 *)malloc(sizeof(double2)*gSize);
+    
+        GpAx[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        EpAx[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        GpAy[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        EpAy[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        GpAz[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        EpAz[w] = (double2 *)malloc(sizeof(double2)*gSize);
+    
+        pAx[w] = (double *)malloc(sizeof(double)*gSize);
+        pAy[w] = (double *)malloc(sizeof(double)*gSize);
+        pAz[w] = (double *)malloc(sizeof(double)*gSize);
+    
+        cudaMalloc((void**) &GV_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &EV_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &GK_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &EK_gpu[w], sizeof(double2)*gSize);
+    
+        cudaMalloc((void**) &GpAx_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &EpAx_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &GpAy_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &EpAy_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &GpAz_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &EpAz_gpu[w], sizeof(double2)*gSize);
+    
+        cudaMalloc((void**) &pAx_gpu[w], sizeof(double)*gSize);
+        cudaMalloc((void**) &pAy_gpu[w], sizeof(double)*gSize);
+        cudaMalloc((void**) &pAz_gpu[w], sizeof(double)*gSize);
+    
+        aux_fields<<<par.grid, par.threads>>>(V_gpu[w], K_gpu[w], gdt, dt,
+                                              Ax_gpu[w], Ay_gpu[w], Az_gpu[w],
+                                              px_gpu, py_gpu, pz_gpu,
+                                              pAx_gpu[w], pAy_gpu[w],
+                                              pAz_gpu[w], GV_gpu[w], EV_gpu[w],
+                                              GK_gpu[w], EK_gpu[w], GpAx_gpu[w],
+                                              GpAy_gpu[w], GpAz_gpu[w],
+                                              EpAx_gpu[w], EpAy_gpu[w],
+                                              EpAz_gpu[w]);
+    
+        cudaMemcpy(GV[w], GV_gpu[w], sizeof(double2)*gSize,
+                   cudaMemcpyDeviceToHost);
+        cudaMemcpy(EV[w], EV_gpu[w], sizeof(double2)*gSize,
+                   cudaMemcpyDeviceToHost);
+        cudaMemcpy(GK[w], GK_gpu[w], sizeof(double2)*gSize,
+                   cudaMemcpyDeviceToHost);
+        cudaMemcpy(EK[w], EK_gpu[w], sizeof(double2)*gSize,
+                   cudaMemcpyDeviceToHost);
+
+        cudaMemcpy(GpAx[w], GpAx_gpu[w], sizeof(double2)*gSize,
+                   cudaMemcpyDeviceToHost);
+        cudaMemcpy(EpAx[w], EpAx_gpu[w], sizeof(double2)*gSize,
+                   cudaMemcpyDeviceToHost);
+        cudaMemcpy(GpAy[w], GpAy_gpu[w], sizeof(double2)*gSize,
+                   cudaMemcpyDeviceToHost);
+        cudaMemcpy(EpAy[w], EpAy_gpu[w], sizeof(double2)*gSize,
+                   cudaMemcpyDeviceToHost);
+        cudaMemcpy(GpAz[w], GpAz_gpu[w], sizeof(double2)*gSize,
+                   cudaMemcpyDeviceToHost);
+        cudaMemcpy(EpAz[w], EpAz_gpu[w], sizeof(double2)*gSize,
                cudaMemcpyDeviceToHost);
-    cudaMemcpy(EV[0], EV_gpu[0], sizeof(double2)*gSize,
-               cudaMemcpyDeviceToHost);
-    cudaMemcpy(GK[0], GK_gpu[0], sizeof(double2)*gSize,
-               cudaMemcpyDeviceToHost);
-    cudaMemcpy(EK[0], EK_gpu[0], sizeof(double2)*gSize,
-               cudaMemcpyDeviceToHost);
 
-    cudaMemcpy(GpAx[0], GpAx_gpu[0], sizeof(double2)*gSize,
-               cudaMemcpyDeviceToHost);
-    cudaMemcpy(EpAx[0], EpAx_gpu[0], sizeof(double2)*gSize,
-               cudaMemcpyDeviceToHost);
-    cudaMemcpy(GpAy[0], GpAy_gpu[0], sizeof(double2)*gSize,
-               cudaMemcpyDeviceToHost);
-    cudaMemcpy(EpAy[0], EpAy_gpu[0], sizeof(double2)*gSize,
-               cudaMemcpyDeviceToHost);
-    cudaMemcpy(GpAz[0], GpAz_gpu[0], sizeof(double2)*gSize,
-               cudaMemcpyDeviceToHost);
-    cudaMemcpy(EpAz[0], EpAz_gpu[0], sizeof(double2)*gSize,
-               cudaMemcpyDeviceToHost);
+        cudaMemcpy(pAx[w], pAx_gpu[w], sizeof(double)*gSize,
+                   cudaMemcpyDeviceToHost);
+        cudaMemcpy(pAy[w], pAy_gpu[w], sizeof(double)*gSize,
+                   cudaMemcpyDeviceToHost);
+        cudaMemcpy(pAz[w], pAz_gpu[w], sizeof(double)*gSize,
+                   cudaMemcpyDeviceToHost);
 
-    cudaMemcpy(pAx[0], pAx_gpu[0], sizeof(double)*gSize,
-               cudaMemcpyDeviceToHost);
-    cudaMemcpy(pAy[0], pAy_gpu[0], sizeof(double)*gSize,
-               cudaMemcpyDeviceToHost);
-    cudaMemcpy(pAz[0], pAz_gpu[0], sizeof(double)*gSize,
-               cudaMemcpyDeviceToHost);
+        // Storing variables
+        cudaFree(items_gpu);
+        //cudaFree(phi_gpu);
+        cudaFree(GV_gpu[w]);
+        cudaFree(EV_gpu[w]);
+        cudaFree(GK_gpu[w]);
+        cudaFree(EK_gpu[w]);
 
-    // Storing variables
-    cudaFree(items_gpu);
-    //cudaFree(phi_gpu);
-    cudaFree(GV_gpu[0]);
-    cudaFree(EV_gpu[0]);
-    cudaFree(GK_gpu[0]);
-    cudaFree(EK_gpu[0]);
+        cudaFree(pAx_gpu[w]);
+        cudaFree(pAy_gpu[w]);
+        cudaFree(pAz_gpu[w]);
 
-    cudaFree(pAx_gpu[0]);
-    cudaFree(pAy_gpu[0]);
-    cudaFree(pAz_gpu[0]);
+        cudaFree(GpAx_gpu[w]);
+        cudaFree(GpAy_gpu[w]);
+        cudaFree(GpAz_gpu[w]);
 
-    cudaFree(GpAx_gpu[0]);
-    cudaFree(GpAy_gpu[0]);
-    cudaFree(GpAz_gpu[0]);
+        cudaFree(EpAx_gpu[w]);
+        cudaFree(EpAy_gpu[w]);
+        cudaFree(EpAz_gpu[w]);
 
-    cudaFree(EpAx_gpu[0]);
-    cudaFree(EpAy_gpu[0]);
-    cudaFree(EpAz_gpu[0]);
+        cudaFree(x_gpu);
+        cudaFree(y_gpu);
+        cudaFree(z_gpu);
 
-    cudaFree(x_gpu);
-    cudaFree(y_gpu);
-    cudaFree(z_gpu);
+        cudaFree(px_gpu);
+        cudaFree(py_gpu);
+        cudaFree(pz_gpu);
 
-    cudaFree(px_gpu);
-    cudaFree(py_gpu);
-    cudaFree(pz_gpu);
-
-    if (!energy_calc){
-        cudaFree(K_gpu[0]);
-        cudaFree(V_gpu[0]);
-        cudaFree(Ax_gpu[0]);
-        cudaFree(Ay_gpu[0]);
-        cudaFree(Az_gpu[0]);
-    }
-    else{
-        par.store("V_gpu",V_gpu);
+        if (!energy_calc){
+            cudaFree(K_gpu[w]);
+            cudaFree(V_gpu[w]);
+            cudaFree(Ax_gpu[w]);
+            cudaFree(Ay_gpu[w]);
+            cudaFree(Az_gpu[w]);
+        }
+        else{
+            par.store("V_gpu",V_gpu);
+        }
     }
 
     par.store("V",V);
@@ -989,7 +993,7 @@ void generate_fields(Grid &par){
     //par.store("pAx_gpu",pAx_gpu);
     //par.store("pAy_gpu",pAy_gpu);
     //par.store("pAz_gpu",pAz_gpu);
-    
+
 }
 
 __global__ void kharmonic_V(double *x, double *y, double *z, double* items,
