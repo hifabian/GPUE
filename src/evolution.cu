@@ -370,8 +370,8 @@ void evolve(Grid &par,
 
     //std::cout << "numSteps is: " << numSteps << '\n';
     // Iterating through all of the steps in either g or esteps.
-    for (int w = 0; w < wfc_array.size(); ++w){
-        for (int i=0; i < numSteps; ++i){
+    for (int i=0; i < numSteps; ++i){
+        for (int w = 0; w < wfc_array.size(); ++w){
             double time = Dt*i;
             if (ramp){
     
@@ -754,7 +754,8 @@ void evolve(Grid &par,
                 if(par.bval("V_time")){
                     EqnNode_gpu* V_eqn = par.astval("V");
                     int e_num = par.ival("V_num");
-                    cMultDensity_ast<<<grid,threads>>>(V_eqn,gpuWfc_array[w],
+                    cMultDensity_ast<<<grid,threads>>>(V_eqn,
+                                                       gpuWfc_array[w],
                         gpuWfc_array[w],
                         dx, dy, dz, time, e_num, 0.5*Dt,
                         gstate,interaction*gDenConst);

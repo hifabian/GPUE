@@ -272,14 +272,16 @@ __global__ void cMultPhi(double2* in1, double* in2, double2* out);
 /**
 * @brief	Kernel for complex multiplication with nonlinear density term
 * @ingroup	gpu
-* @param	in1 Wavefunction input
-* @param	in2 Evolution operator input
-* @param	out Pass by reference output for multiplication result
+* @param	V Evolution operator input
+* @param	wfc_in Wavefunction array input
+* @param	wfc_out Pass by reference output for multiplication result
 * @param	dt Timestep for evolution
 * @param	gState If performing real (1) or imaginary (0) time evolution
 * @param	gDenConst a constant for evolution
 */
-__global__ void cMultDensity(double2* in1, double2* in2, double2* out, double dt, int gstate, double gDenConst);
+__global__ void cMultDensity(double2* V, double2* wfc_in,
+                             double2* wfc_out, double dt, int gstate,
+                             double gDenConst);
 
 /**
 * @brief        Kernel for complex multiplication with nonlinear density term

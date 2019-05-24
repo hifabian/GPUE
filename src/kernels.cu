@@ -362,29 +362,29 @@ __global__ void l2_norm(double2 *in1, double2 *in2, double *out){
 /**
  * Performs the non-linear evolution term of Gross--Pitaevskii equation.
  */
-__global__ void cMultDensity(double2* in1, double2* in2, double2* out, double dt, int gstate, double gDenConst){
+__global__ void cMultDensity(double2* V, double2* wfc_in,
+                             double2* wfc_out, double dt, int gstate,
+                             double gDenConst){
     double2 result;
     double gDensity;
 
     int gid = getGid3d3d();
-    double2 tin1 = in1[gid];
-    double2 tin2 = in2[gid];
-    gDensity = gDenConst*complexMagnitudeSquared(in2[gid])*(dt/HBAR);
+    gDensity = gDenConst*complexMagnitudeSquared(wfc_in[gid])*(dt/HBAR);
 
     if(gstate == 0){
-        double tmp = in1[gid].x*exp(-gDensity);
-        result.x = (tmp)*tin2.x - (tin1.y)*tin2.y;
-        result.y = (tmp)*tin2.y + (tin1.y)*tin2.x;
+        double tmp = V[gid].x*exp(-gDensity);
+        result.x = (tmp)*wfc_in[gid].x - (V[gid].y)*wfc_in[gid].y;
+        result.y = (tmp)*wfc_in[gid].y + (V[gid].y)*wfc_in[gid].x;
     }
     else{
         double2 tmp;
-        tmp.x = tin1.x*cos(-gDensity) - tin1.y*sin(-gDensity);
-        tmp.y = tin1.y*cos(-gDensity) + tin1.x*sin(-gDensity);
+        tmp.x = V[gid].x*cos(-gDensity) - V[gid].y*sin(-gDensity);
+        tmp.y = V[gid].y*cos(-gDensity) + V[gid].x*sin(-gDensity);
         
-        result.x = (tmp.x)*tin2.x - (tmp.y)*tin2.y;
-        result.y = (tmp.x)*tin2.y + (tmp.y)*tin2.x;
+        result.x = (tmp.x)*wfc_in[gid].x - (tmp.y)*wfc_in[gid].y;
+        result.y = (tmp.x)*wfc_in[gid].y + (tmp.y)*wfc_in[gid].x;
     }
-    out[gid] = result;
+    wfc_out[gid] = result;
 }
 
 //cMultDensity for ast V
