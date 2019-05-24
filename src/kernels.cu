@@ -387,6 +387,43 @@ __global__ void cMultDensity(double2* V, double2* wfc_in,
     wfc_out[gid] = result;
 }
 
+/**
+ * Performs the non-linear evolution term of Gross--Pitaevskii equation.
+ */
+__global__ void cMultDensity_multicomp(double2* V, double2* wfc_in,
+                                       double2* wfc_out,
+                                       double2** wfc_array,
+                                       double** interactions,
+                                       double dt, int gstate,
+                                       double gDenConst, int wfc_num, int w){
+    double2 result;
+    double gDensity;
+
+    int gid = getGid3d3d();
+    gDensity = 0;
+    for (int i = 0; i < wfc_num; ++i){
+        gDensity += interactions[w][i]
+                    *complexMagnitudeSquared(wfc_array[i][gid]);
+    }
+    gDensity *= gDenConst*(dt/HBAR);
+
+    if(gstate == 0){
+        double tmp = V[gid].x*exp(-gDensity);
+        result.x = (tmp)*wfc_in[gid].x - (V[gid].y)*wfc_in[gid].y;
+        result.y = (tmp)*wfc_in[gid].y + (V[gid].y)*wfc_in[gid].x;
+    }
+    else{
+        double2 tmp;
+        tmp.x = V[gid].x*cos(-gDensity) - V[gid].y*sin(-gDensity);
+        tmp.y = V[gid].y*cos(-gDensity) + V[gid].x*sin(-gDensity);
+        
+        result.x = (tmp.x)*wfc_in[gid].x - (tmp.y)*wfc_in[gid].y;
+        result.y = (tmp.x)*wfc_in[gid].y + (tmp.y)*wfc_in[gid].x;
+    }
+    wfc_out[gid] = result;
+}
+
+
 //cMultDensity for ast V
 __global__ void cMultDensity_ast(EqnNode_gpu *eqn, double2* in, double2* out, 
                                  double dx, double dy, double dz, double time,
