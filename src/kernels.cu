@@ -393,7 +393,7 @@ __global__ void cMultDensity(double2* V, double2* wfc_in,
 __global__ void cMultDensity_multicomp(double2* V, double2* wfc_in,
                                        double2* wfc_out,
                                        double2** wfc_array,
-                                       double** interactions,
+                                       double* interactions,
                                        double dt, int gstate,
                                        double gDenConst, int wfc_num, int w){
     double2 result;
@@ -402,10 +402,12 @@ __global__ void cMultDensity_multicomp(double2* V, double2* wfc_in,
     int gid = getGid3d3d();
     gDensity = 0;
     for (int i = 0; i < wfc_num; ++i){
-        gDensity += interactions[w][i]
+        int index = wfc_num*w + i;
+        gDensity += interactions[index]
                     *complexMagnitudeSquared(wfc_array[i][gid]);
     }
     gDensity *= gDenConst*(dt/HBAR);
+
 
     if(gstate == 0){
         double tmp = V[gid].x*exp(-gDensity);

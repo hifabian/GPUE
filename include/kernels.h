@@ -286,6 +286,25 @@ __global__ void cMultDensity(double2* V, double2* wfc_in,
 /**
 * @brief        Kernel for complex multiplication with nonlinear density term
 * @ingroup      gpu
+* @param        V Evolution operator input
+* @param        wfc_in Wavefunction array input
+* @param        wfc_out Pass by reference output for multiplication result
+* @param        wfc_array pointers to all other wavefunctions in the system
+* @param        interactions interaction terms between components in system
+* @param        dt Timestep for evolution
+* @param        gState If performing real (1) or imaginary (0) time evolution
+* @param        gDenConst a constant for evolution
+*/
+__global__ void cMultDensity_multicomp(double2* V, double2* wfc_in,
+                                       double2* wfc_out,
+                                       double2** wfc_array,
+                                       double* interactions,
+                                       double dt, int gstate,
+                                       double gDenConst, int wfc_num, int w);
+
+/**
+* @brief        Kernel for complex multiplication with nonlinear density term
+* @ingroup      gpu
 * @param        GPU AST
 * @param        in Wavefunction input
 * @param        out Wavefunction output

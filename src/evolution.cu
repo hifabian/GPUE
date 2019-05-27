@@ -263,8 +263,24 @@ void evolve(Grid &par,
 
     std::vector<double2 *> wfc_array = par.d2svecval("wfc_array");
     std::vector<double2 *> gpuWfc_array = par.d2svecval("wfc_gpu_array");
+    double2 **device_wfc_array;
+    cudaMalloc((void **) &device_wfc_array, sizeof(double2*)*wfc_num);
+    cudaMemcpy(device_wfc_array, gpuWfc_array.data(), sizeof(double2*)*wfc_num,
+               cudaMemcpyHostToDevice);
+
     std::vector<double2 *> K_gpu = par.d2svecval("K_gpu");
     std::vector<double2 *> V_gpu = par.d2svecval("V_gpu");
+
+    double *interactions, *gpu_interactions;
+    interactions = (double *)malloc(sizeof(double)*wfc_num*wfc_num);
+    cudaMalloc((void **) &gpu_interactions, sizeof(double)*wfc_num*wfc_num);
+
+    for (int i = 0; i < wfc_num*wfc_num; ++i){
+        interactions[i] = 1;
+    }
+
+    cudaMemcpy(gpu_interactions, interactions, sizeof(double)*wfc_num*wfc_num,
+               cudaMemcpyHostToDevice);
 
     if (dimnum > 1){
         dy = par.dval("dy");
@@ -751,19 +767,41 @@ void evolve(Grid &par,
     
             // U_r(dt/2)*wfc
             if(nonlin == 1){
-                if(par.bval("V_time")){
-                    EqnNode_gpu* V_eqn = par.astval("V");
-                    int e_num = par.ival("V_num");
-                    cMultDensity_ast<<<grid,threads>>>(V_eqn,
-                                                       gpuWfc_array[w],
-                        gpuWfc_array[w],
-                        dx, dy, dz, time, e_num, 0.5*Dt,
-                        gstate,interaction*gDenConst);
+                if (wfc_num > 1){
+                    if(par.bval("V_time")){
+                        EqnNode_gpu* V_eqn = par.astval("V");
+                        int e_num = par.ival("V_num");
+                        cMultDensity_ast<<<grid,threads>>>(V_eqn,
+                                                           gpuWfc_array[w],
+                            gpuWfc_array[w],
+                            dx, dy, dz, time, e_num, 0.5*Dt,
+                            gstate,interaction*gDenConst);
+                    }
+                    else{
+                        cMultDensity_multicomp<<<grid,threads>>>(V_gpu[w],
+                            gpuWfc_array[w],
+                            gpuWfc_array[w],
+                            device_wfc_array,
+                            gpu_interactions,
+                            0.5*Dt,gstate,gDenConst, wfc_num, w);
+                    }
+
                 }
                 else{
-                    cMultDensity<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
-                        gpuWfc_array[w],
-                        0.8*Dt,gstate,interaction*gDenConst);
+                    if(par.bval("V_time")){
+                        EqnNode_gpu* V_eqn = par.astval("V");
+                        int e_num = par.ival("V_num");
+                        cMultDensity_ast<<<grid,threads>>>(V_eqn,
+                                                           gpuWfc_array[w],
+                            gpuWfc_array[w],
+                            dx, dy, dz, time, e_num, 0.5*Dt,
+                            gstate,interaction*gDenConst);
+                    }
+                    else{
+                        cMultDensity<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
+                            gpuWfc_array[w],
+                            0.5*Dt,gstate,interaction*gDenConst);
+                    }
                 }
             }
             else {
@@ -806,17 +844,37 @@ void evolve(Grid &par,
     
             // U_r(dt/2)*wfc
             if(nonlin == 1){
-                if(par.bval("V_time")){
-                    EqnNode_gpu* V_eqn = par.astval("V");
-                    int e_num = par.ival("V_num");
-                    cMultDensity_ast<<<grid,threads>>>(V_eqn,gpuWfc_array[w],
-                        gpuWfc_array[w], dx, dy, dz, time, e_num, 0.5*Dt,
-                        gstate,interaction*gDenConst);
+                if (wfc_num > 1){
+                    if(par.bval("V_time")){
+                        EqnNode_gpu* V_eqn = par.astval("V");
+                        int e_num = par.ival("V_num");
+                        cMultDensity_ast<<<grid,threads>>>(V_eqn,
+                            gpuWfc_array[w], gpuWfc_array[w], dx, dy, dz,
+                            time, e_num, 0.5*Dt,
+                            gstate,interaction*gDenConst);
+                    }
+                    else{
+                        cMultDensity_multicomp<<<grid,threads>>>(V_gpu[w],
+                            gpuWfc_array[w], gpuWfc_array[w],
+                            device_wfc_array, gpu_interactions, 0.5*Dt, gstate,
+                            interaction*gDenConst, wfc_num, w);
+                    }
+
                 }
                 else{
-                    cMultDensity<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
-                        gpuWfc_array[w], 0.5*Dt, gstate,
-                        interaction*gDenConst);
+                    if(par.bval("V_time")){
+                        EqnNode_gpu* V_eqn = par.astval("V");
+                        int e_num = par.ival("V_num");
+                        cMultDensity_ast<<<grid,threads>>>(V_eqn,
+                            gpuWfc_array[w], gpuWfc_array[w], dx, dy, dz,
+                            time, e_num, 0.5*Dt,
+                            gstate,interaction*gDenConst);
+                    }
+                    else{
+                        cMultDensity<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
+                            gpuWfc_array[w], 0.5*Dt, gstate,
+                            interaction*gDenConst);
+                    }
                 }
             }
             else {
@@ -898,4 +956,8 @@ void evolve(Grid &par,
     }
     par.store("wfc_array", wfc_array);
     par.store("wfc_gpu_array", gpuWfc_array);
+
+    cudaFree(device_wfc_array);
+    cudaFree(gpu_interactions);
+    free(interactions);
 }
