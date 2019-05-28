@@ -275,8 +275,18 @@ void evolve(Grid &par,
     interactions = (double *)malloc(sizeof(double)*wfc_num*wfc_num);
     cudaMalloc((void **) &gpu_interactions, sizeof(double)*wfc_num*wfc_num);
 
-    for (int i = 0; i < wfc_num*wfc_num; ++i){
-        interactions[i] = 1;
+    for (int i = 0; i < wfc_num; ++i){
+        for (int j = 0; j < wfc_num; ++j){
+            int index = wfc_num*i +j;
+            double val;
+            if (i == j){
+                val = 1;
+            }
+            else{
+                val = 0.5;
+            }
+            interactions[index] = val;
+        }
     }
 
     cudaMemcpy(gpu_interactions, interactions, sizeof(double)*wfc_num*wfc_num,
