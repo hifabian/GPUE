@@ -4,6 +4,55 @@
 
 struct stat st = {0};
 
+std::vector<std::string> split_string(std::string input_string,
+                                      char split_char){
+    // Finding element number to reserve 
+    std::vector<int> char_indices = {0};
+    for (size_t i = 0; i < input_string.size(); ++i){
+        if (input_string[i] == split_char){
+            char_indices.push_back(i+1);
+        }
+    }
+     
+    std::vector<std::string> result(char_indices.size());
+    for (size_t i = 0; i < char_indices.size(); ++i){
+        result[i] = input_string.substr(char_indices[i],
+                                        char_indices[i+1] - char_indices[i]-1);
+    }
+    return result;
+}
+
+void set_interactions(Grid &par, std::string input, int wfc_num,
+                      double* interactions, double* gpu_interactions){
+     input = input.substr(1, input.size()-2);
+
+     // splitting along ";"
+     std::vector<std::string> rows;
+     rows = split_string(input, ';');
+
+     for (size_t i = 0; i < rows.size(); ++i){
+         // count when skipping blank columns after splitting
+         int count = 0;
+         std::vector<std::string> cols = split_string(rows[i], ' ');
+         for (size_t j = 0; j < cols.size(); ++j){
+             if (cols[j].size() > 0){
+                 int index = wfc_num*i + count;
+                 interactions[index] = std::stod(cols[j].c_str());
+             }
+             else{
+                 count--;
+             }
+             count++;
+         }
+     }
+
+     cudaMemcpy(gpu_interactions, interactions, sizeof(double)*wfc_num*wfc_num,
+                cudaMemcpyHostToDevice);
+
+     par.store("interactions", interactions);
+     par.store("gpu_interactions", gpu_interactions);
+}
+
 Grid parseArgs(int argc, char** argv){
 
     // Creates initial grid class for the parameters
@@ -182,9 +231,36 @@ Grid parseArgs(int argc, char** argv){
             case 'N':
             {
                 int wfc_num = atoi(optarg);
+
+                // Initializing the interaction terms
+                double *interactions, *gpu_interactions;
+                interactions = (double *)malloc(sizeof(double)*wfc_num*wfc_num);
+                cudaMalloc((void **) &gpu_interactions,
+                           sizeof(double)*wfc_num*wfc_num);
+
+                for (int i = 0; i < wfc_num; ++i){
+                    for (int j = 0; j < wfc_num; ++j){
+                        int index = wfc_num*i +j;
+                        double val;
+                        if (i == j){
+                            val = 1;
+                        }
+                        else{
+                            val = 0.5;
+                        }
+                        interactions[index] = val;
+                    }
+                }
+
+                cudaMemcpy(gpu_interactions, interactions,
+                           sizeof(double)*wfc_num*wfc_num,
+                           cudaMemcpyHostToDevice);
+
                 printf("Argument for condensate number is given as %d\n",
                         wfc_num);
                 par.store("wfc_num",(int)wfc_num);
+                par.store("interactions", interactions);
+                par.store("gpu_interactions", gpu_interactions);
                 break;
             }
             case 'n':
@@ -299,9 +375,20 @@ Grid parseArgs(int argc, char** argv){
             }
             case 'i':
             {
-                double interaction = atof(optarg);
-                printf("Argument for interaction scaling is %E\n",interaction);
-                par.store("interaction",interaction);
+                int wfc_num = par.ival("wfc_num");
+                if (wfc_num == 1){
+                    double interaction = atof(optarg);
+                    printf("Argument for interaction scaling is %E\n",
+                           interaction);
+                    par.store("interaction",interaction);
+                }
+                if (wfc_num > 1){
+                    double* interactions = par.dsval("interactions");
+                    double* gpu_interactions = par.dsval("gpu_interactions");
+                    set_interactions(par, std::string(optarg), wfc_num,
+                                     interactions, gpu_interactions);
+                    printf("Arguments set for interaction terms\n");
+                }
                 break;
             }
             case 'P':

@@ -275,23 +275,6 @@ void evolve(Grid &par,
     interactions = (double *)malloc(sizeof(double)*wfc_num*wfc_num);
     cudaMalloc((void **) &gpu_interactions, sizeof(double)*wfc_num*wfc_num);
 
-    for (int i = 0; i < wfc_num; ++i){
-        for (int j = 0; j < wfc_num; ++j){
-            int index = wfc_num*i +j;
-            double val;
-            if (i == j){
-                val = 1;
-            }
-            else{
-                val = 0.5;
-            }
-            interactions[index] = val;
-        }
-    }
-
-    cudaMemcpy(gpu_interactions, interactions, sizeof(double)*wfc_num*wfc_num,
-               cudaMemcpyHostToDevice);
-
     if (dimnum > 1){
         dy = par.dval("dy");
         y = par.dsval("y");
@@ -778,6 +761,7 @@ void evolve(Grid &par,
             // U_r(dt/2)*wfc
             if(nonlin == 1){
                 if (wfc_num > 1){
+                    double* gpu_interactions = par.dsval("gpu_interactions");
                     if(par.bval("V_time")){
                         EqnNode_gpu* V_eqn = par.astval("V");
                         int e_num = par.ival("V_num");
@@ -855,6 +839,7 @@ void evolve(Grid &par,
             // U_r(dt/2)*wfc
             if(nonlin == 1){
                 if (wfc_num > 1){
+                    double* gpu_interactions = par.dsval("gpu_interactions");
                     if(par.bval("V_time")){
                         EqnNode_gpu* V_eqn = par.astval("V");
                         int e_num = par.ival("V_num");
@@ -968,6 +953,4 @@ void evolve(Grid &par,
     par.store("wfc_gpu_array", gpuWfc_array);
 
     cudaFree(device_wfc_array);
-    cudaFree(gpu_interactions);
-    free(interactions);
 }
