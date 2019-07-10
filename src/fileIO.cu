@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cuda_runtime.h>
+#include "H5Cpp.h"
+
 #include "../include/fileIO.h"
 
 namespace FileIO{

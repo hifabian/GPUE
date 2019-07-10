@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 3.8)
 project(gpue_build LANGUAGES CXX CUDA)
 find_package(CUDA QUIET REQUIRED)
 
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
+execute_process(WORKING_DIRECTORY ./bin/
+                COMMAND bash install_hdf5.sh
+                COMMAND tail -n 1
+                OUTPUT_VARIABLE HDF5_INCLUDE_DIR)
+
+include_directories (${HDF5_INCLUDE_DIR})
+
 set(
     CUDA_NVCC_FLAGS
     ${CUDA_NVCC_FLAGS};
