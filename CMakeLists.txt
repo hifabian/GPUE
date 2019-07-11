@@ -6,6 +6,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 execute_process(WORKING_DIRECTORY ./bin/
                 COMMAND bash install_hdf5.sh
+                COMMAND tee /dev/tty
                 COMMAND tail -n 1
                 OUTPUT_VARIABLE HDF5_INCLUDE_DIR)
 
@@ -21,7 +22,7 @@ find_file( EXAMPLE_CFG example.cfg src/ )
 add_library(unitTest OBJECT src/unit_test.cu include/unit_test.h include/kernels.h)
 set( CFG_FILE_PATH _CFG_FILE_PATH="${EXAMPLE_CFG}" )
 target_compile_options(
-   unitTest PRIVATE -D${CFG_FILE_PATH} -dc -std=c++11
+    unitTest PRIVATE -D${CFG_FILE_PATH} -dc -std=c++11
 )
 
 add_executable(
