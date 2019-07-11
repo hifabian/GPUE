@@ -1,4 +1,4 @@
-CUDA_HOME = /opt/cuda/
+CUDA_HOME = /usr/local/cuda/
 #CUDA_HOME = /apps/free/cuda/7.5.18/
 #CUTT_DIR = cutt/lib
 GPU_ARCH	= sm_50
@@ -18,9 +18,11 @@ endif
 
 CUDA_FLAGS 	= -lcufft
 
+HDF5_HEADER = $(shell cd ./bin && bash install_hdf5.sh | tee /dev/tty | tail -n 1)
+
 CLINKER		= $(CC) 
 RM		= /bin/rm
-INCFLAGS	= -I$(CUDA_HEADER) 
+INCFLAGS	= -I$(CUDA_HEADER) -I$(HDF5_HEADER)
 LDFLAGS		= -L$(CUDA_LIB) 
 EXECS		= gpue # BINARY NAME HERE
 
