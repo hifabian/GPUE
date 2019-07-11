@@ -1041,5 +1041,6 @@ void evolve(Grid &par,
     par.store("wfc_array", wfc_array);
     par.store("wfc_gpu_array", gpuWfc_array);
 
-    cudaFree(device_wfc_array);
+    cudaHandleError(cudaFree(device_wfc_array));
+    cudaCheckError();
 }

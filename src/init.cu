@@ -428,7 +428,6 @@ void set_variables(Grid &par, bool ev_type){
     std::vector<double2 *> wfc_array = par.d2svecval("wfc_array");
     std::vector<double2 *> wfc_gpu_array =
          par.d2svecval("wfc_gpu_array");
-    cudaError_t err;
     int dimnum = par.ival("dimnum");
     int xDim = par.ival("xDim");
     int yDim = par.ival("yDim");
@@ -549,25 +548,14 @@ void set_variables(Grid &par, bool ev_type){
                 cudaHandleError(cudaMemcpy(K_gpu[i], EK[i],
                                 sizeof(cufftDoubleComplex)*gsize,
                                 cudaMemcpyHostToDevice));
-                if(err!=cudaSuccess){
-                    std::cout << "ERROR: Could not copy K_gpu to device"
-                              << '\n';
-                    exit(1);
-                }
                 par.store("K_gpu", K_gpu);
             }
         }
         if(!par.bval("Ax_time")){
             for (int i = 0; i < wfc_array.size(); ++i){
-                cudaHandleError(err=cudaMemcpy(pAx_gpu[i], EpAx[i],
+                cudaHandleError(cudaMemcpy(pAx_gpu[i], EpAx[i],
                                sizeof(cufftDoubleComplex)*gsize,
                                cudaMemcpyHostToDevice));
-                if(err!=cudaSuccess){
-                    std::cout << "ERROR: Could not copy pAx_gpu to device"
-                              << '\n';
-                    std::cout << err << '\n';
-                    exit(1);
-                }
                 par.store("pAx_gpu", pAx_gpu);
             }
         }
@@ -577,11 +565,6 @@ void set_variables(Grid &par, bool ev_type){
                 cudaHandleError(cudaMemcpy(V_gpu[i], EV[i],
                                 sizeof(cufftDoubleComplex)*gsize,
                                 cudaMemcpyHostToDevice));
-                if(err!=cudaSuccess){
-                    std::cout << "ERROR: Could not copy V_gpu to device"
-                              << '\n';
-                    exit(1);
-                }
                 par.store("V_gpu", V_gpu);
             }
         }
@@ -589,10 +572,6 @@ void set_variables(Grid &par, bool ev_type){
             cudaHandleError(cudaMemcpy(wfc_gpu_array[i], wfc_array[i],
                             sizeof(cufftDoubleComplex)*gsize,
                             cudaMemcpyHostToDevice));
-            if(err!=cudaSuccess){
-                std::cout << "ERROR: Could not copy wfc_gpu to device" << '\n';
-                exit(1);
-            }
         }
 
         par.store("wfc_gpu_array", wfc_gpu_array);
@@ -604,11 +583,6 @@ void set_variables(Grid &par, bool ev_type){
                 cudaHandleError(cudaMemcpy(pAy_gpu[i], EpAy[i],
                                 sizeof(cufftDoubleComplex)*gsize,
                                 cudaMemcpyHostToDevice));
-                if(err!=cudaSuccess){
-                    std::cout << "ERROR: Could not copy pAy_gpu to device"
-                              << '\n';
-                    exit(1);
-                }
                 par.store("pAy_gpu", pAy_gpu);
             }
         }
@@ -619,11 +593,6 @@ void set_variables(Grid &par, bool ev_type){
                 cudaHandleError(cudaMemcpy(pAz_gpu[i], EpAz[i],
                                 sizeof(cufftDoubleComplex)*gsize,
                                 cudaMemcpyHostToDevice));
-                if(err!=cudaSuccess){
-                    std::cout << "ERROR: Could not copy pAz_gpu to device"
-                              << '\n';
-                    exit(1);
-                }
                 par.store("pAz_gpu", pAz_gpu);
             }
         }
