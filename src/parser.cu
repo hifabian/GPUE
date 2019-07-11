@@ -120,7 +120,7 @@ Grid parseArgs(int argc, char** argv){
     optind = 1;
 
     while ((opt = getopt (argc, argv, 
-           "b:d:D:C:x:y:w:m:G:g:e:T:t:n:p:rQ:L:E::lsi:P:X:Y:O:k:WU:V:S:ahz:H:uA:v:Z:fc:F:K:R:q:I:j:J;")) !=-1)
+           "b:d:D:C:x:y:w:m:G:g:e:T:t:n:p:rQ:L:E::lsi:P:X:Y:O:k:WU:V:S:ahz:H:uA:v:Z:fc:F:K:R:q:I:j:JN:;")) !=-1)
     {
         switch (opt)
         {

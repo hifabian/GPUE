@@ -210,7 +210,9 @@ int init(Grid &par){
     if (par.bval("use_param_file")){
         parse_param_file(par);
     }
+    std::cout << "generating fields...\n";
     generate_fields(par);
+    std::cout << "generated fields...\n";
     std::vector<double *> K = par.dsvecval("K");
     std::vector<double *> Ax = par.dsvecval("Ax");
     std::vector<double *> Ay = par.dsvecval("Ay");

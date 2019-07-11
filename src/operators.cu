@@ -737,6 +737,7 @@ void generate_fields(Grid &par){
 
     generate_p_space(par);
     generate_K(par);
+    std::cout << "generating gauge fields...\n";
     generate_gauge(par);
 
 
@@ -833,6 +834,7 @@ void generate_fields(Grid &par){
     std::vector<double *> pAx(wfc_num), pAy(wfc_num), pAz(wfc_num);
     std::vector<double *> pAx_gpu(wfc_num), pAy_gpu(wfc_num), pAz_gpu(wfc_num);
     
+    std::cout << "iterating through all wavefunctions...\n";
     for (int w = 0; w < wfc_num; ++w){
 
         V[w] = (double *)malloc(sizeof(double)*gSize);
@@ -905,21 +907,27 @@ void generate_fields(Grid &par){
         pAy[w] = (double *)malloc(sizeof(double)*gSize);
         pAz[w] = (double *)malloc(sizeof(double)*gSize);
     
-        cudaMalloc((void**) &GV_gpu[w], sizeof(double2)*gSize);
-        cudaMalloc((void**) &EV_gpu[w], sizeof(double2)*gSize);
-        cudaMalloc((void**) &GK_gpu[w], sizeof(double2)*gSize);
-        cudaMalloc((void**) &EK_gpu[w], sizeof(double2)*gSize);
+        cudaHandleError(cudaMalloc((void**) &GV_gpu[w], sizeof(double2)*gSize));
+        cudaHandleError(cudaMalloc((void**) &EV_gpu[w], sizeof(double2)*gSize));
+        cudaHandleError(cudaMalloc((void**) &GK_gpu[w], sizeof(double2)*gSize));
+        cudaHandleError(cudaMalloc((void**) &EK_gpu[w], sizeof(double2)*gSize));
     
-        cudaMalloc((void**) &GpAx_gpu[w], sizeof(double2)*gSize);
-        cudaMalloc((void**) &EpAx_gpu[w], sizeof(double2)*gSize);
-        cudaMalloc((void**) &GpAy_gpu[w], sizeof(double2)*gSize);
-        cudaMalloc((void**) &EpAy_gpu[w], sizeof(double2)*gSize);
-        cudaMalloc((void**) &GpAz_gpu[w], sizeof(double2)*gSize);
-        cudaMalloc((void**) &EpAz_gpu[w], sizeof(double2)*gSize);
+        cudaHandleError(cudaMalloc((void**) &GpAx_gpu[w],
+                        sizeof(double2)*gSize));
+        cudaHandleError(cudaMalloc((void**) &EpAx_gpu[w],
+                        sizeof(double2)*gSize));
+        cudaHandleError(cudaMalloc((void**) &GpAy_gpu[w],
+                        sizeof(double2)*gSize));
+        cudaHandleError(cudaMalloc((void**) &EpAy_gpu[w],
+                        sizeof(double2)*gSize));
+        cudaHandleError(cudaMalloc((void**) &GpAz_gpu[w],
+                        sizeof(double2)*gSize));
+        cudaHandleError(cudaMalloc((void**) &EpAz_gpu[w],
+                        sizeof(double2)*gSize));
     
-        cudaMalloc((void**) &pAx_gpu[w], sizeof(double)*gSize);
-        cudaMalloc((void**) &pAy_gpu[w], sizeof(double)*gSize);
-        cudaMalloc((void**) &pAz_gpu[w], sizeof(double)*gSize);
+        cudaHandleError(cudaMalloc((void**) &pAx_gpu[w], sizeof(double)*gSize));
+        cudaHandleError(cudaMalloc((void**) &pAy_gpu[w], sizeof(double)*gSize));
+        cudaHandleError(cudaMalloc((void**) &pAz_gpu[w], sizeof(double)*gSize));
     
         aux_fields<<<par.grid, par.threads>>>(V_gpu[w], K_gpu[w], gdt, dt,
                                               Ax_gpu[w], Ay_gpu[w], Az_gpu[w],
@@ -962,7 +970,6 @@ void generate_fields(Grid &par){
                         cudaMemcpyDeviceToHost));
 
         // Storing variables
-        cudaHandleError(cudaFree(items_gpu));
         //cudaHandleError(cudaFree(phi_gpu));
         cudaHandleError(cudaFree(GV_gpu[w]));
         cudaHandleError(cudaFree(EV_gpu[w]));
@@ -991,7 +998,9 @@ void generate_fields(Grid &par){
         else{
             par.store("V_gpu",V_gpu);
         }
+        std::cout << "wavefunction " << w << " set!\n";
     }
+    cudaHandleError(cudaFree(items_gpu));
     cudaHandleError(cudaFree(x_gpu));
     cudaHandleError(cudaFree(y_gpu));
     cudaHandleError(cudaFree(z_gpu));

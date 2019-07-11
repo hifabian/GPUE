@@ -38,7 +38,8 @@ int kill_idx = -1;
 
 void cudaHandleError(cudaError_t result) {
     if (result != cudaSuccess) {
-        std::cout << "Cuda operation failed!\n Error code: " << result << '\n';
+        std::cout << "Cuda operation failed!\n Error: " 
+                  << cudaGetErrorString(result) << '\n';
         exit(1);
     }
 }
@@ -46,14 +47,15 @@ void cudaHandleError(cudaError_t result) {
 void cudaCheckError() {
     cudaError_t result = cudaGetLastError();
     if (result != cudaSuccess) {
-        std::cout << "Cuda kernel failed!\n Error code: " << result << '\n';
+        std::cout << "Cuda kernel failed!\n Error: " 
+                  << cudaGetErrorString(result) << '\n';
         exit(1);
     }
 }
 
 void cufftHandleError(cufftResult result) {
     if (result != CUFFT_SUCCESS) {
-        std::cout << "cufft operation failed!\n Error code: " << result << '\n';
+        std::cout << "cufft operation failed!\n Error: " << result << '\n';
     }
 }
 
