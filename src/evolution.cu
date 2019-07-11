@@ -9,127 +9,150 @@ void apply_gauge(Grid &par, double2 *wfc, double2 *Ax, double2 *Ay,
                  cufftHandle plan_dim3, double dx, double dy, double dz,
                  double time, int yDim, int size){
 
-    cufftResult result;
     dim3 grid = par.grid;
     dim3 threads = par.threads;
 
     if (flip){
 
         // 1d forward / mult by Az
-        result = cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_FORWARD);
+        cufftHandleError(cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_FORWARD));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_z, wfc);
+        cudaCheckError();
         if(par.bval("Ax_time")){
             EqnNode_gpu* Ax_eqn = par.astval("Ax");
             int e_num = par.ival("Ax_num");
             ast_cmult<<<grid,threads>>>(wfc, wfc, Ax_eqn, dx, dy, dz,
                                         time, e_num);
+            cudaCheckError();
         }
         else{
             cMult<<<grid,threads>>>(wfc, (cufftDoubleComplex*) Ax, wfc);
+            cudaCheckError();
         }
-        result = cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_INVERSE);
+        cufftHandleError(cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_INVERSE));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_z, wfc);
+        cudaCheckError();
 
         // loop to multiply by Ay
         for (int i = 0; i < yDim; i++){
-            result = cufftExecZ2Z(plan_dim2,  &wfc[i*size],
-                     &wfc[i*size], CUFFT_FORWARD);
+            cufftHandleError(cufftExecZ2Z(plan_dim2,  &wfc[i*size],
+                             &wfc[i*size], CUFFT_FORWARD));
         }
 
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_y, wfc);
+        cudaCheckError();
         if(par.bval("Ay_time")){
             EqnNode_gpu* Ay_eqn = par.astval("Ay");
             int e_num = par.ival("Ay_num");
             ast_cmult<<<grid,threads>>>(wfc, wfc, Ay_eqn, dx, dy, dz,
                                         time, e_num);
+            cudaCheckError();
         }
         else{
             cMult<<<grid,threads>>>(wfc, (cufftDoubleComplex*) Ay, wfc);
+            cudaCheckError();
         }
 
         for (int i = 0; i < yDim; i++){
             //size = xDim * zDim;
-            result = cufftExecZ2Z(plan_dim2, &wfc[i*size],
-                     &wfc[i*size], CUFFT_INVERSE);
+            cufftHandleError(cufftExecZ2Z(plan_dim2, &wfc[i*size],
+                             &wfc[i*size], CUFFT_INVERSE));
         }
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_y, wfc);
+        cudaCheckError();
 
         // 1D FFT to Ax
-        result = cufftExecZ2Z(plan_dim3, wfc, wfc, CUFFT_FORWARD);
+        cufftHandleError(cufftExecZ2Z(plan_dim3, wfc, wfc, CUFFT_FORWARD));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_x, wfc);
+        cudaCheckError();
 
         if(par.bval("Az_time")){
             EqnNode_gpu* Az_eqn = par.astval("Az");
             int e_num = par.ival("Az_num");
             ast_cmult<<<grid,threads>>>(wfc, wfc, Az_eqn, dx, dy, dz,
                                         time, e_num);
+            cudaCheckError();
         }
         else{
             cMult<<<grid,threads>>>(wfc, (cufftDoubleComplex*) Az, wfc);
+            cudaCheckError();
         }
 
-        result = cufftExecZ2Z(plan_dim3, wfc, wfc, CUFFT_INVERSE);
+        cufftHandleError(cufftExecZ2Z(plan_dim3, wfc, wfc, CUFFT_INVERSE));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_x, wfc);
+        cudaCheckError();
 
     }
     else{
 
         // 1D FFT to Ax
-        result = cufftExecZ2Z(plan_dim3, wfc, wfc, CUFFT_FORWARD);
+        cufftHandleError(cufftExecZ2Z(plan_dim3, wfc, wfc, CUFFT_FORWARD));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_x, wfc);
+        cudaCheckError();
 
         if(par.bval("Az_time")){
             EqnNode_gpu* Az_eqn = par.astval("Az");
             int e_num = par.ival("Az_num");
             ast_cmult<<<grid,threads>>>(wfc, wfc, Az_eqn, dx, dy, dz,
                                         time, e_num);
+            cudaCheckError();
         }
         else{
             cMult<<<grid,threads>>>(wfc, (cufftDoubleComplex*) Az, wfc);
+            cudaCheckError();
         }
 
-        result = cufftExecZ2Z(plan_dim3, wfc, wfc, CUFFT_INVERSE);
+        cufftHandleError(cufftExecZ2Z(plan_dim3, wfc, wfc, CUFFT_INVERSE));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_x, wfc);
+        cudaCheckError();
 
 
         // loop to multiply by Ay
         for (int i = 0; i < yDim; i++){
-            result = cufftExecZ2Z(plan_dim2,  &wfc[i*size],
-                     &wfc[i*size], CUFFT_FORWARD);
+            cufftHandleError(cufftExecZ2Z(plan_dim2,  &wfc[i*size],
+                             &wfc[i*size], CUFFT_FORWARD));
         }
 
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_y, wfc);
+        cudaCheckError();
         if(par.bval("Ay_time")){
             EqnNode_gpu* Ay_eqn = par.astval("Ay");
             int e_num = par.ival("Ay_num");
             ast_cmult<<<grid,threads>>>(wfc, wfc, Ay_eqn, dx, dy, dz,
                                         time, e_num);
+            cudaCheckError();
         }
         else{
             cMult<<<grid,threads>>>(wfc, (cufftDoubleComplex*) Ay, wfc);
+            cudaCheckError();
         }
 
         for (int i = 0; i < yDim; i++){
             //size = xDim * zDim;
-            result = cufftExecZ2Z(plan_dim2, &wfc[i*size],
-                     &wfc[i*size], CUFFT_INVERSE);
+            cufftHandleError(cufftExecZ2Z(plan_dim2, &wfc[i*size],
+                             &wfc[i*size], CUFFT_INVERSE));
         }
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_y, wfc);
+        cudaCheckError();
 
         // 1d forward / mult by Az
-        result = cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_FORWARD);
+        cufftHandleError(cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_FORWARD));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_z, wfc);
+        cudaCheckError();
         if(par.bval("Ax_time")){
             EqnNode_gpu* Ax_eqn = par.astval("Ax");
             int e_num = par.ival("Ax_num");
             ast_cmult<<<grid,threads>>>(wfc, wfc, Ax_eqn, dx, dy, dz,
                                         time, e_num);
+            cudaCheckError();
         }
         else{
             cMult<<<grid,threads>>>(wfc, (cufftDoubleComplex*) Ax, wfc);
+            cudaCheckError();
         }
-        result = cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_INVERSE);
+        cufftHandleError(cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_INVERSE));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_z, wfc);
+        cudaCheckError();
 
     }
 
@@ -141,77 +164,92 @@ void apply_gauge(Grid &par, double2 *wfc, double2 *Ax, double2 *Ay,
                  cufftHandle plan_1d, cufftHandle plan_dim2, double dx,
                  double dy, double dz, double time){
 
-    cufftResult result;
     dim3 grid = par.grid;
     dim3 threads = par.threads;
 
     if (flip){
 
         // 1d forward / mult by Ay
-        result = cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_FORWARD);
+        cufftHandleError(cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_FORWARD));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_y ,wfc);
+        cudaCheckError();
         if(par.bval("Ay_time")){
             EqnNode_gpu* Ay_eqn = par.astval("Ay");
             int e_num = par.ival("Ay_num");
             ast_cmult<<<grid,threads>>>(wfc, wfc, Ay_eqn, dx, dy, dz,
                                         time, e_num);
+            cudaCheckError();
         }
         else{
             cMult<<<grid,threads>>>(wfc, (cufftDoubleComplex*) Ay, wfc);
+            cudaCheckError();
         }
-        result = cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_INVERSE);
+        cufftHandleError(cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_INVERSE));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_y, wfc);
+        cudaCheckError();
 
 
         // 1D FFT to wfc_pAx
-        result = cufftExecZ2Z(plan_dim2, wfc, wfc, CUFFT_FORWARD);
+        cufftHandleError(cufftExecZ2Z(plan_dim2, wfc, wfc, CUFFT_FORWARD));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_x, wfc);
+        cudaCheckError();
         if(par.bval("Ax_time")){
             EqnNode_gpu* Ax_eqn = par.astval("Ax");
             int e_num = par.ival("Ax_num");
             ast_cmult<<<grid,threads>>>(wfc, wfc, Ax_eqn, dx, dy, dz,
                                         time, e_num);
+            cudaCheckError();
         }
         else{
             cMult<<<grid,threads>>>(wfc, (cufftDoubleComplex*) Ax, wfc);
+            cudaCheckError();
         }
 
-        result = cufftExecZ2Z(plan_dim2, wfc, wfc, CUFFT_INVERSE);
+        cufftHandleError(cufftExecZ2Z(plan_dim2, wfc, wfc, CUFFT_INVERSE));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_x, wfc);
+        cudaCheckError();
     }
     else{
 
         // 1D FFT to wfc_pAx
-        result = cufftExecZ2Z(plan_dim2, wfc, wfc, CUFFT_FORWARD);
+        cufftHandleError(cufftExecZ2Z(plan_dim2, wfc, wfc, CUFFT_FORWARD));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_x, wfc);
+        cudaCheckError();
         if(par.bval("Ax_time")){
             EqnNode_gpu* Ax_eqn = par.astval("Ax");
             int e_num = par.ival("Ax_num");
             ast_cmult<<<grid,threads>>>(wfc, wfc, Ax_eqn, dx, dy, dz,
                                         time, e_num);
+            cudaCheckError();
         }
         else{
             cMult<<<grid,threads>>>(wfc, (cufftDoubleComplex*) Ax, wfc);
+            cudaCheckError();
         }
 
-        result = cufftExecZ2Z(plan_dim2, wfc, wfc, CUFFT_INVERSE);
+        cufftHandleError(cufftExecZ2Z(plan_dim2, wfc, wfc, CUFFT_INVERSE));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_x, wfc);
+        cudaCheckError();
 
 
         // 1d forward / mult by Ay
-        result = cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_FORWARD);
+        cufftHandleError(cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_FORWARD));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_y ,wfc);
+        cudaCheckError();
         if(par.bval("Ay_time")){
             EqnNode_gpu* Ay_eqn = par.astval("Ay");
             int e_num = par.ival("Ay_num");
             ast_cmult<<<grid,threads>>>(wfc, wfc, Ay_eqn, dx, dy, dz,
                                         time, e_num);
+            cudaCheckError();
         }
         else{
             cMult<<<grid,threads>>>(wfc, (cufftDoubleComplex*) Ay, wfc);
+            cudaCheckError();
         }
-        result = cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_INVERSE);
+        cufftHandleError(cufftExecZ2Z(plan_1d, wfc, wfc, CUFFT_INVERSE));
         scalarMult<<<grid,threads>>>(wfc, renorm_factor_y, wfc);
+        cudaCheckError();
 
     }
 
@@ -253,6 +291,8 @@ void evolve(Grid &par,
     bool nonlin = par.bval("gpe");
     bool lz = par.bval("corotating");
     bool ramp = par.bval("ramp");
+    int energy_calc_steps = par.ival("energy_calc_steps");
+    double energy_calc_threshold = par.dval("energy_calc_threshold");
     int ramp_type = par.ival("ramp_type");
     int step_offset = par.ival("step_offset");
     int xDim = par.ival("xDim");
@@ -264,16 +304,19 @@ void evolve(Grid &par,
     std::vector<double2 *> wfc_array = par.d2svecval("wfc_array");
     std::vector<double2 *> gpuWfc_array = par.d2svecval("wfc_gpu_array");
     double2 **device_wfc_array;
-    cudaMalloc((void **) &device_wfc_array, sizeof(double2*)*wfc_num);
-    cudaMemcpy(device_wfc_array, gpuWfc_array.data(), sizeof(double2*)*wfc_num,
-               cudaMemcpyHostToDevice);
+    cudaHandleError(cudaMalloc((void **) &device_wfc_array,
+                              sizeof(double2*)*wfc_num));
+    cudaHandleError(cudaMemcpy(device_wfc_array,
+                   gpuWfc_array.data(), sizeof(double2*)*wfc_num,
+                   cudaMemcpyHostToDevice));
 
     std::vector<double2 *> K_gpu = par.d2svecval("K_gpu");
     std::vector<double2 *> V_gpu = par.d2svecval("V_gpu");
 
     double *interactions, *gpu_interactions;
     interactions = (double *)malloc(sizeof(double)*wfc_num*wfc_num);
-    cudaMalloc((void **) &gpu_interactions, sizeof(double)*wfc_num*wfc_num);
+    cudaHandleError(cudaMalloc((void **) &gpu_interactions,
+                    sizeof(double)*wfc_num*wfc_num));
 
     if (dimnum > 1){
         dy = par.dval("dy");
@@ -290,7 +333,6 @@ void evolve(Grid &par,
     int gridSize = xDim * yDim * zDim;
 
     // getting data from Cuda class
-    cufftResult result;
     cufftHandle plan_1d = par.ival("plan_1d");
     cufftHandle plan_2d = par.ival("plan_2d");
     cufftHandle plan_other2d = par.ival("plan_other2d");
@@ -403,14 +445,14 @@ void evolve(Grid &par,
                 }
             }
     
+            cudaHandleError(cudaMemcpy(wfc_array[w], gpuWfc_array[w],
+                            sizeof(cufftDoubleComplex)*xDim*yDim*zDim, 
+                            cudaMemcpyDeviceToHost));
             // Print-out at pre-determined rate.
             // Vortex & wfc analysis performed here also.
             if(i % printSteps == 0) {
                 // If the unit_test flag is on, we need a special case
                 printf("Step: %d    Omega: %lf\n", i, omega_0);
-                cudaMemcpy(wfc_array[w], gpuWfc_array[w],
-                           sizeof(cufftDoubleComplex)*xDim*yDim*zDim, 
-                           cudaMemcpyDeviceToHost);
     
                 // Printing out time of iteration
                 end = clock();
@@ -531,10 +573,11 @@ void evolve(Grid &par,
                                 // for the potential.
                                 if (kick_it == 2) {
                                     printf("Kicked it 1\n");
-                                    cudaMemcpy(V_gpu[w], EV_opt[w],
-                                               sizeof(cufftDoubleComplex)*xDim
-                                                   *yDim*wfc_num,
-                                               cudaMemcpyHostToDevice);
+                                    cudaHandleError(cudaMemcpy(V_gpu[w],
+                                                    EV_opt[w],
+                                                    sizeof(double2)
+                                                        *xDim*yDim*wfc_num,
+                                                    cudaMemcpyHostToDevice));
                                 }
                                 // Write out the newly specified potential
                                 // and exp potential to files
@@ -613,13 +656,15 @@ void evolve(Grid &par,
                                                     getData().getCoordsD().y,
                                                 xDim);
         
-                                            cudaMemcpy(Phi_gpu[w], Phi[w], 
-                                                       sizeof(double) * xDim
-                                                           *yDim*wfc_num,
-                                                       cudaMemcpyHostToDevice);
+                                            cudaHandleError(cudaMemcpy(
+                                                Phi_gpu[w], Phi[w], 
+                                                sizeof(double)
+                                                    *xDim*yDim*wfc_num,
+                                                cudaMemcpyHostToDevice));
                                             cMultPhi <<<grid, threads>>>(
                                                 gpuWfc_array[w],Phi_gpu[w],
                                                 gpuWfc_array[w]);
+                                            cudaCheckError();
         
                                             // Imprinting new one
                                             int cval = -winding;
@@ -634,13 +679,15 @@ void evolve(Grid &par,
                                                 xDim);
         
                                             // Sending to device for imprinting
-                                            cudaMemcpy(Phi_gpu[w], Phi[w], 
-                                                       sizeof(double) * xDim
-                                                           *yDim*wfc_num,
-                                                       cudaMemcpyHostToDevice);
+                                            cudaHandleError(cudaMemcpy(
+                                                Phi_gpu[w], Phi[w], 
+                                                sizeof(double)
+                                                    *xDim*yDim*wfc_num,
+                                                cudaMemcpyHostToDevice));
                                             cMultPhi <<<grid, threads>>>(
                                                 gpuWfc_array[w],Phi_gpu[w],
                                                 gpuWfc_array[w]);
+                                            cudaCheckError();
                                         }
                                         else{
                                             int cval = -(winding-1);
@@ -651,13 +698,15 @@ void evolve(Grid &par,
                                                 lattice.getVortexUid(idx)->
                                                     getData().getCoordsD().y,
                                                 xDim);
-                                            cudaMemcpy(Phi_gpu[w], Phi[w], 
-                                                       sizeof(double) * xDim
-                                                           *yDim*wfc_num,
-                                                       cudaMemcpyHostToDevice);
+                                            cudaHandleError(cudaMemcpy(
+                                                Phi_gpu[w], Phi[w], 
+                                                sizeof(double)
+                                                    *xDim*yDim*wfc_num,
+                                                cudaMemcpyHostToDevice));
                                             cMultPhi <<<grid, threads>>>(
                                                 gpuWfc_array[w],Phi_gpu[w],
                                                 gpuWfc_array[w]);
+                                            cudaCheckError();
                                         }
                                     };
                                     if (kill_idx > 0){
@@ -735,27 +784,6 @@ void evolve(Grid &par,
                                      i+step_offset);
                 }
                 //std::cout << "written" << '\n';
-                if (par.bval("energy_calc")){
-                    double energy = energy_calc(par,gpuWfc_array[w]);
-                    // Now opening and closing file for writing.
-                    std::ofstream energy_out;
-                    std::string mode = "energyi.dat";
-                    if (gstate == 1){
-                        mode = "energy.dat";
-                    }
-                    if (i == 0){
-                        energy_out.open(data_dir + mode);
-                    }
-                    else{
-                        energy_out.open(data_dir + mode, std::ios::out |
-                                                         std::ios::app);
-                    }
-                    energy_out << energy << '\n';
-                    energy_out.close();
-                    printf("Energy[t@%d]=%E\n",i,energy);
-                    par.store("energy", energy);
-                }
-    
             }
     
             // U_r(dt/2)*wfc
@@ -766,10 +794,11 @@ void evolve(Grid &par,
                         EqnNode_gpu* V_eqn = par.astval("V");
                         int e_num = par.ival("V_num");
                         cMultDensity_ast<<<grid,threads>>>(V_eqn,
-                                                           gpuWfc_array[w],
+                            gpuWfc_array[w],
                             gpuWfc_array[w],
                             dx, dy, dz, time, e_num, 0.5*Dt,
                             gstate,interaction*gDenConst);
+                        cudaCheckError();
                     }
                     else{
                         cMultDensity_multicomp<<<grid,threads>>>(V_gpu[w],
@@ -778,6 +807,7 @@ void evolve(Grid &par,
                             device_wfc_array,
                             gpu_interactions,
                             0.5*Dt,gstate,gDenConst, wfc_num, w);
+                        cudaCheckError();
                     }
 
                 }
@@ -790,11 +820,13 @@ void evolve(Grid &par,
                             gpuWfc_array[w],
                             dx, dy, dz, time, e_num, 0.5*Dt,
                             gstate,interaction*gDenConst);
+                        cudaCheckError();
                     }
                     else{
                         cMultDensity<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
                             gpuWfc_array[w],
                             0.5*Dt,gstate,interaction*gDenConst);
+                        cudaCheckError();
                     }
                 }
             }
@@ -805,36 +837,42 @@ void evolve(Grid &par,
                     ast_op_mult<<<grid,threads>>>(gpuWfc_array[w],
                         gpuWfc_array[w],
                         V_eqn, dx, dy, dz, time, e_num, gstate+1, Dt);
+                        cudaCheckError();
                 }
                 else{
                     cMult<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
                                             gpuWfc_array[w]);
+                        cudaCheckError();
                 }
             }
     
             // U_p(dt)*fft2(wfc)
-            result = cufftExecZ2Z(plan_3d,gpuWfc_array[w],gpuWfc_array[w],
-                                  CUFFT_FORWARD);
+            cufftHandleError(cufftExecZ2Z(plan_3d,gpuWfc_array[w],
+                                  gpuWfc_array[w], CUFFT_FORWARD));
     
             // Normalise
             scalarMult<<<grid,threads>>>(gpuWfc_array[w],renorm_factor_nd,
                                          gpuWfc_array[w]);
+            cudaCheckError();
             if (par.bval("K_time")){
                 EqnNode_gpu* k_eqn = par.astval("k");
                 int e_num = par.ival("k_num");
                 ast_op_mult<<<grid,threads>>>(gpuWfc_array[w],gpuWfc_array[w],
                     k_eqn, dx, dy, dz, time, e_num, gstate+1, Dt);
+                cudaCheckError();
             }
             else{
                 cMult<<<grid,threads>>>(K_gpu[w],gpuWfc_array[w],
                                         gpuWfc_array[w]);
+                cudaCheckError();
             }
-            result = cufftExecZ2Z(plan_3d,gpuWfc_array[w],gpuWfc_array[w],
-                                  CUFFT_INVERSE);
+            cufftHandleError(cufftExecZ2Z(plan_3d,gpuWfc_array[w],
+                                  gpuWfc_array[w], CUFFT_INVERSE));
     
             // Normalise
             scalarMult<<<grid,threads>>>(gpuWfc_array[w],renorm_factor_nd,
                                          gpuWfc_array[w]);
+            cudaCheckError();
     
             // U_r(dt/2)*wfc
             if(nonlin == 1){
@@ -847,12 +885,14 @@ void evolve(Grid &par,
                             gpuWfc_array[w], gpuWfc_array[w], dx, dy, dz,
                             time, e_num, 0.5*Dt,
                             gstate,interaction*gDenConst);
+                        cudaCheckError();
                     }
                     else{
                         cMultDensity_multicomp<<<grid,threads>>>(V_gpu[w],
                             gpuWfc_array[w], gpuWfc_array[w],
                             device_wfc_array, gpu_interactions, 0.5*Dt, gstate,
                             interaction*gDenConst, wfc_num, w);
+                        cudaCheckError();
                     }
 
                 }
@@ -864,11 +904,13 @@ void evolve(Grid &par,
                             gpuWfc_array[w], gpuWfc_array[w], dx, dy, dz,
                             time, e_num, 0.5*Dt,
                             gstate,interaction*gDenConst);
+                        cudaCheckError();
                     }
                     else{
                         cMultDensity<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
                             gpuWfc_array[w], 0.5*Dt, gstate,
                             interaction*gDenConst);
+                        cudaCheckError();
                     }
                 }
             }
@@ -879,10 +921,12 @@ void evolve(Grid &par,
                     ast_op_mult<<<grid,threads>>>(gpuWfc_array[w],
                         gpuWfc_array[w],
                         V_eqn, dx, dy, dz, time, e_num, gstate+1, Dt);
+                        cudaCheckError();
                 }
                 else{
                     cMult<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
                                             gpuWfc_array[w]);
+                        cudaCheckError();
                 }
     
             }
@@ -895,15 +939,18 @@ void evolve(Grid &par,
                     scalarPow<<<grid,threads>>>((double2*) gpu1dpAy[w], 
                                                 omega_0,
                                                 (double2*) gpu1dpAy[w]);
+                    cudaCheckError();
                     if (dimnum > 1){
                         scalarPow<<<grid,threads>>>((double2*) gpu1dpAx[w],
                                                     omega_0,
                                                     (double2*) gpu1dpAx[w]);
+                        cudaCheckError();
                     }
                     if (dimnum > 2){
                         scalarPow<<<grid,threads>>>((double2*) gpu1dpAz[w],
                                                     omega_0,
                                                     (double2*) gpu1dpAz[w]);
+                        cudaCheckError();
                     }
                 }
                 int size = xDim*zDim;
@@ -920,33 +967,75 @@ void evolve(Grid &par,
                                 plan_other2d, dx, dy, dz, time);
                 }
                 else if (dimnum == 1){
-                    result = cufftExecZ2Z(plan_1d,gpuWfc_array[w],
-                                          gpuWfc_array[w],CUFFT_FORWARD);
+                    cufftHandleError(cufftExecZ2Z(plan_1d,gpuWfc_array[w],
+                                     gpuWfc_array[w],CUFFT_FORWARD));
                     scalarMult<<<grid,threads>>>(gpuWfc_array[w],
                                                  renorm_factor_x,
                                                  gpuWfc_array[w]);
+                        cudaCheckError();
                     if(par.bval("Ax_time")){
                         EqnNode_gpu* Ax_eqn = par.astval("Ax");
                         int e_num = par.ival("Ax_num");
                         ast_cmult<<<grid,threads>>>(gpuWfc_array[w],
                             gpuWfc_array[w], Ax_eqn, dx, dy, dz, time, e_num);
+                        cudaCheckError();
                     }
                     else{
                         cMult<<<grid,threads>>>(gpuWfc_array[w],
                             (cufftDoubleComplex*) gpu1dpAx[w], gpuWfc_array[w]);
+                        cudaCheckError();
                     }
     
-                    result = cufftExecZ2Z(plan_1d,gpuWfc_array[w],
-                                          gpuWfc_array[w], CUFFT_INVERSE);
+                    cufftHandleError(cufftExecZ2Z(plan_1d,gpuWfc_array[w],
+                                     gpuWfc_array[w], CUFFT_INVERSE));
                     scalarMult<<<grid,threads>>>(gpuWfc_array[w],
                                                  renorm_factor_x,
                                                  gpuWfc_array[w]);
+                        cudaCheckError();
                 }
             }
         
             if(gstate==0){
                 parSum(gpuWfc_array[w], par);
             }
+            if (par.bval("energy_calc") &&
+               (i % (energy_calc_steps == 0 ? printSteps : energy_calc_steps)
+                    == 0)) {
+                double energy = energy_calc(par, gpuWfc_array[w]);
+
+                printf("Energy[t@%d]=%E\n",i,energy);
+                std::ofstream energy_out;
+                std::string mode = "energyi.dat";
+                if (gstate == 1){
+                    mode = "energy.dat";
+                }
+                if (i == 0){
+                    energy_out.open(data_dir + mode);
+                }
+                else{
+                    energy_out.open(data_dir + mode, std::ios::out |
+                                                     std::ios::app);
+                }
+                energy_out << energy << '\n';
+                energy_out.close();
+
+                double oldEnergy;
+                if (i != 0) {
+                    oldEnergy = par.dval("energy");
+                } else {
+                    oldEnergy = 0;
+                }
+                par.store("energy", energy);
+
+                if (i != 0 &&
+                    fabs(oldEnergy - energy)
+                       < energy_calc_threshold * oldEnergy &&
+                    gstate == 0) {
+                    printf("Stopping early at step %d with energy %E\n",
+                           i, energy);
+                    break;
+                }
+        }
         }
     }
     par.store("wfc_array", wfc_array);

@@ -138,15 +138,16 @@ void math_operator_test(){
     hb[0].x = 0.02;
     hb[0].y = 0.2;
 
-    cudaMalloc((void**) &da, sizeof(double2));
-    cudaMalloc((void**) &db, sizeof(double2));
-    cudaMalloc((void**) &dc, sizeof(double2));
+    cudaHandleError( cudaMalloc((void**) &da, sizeof(double2)) );
+    cudaHandleError( cudaMalloc((void**) &db, sizeof(double2)) );
+    cudaHandleError( cudaMalloc((void**) &dc, sizeof(double2)) );
 
-    cudaMemcpy(da, ha, sizeof(double2), cudaMemcpyHostToDevice);
-    cudaMemcpy(db, hb, sizeof(double2), cudaMemcpyHostToDevice);
+    cudaHandleError( cudaMemcpy(da, ha, sizeof(double2), cudaMemcpyHostToDevice) );
+    cudaHandleError( cudaMemcpy(db, hb, sizeof(double2), cudaMemcpyHostToDevice) );
 
     add_test<<<grid, threads>>>(da, db, dc);
-    cudaMemcpy(hc, dc, sizeof(double2), cudaMemcpyDeviceToHost);
+    cudaCheckError();
+    cudaHandleError( cudaMemcpy(hc, dc, sizeof(double2), cudaMemcpyDeviceToHost) );
 
     if (abs(hc[0].x - 0.03) > 1e-16 || abs(hc[0].y - 0.3) > 1e-16){
         std::cout << "Complex addition test failed!\n";
@@ -154,7 +155,8 @@ void math_operator_test(){
     }
 
     subtract_test<<<grid, threads>>>(da, db, dc);
-    cudaMemcpy(hc, dc, sizeof(double2), cudaMemcpyDeviceToHost);
+    cudaCheckError();
+    cudaHandleError( cudaMemcpy(hc, dc, sizeof(double2), cudaMemcpyDeviceToHost) );
 
     if (hc[0].x != -0.01 || hc[0].y != -0.1){
         std::cout << "Complex subtraction test failed!\n";
@@ -162,7 +164,8 @@ void math_operator_test(){
     }
 
     pow_test<<<grid, threads>>>(da, 3, dc);
-    cudaMemcpy(hc, dc, sizeof(double2), cudaMemcpyDeviceToHost);
+    cudaCheckError();
+    cudaHandleError( cudaMemcpy(hc, dc, sizeof(double2), cudaMemcpyDeviceToHost) );
 
     if (abs(hc[0].x + 0.000299) > 1e-16 || abs(hc[0].y + 0.00097) > 1e-16){
         std::cout << "Complex power test failed!\n";
@@ -170,7 +173,8 @@ void math_operator_test(){
     }
 
     mult_test<<<grid, threads>>>(da, db, dc);
-    cudaMemcpy(hc, dc, sizeof(double2), cudaMemcpyDeviceToHost);
+    cudaCheckError();
+    cudaHandleError( cudaMemcpy(hc, dc, sizeof(double2), cudaMemcpyDeviceToHost) );
 
     if (abs(hc[0].x + 0.0198) > 1e-16 || abs(hc[0].y - 0.004) > 1e-16){
         std::cout << "Complex multiplication test failed!\n";
@@ -178,7 +182,8 @@ void math_operator_test(){
     }
 
     mult_test<<<grid, threads>>>(da, 3.0, dc);
-    cudaMemcpy(hc, dc, sizeof(double2), cudaMemcpyDeviceToHost);
+    cudaCheckError();
+    cudaHandleError( cudaMemcpy(hc, dc, sizeof(double2), cudaMemcpyDeviceToHost) );
 
     if (abs(hc[0].x - 0.03) > 1e-16 || abs(hc[0].y - 0.3) > 1e-16){
         std::cout << "Complex multiplication test with real number failed!\n";
@@ -187,18 +192,18 @@ void math_operator_test(){
 
     std::cout << "Complex addition, subtraction, multiplication, and powers have been tested\n";
 
-    cudaFree(da);
-    cudaFree(db);
-    cudaFree(dc);
+    cudaHandleError( cudaFree(da) );
+    cudaHandleError( cudaFree(db) );
+    cudaHandleError( cudaFree(dc) );
 
 
     std::cout << "Now testing the derive() kernels...\n";
     // Now testing the derive function
-    int dim = 4;
+    unsigned int dim = 4;
     double2 *darray, *darray_gpu, *darray_out;
     darray = (double2 *)malloc(sizeof(double2)*dim*dim*dim);
-    cudaMalloc((void**) &darray_gpu, sizeof(double2)*dim*dim*dim);
-    cudaMalloc((void**) &darray_out, sizeof(double2)*dim*dim*dim);
+    cudaHandleError( cudaMalloc((void**) &darray_gpu, sizeof(double2)*dim*dim*dim) );
+    cudaHandleError( cudaMalloc((void**) &darray_out, sizeof(double2)*dim*dim*dim) );
 
     for (int i = 0; i < dim; ++i){
         for (int j = 0; j < dim; ++j){
@@ -210,15 +215,16 @@ void math_operator_test(){
         }
     }
 
-    cudaMemcpy(darray_gpu, darray, sizeof(double2)*dim*dim*dim,
-               cudaMemcpyHostToDevice);
+    cudaHandleError( cudaMemcpy(darray_gpu, darray, sizeof(double2)*dim*dim*dim,
+                                cudaMemcpyHostToDevice) );
 
     grid = {1, dim, dim};
     threads = {dim, 1, 1};
 
     derive<<<grid, threads>>>(darray_gpu, darray_out, 1, dim*dim*dim,1);
-    cudaMemcpy(darray, darray_out, sizeof(double2)*dim*dim*dim,
-               cudaMemcpyDeviceToHost);
+    cudaCheckError();
+    cudaHandleError( cudaMemcpy(darray, darray_out, sizeof(double2)*dim*dim*dim,
+                                cudaMemcpyDeviceToHost) );
     for (int i = 0; i < dim-1; ++i){
         for (int j = 0; j < dim-1; ++j){
             for (int k = 0; k < dim-1; ++k){
@@ -230,8 +236,9 @@ void math_operator_test(){
     }
 
     derive<<<grid, threads>>>(darray_gpu, darray_out, dim, dim*dim*dim,1);
-    cudaMemcpy(darray, darray_out, sizeof(double2)*dim*dim*dim,
-               cudaMemcpyDeviceToHost);
+    cudaCheckError();
+    cudaHandleError( cudaMemcpy(darray, darray_out, sizeof(double2)*dim*dim*dim,
+                                cudaMemcpyDeviceToHost) );
     for (int i = 0; i < dim-1; ++i){
         for (int j = 0; j < dim-1; ++j){
             for (int k = 0; k < dim-1; ++k){
@@ -243,8 +250,9 @@ void math_operator_test(){
     }
 
     derive<<<grid, threads>>>(darray_gpu, darray_out, dim*dim, dim*dim*dim,1);
-    cudaMemcpy(darray, darray_out, sizeof(double2)*dim*dim*dim,
-               cudaMemcpyDeviceToHost);
+    cudaCheckError();
+    cudaHandleError( cudaMemcpy(darray, darray_out, sizeof(double2)*dim*dim*dim,
+                                cudaMemcpyDeviceToHost) );
     for (int i = 0; i < dim-1; ++i){
         for (int j = 0; j < dim-1; ++j){
             for (int k = 0; k < dim-1; ++k){
@@ -302,20 +310,21 @@ void cufftDoubleComplex_functions_test(){
     hin[0].x = 3.0;
     hin[0].y = 4.0;
 
-    cudaMalloc((void**)&dval_double, sizeof(double));
-    cudaMalloc((void**)&dval_double2, sizeof(double2));
-    cudaMalloc((void**)&dout, sizeof(double));
-    cudaMalloc((void**)&din, sizeof(double2));
+    cudaHandleError( cudaMalloc((void**)&dval_double, sizeof(double)) );
+    cudaHandleError( cudaMalloc((void**)&dval_double2, sizeof(double2)) );
+    cudaHandleError( cudaMalloc((void**)&dout, sizeof(double)) );
+    cudaHandleError( cudaMalloc((void**)&din, sizeof(double2)) );
 
 
     // Testing make_cufftDoubleComplex function
-    cudaMemcpy(dval_double, hval_double, sizeof(double), 
-               cudaMemcpyHostToDevice);
+    cudaHandleError( cudaMemcpy(dval_double, hval_double, sizeof(double), 
+                                cudaMemcpyHostToDevice) );
 
     make_cufftDoubleComplex<<<grid, threads>>>(dval_double, dval_double2);
+    cudaCheckError();
 
-    cudaMemcpy(hval_double2, dval_double2, sizeof(double2),
-               cudaMemcpyDeviceToHost);
+    cudaHandleError( cudaMemcpy(hval_double2, dval_double2, sizeof(double2),
+                                cudaMemcpyDeviceToHost) );
 
     if (hval_double2[0].x != 3.0 || hval_double2[0].y != 0){
         std::cout << "Test of make_cufftDoubleComplex failed!\n";
@@ -323,10 +332,11 @@ void cufftDoubleComplex_functions_test(){
     }
 
     // testing device complexMagnitude function
-    cudaMemcpy(din, hin, sizeof(double2), cudaMemcpyHostToDevice);
+    cudaHandleError( cudaMemcpy(din, hin, sizeof(double2), cudaMemcpyHostToDevice) );
     complexMag_test<<<grid, threads>>>(din, dout);
+    cudaCheckError();
 
-    cudaMemcpy(hout, dout, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaHandleError( cudaMemcpy(hout, dout, sizeof(double), cudaMemcpyDeviceToHost) );
 
     if (hout[0] != 5.0){
         std::cout << hout[0] << '\n';
@@ -336,7 +346,8 @@ void cufftDoubleComplex_functions_test(){
 
     // Testing global complexMagnitude function
     complexMagnitude<<<grid, threads>>>(din, dout);
-    cudaMemcpy(hout, dout, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaCheckError();
+    cudaHandleError( cudaMemcpy(hout, dout, sizeof(double), cudaMemcpyDeviceToHost) );
 
     if (hout[0] != 5.0){
         std::cout << hout[0] << '\n';
@@ -345,8 +356,9 @@ void cufftDoubleComplex_functions_test(){
     }
 
     complexMag2_test<<<grid, threads>>>(din, dout);
+    cudaCheckError();
 
-    cudaMemcpy(hout, dout, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaHandleError( cudaMemcpy(hout, dout, sizeof(double), cudaMemcpyDeviceToHost) );
 
     if (hout[0] != 25.0){
         std::cout << hout[0] << '\n';
@@ -356,7 +368,8 @@ void cufftDoubleComplex_functions_test(){
 
     // Testing global complexMagnitude function
     complexMagnitudeSquared<<<grid, threads>>>(din, dout);
-    cudaMemcpy(hout, dout, sizeof(double), cudaMemcpyDeviceToHost);
+    cudaCheckError();
+    cudaHandleError( cudaMemcpy(hout, dout, sizeof(double), cudaMemcpyDeviceToHost) );
 
     if (hout[0] != 25.0){
         std::cout << hout[0] << '\n';
@@ -424,24 +437,25 @@ void dynamic_test(){
     }
 */
 
-    cudaMalloc((void**)&eqn_gpu, sizeof(EqnNode_gpu)*element_num);
-    cudaMemcpy(eqn_gpu, eqn_cpu, sizeof(EqnNode_gpu)*element_num,
-               cudaMemcpyHostToDevice);
+    cudaHandleError( cudaMalloc((void**)&eqn_gpu, sizeof(EqnNode_gpu)*element_num) );
+    cudaHandleError( cudaMemcpy(eqn_gpu, eqn_cpu, sizeof(EqnNode_gpu)*element_num,
+                                cudaMemcpyHostToDevice) );
 
     // Now to check some simple evaluation
     std::cout << "Now to check simple GPU evaluation..." << '\n';
     int n = 64;
     double *array, *array_gpu;
     array = (double *)malloc(sizeof(double)*n);
-    cudaMalloc(&array_gpu, sizeof(double)*n);
+    cudaHandleError( cudaMalloc(&array_gpu, sizeof(double)*n) );
 
     int threads = 64;
     int grid = (int)ceil((float)n/threads);
 
     //zeros<<<grid, threads>>>(array_gpu, n);
     find_field<<<grid, threads>>>(array_gpu, 1, 0.0, 0.0, 0.0, 1,1,1,eqn_gpu);
+    cudaCheckError();
 
-    cudaMemcpy(array, array_gpu, sizeof(double)*n, cudaMemcpyDeviceToHost);
+    cudaHandleError( cudaMemcpy(array, array_gpu, sizeof(double)*n, cudaMemcpyDeviceToHost) );
 
     for (int i = 0; i < n; ++i){
         double eqn_val = (((3*i)+7)+(5-7)+cos(0)*1)+pow(120,2);
@@ -466,9 +480,10 @@ void dynamic_test(){
     parse_param_file(par);
     EqnNode_gpu *eqn = par.astval("V");
     find_field<<<grid, threads>>>(array_gpu, 0.1, 0.1, 0.1, 1, 1, 1, 0, eqn);
-    cudaDeviceSynchronize();
+    cudaCheckError();
+    cudaHandleError( cudaDeviceSynchronize() );
     
-    cudaMemcpy(array, array_gpu, sizeof(double)*n, cudaMemcpyDeviceToHost);
+    cudaHandleError( cudaMemcpy(array, array_gpu, sizeof(double)*n, cudaMemcpyDeviceToHost) );
 
 /*
     for (int i = 0; i < n; ++i){
@@ -499,16 +514,17 @@ void bessel_test(){
     double *j_gpu, *j_poly_gpu;
     bool *val, *val_gpu;
     int n = 128;
-    cudaMalloc((void **)&j_gpu, sizeof(double)*n);
-    cudaMalloc((void **)&j_poly_gpu, sizeof(double)*n);
+    cudaHandleError( cudaMalloc((void **)&j_gpu, sizeof(double)*n) );
+    cudaHandleError( cudaMalloc((void **)&j_poly_gpu, sizeof(double)*n) );
 
-    cudaMalloc((void **)&val_gpu, sizeof(bool));
+    cudaHandleError( cudaMalloc((void **)&val_gpu, sizeof(bool)) );
     val = (bool *)malloc(sizeof(bool));
     val[0] = true;
-    cudaMemcpy(val_gpu, val, sizeof(bool), cudaMemcpyHostToDevice);
+    cudaHandleError( cudaMemcpy(val_gpu, val, sizeof(bool), cudaMemcpyHostToDevice) );
 
     bessel_test_kernel<<<64,2>>>(j_gpu, j_poly_gpu, val_gpu);
-    cudaMemcpy(val, val_gpu, sizeof(bool), cudaMemcpyDeviceToHost);
+    cudaCheckError();
+    cudaHandleError( cudaMemcpy(val, val_gpu, sizeof(bool), cudaMemcpyDeviceToHost) );
 
     if(val[0]){
         std::cout << "Bessel Test Passed!" << '\n';
@@ -548,43 +564,28 @@ void fft_test(){
     generate_plan_other3d(&plan_y, par, 1);
     generate_plan_other3d(&plan_z, par, 2);
 
-    // And the result / error
-    cudaError_t err;
-    cufftResult result;
-
     // Creating the initial array for the x dimension fft
     double2 *array, *gpu_array;
     array = (double2 *) malloc(sizeof(double2)*gsize);
-    cudaMalloc((void**) &gpu_array, sizeof(double2)*gsize);
+    cudaHandleError( cudaMalloc((void**) &gpu_array, sizeof(double2)*gsize) );
     for (int i = 0; i < gsize; i++){
         array[i].x = 1;
         array[i].y = 0;
     }
 
     // transferring to gpu
-    err = cudaMemcpy(gpu_array, array, sizeof(double2)*gsize,
-                     cudaMemcpyHostToDevice);
-    if (err != cudaSuccess){
-        std::cout << "Could not coppy array to device!" << '\n';
-        std::cout << "error code: " << err << '\n';
-        exit(1);
-    }
+    cudaHandleError( cudaMemcpy(gpu_array, array, sizeof(double2)*gsize,
+                                cudaMemcpyHostToDevice) );
 
     // Performing the x transformation
     for (int i = 0; i < yDim; i++){
-        result = cufftExecZ2Z(plan_y, &gpu_array[i*xDim*yDim], 
-                                      &gpu_array[i*xDim*yDim], CUFFT_FORWARD);
+        cufftHandleError( cufftExecZ2Z(plan_y, &gpu_array[i*xDim*yDim], 
+                                       &gpu_array[i*xDim*yDim], CUFFT_FORWARD) );
     }
-    //result = cufftExecZ2Z(plan_z, gpu_array, gpu_array, CUFFT_FORWARD);
 
     // transferring back to host to check output
-    err = cudaMemcpy(array, gpu_array, sizeof(double2)*gsize, 
-                     cudaMemcpyDeviceToHost);
-    if (err != cudaSuccess){
-        std::cout << "Could not coppy gpu_array to host!" << '\n';
-        std::cout << "error code: " << err << '\n';
-        exit(1);
-    }
+    cudaHandleError( cudaMemcpy(array, gpu_array, sizeof(double2)*gsize, 
+                                cudaMemcpyDeviceToHost) );
 
 /*
     for (int i = 0; i < gsize; i++){
@@ -595,19 +596,13 @@ void fft_test(){
     // Now to try the inverse direction
 
     for (int i = 0; i < yDim; i++){
-        result = cufftExecZ2Z(plan_y, &gpu_array[i*xDim*yDim], 
-                                      &gpu_array[i*xDim*yDim], CUFFT_INVERSE);
+        cufftHandleError( cufftExecZ2Z(plan_y, &gpu_array[i*xDim*yDim], 
+                                        &gpu_array[i*xDim*yDim], CUFFT_INVERSE) );
     }
-    //result = cufftExecZ2Z(plan_z, gpu_array, gpu_array, CUFFT_INVERSE);
 
     // copying back
-    err = cudaMemcpy(array, gpu_array, sizeof(double2)*gsize, 
-                     cudaMemcpyDeviceToHost);
-    if (err != cudaSuccess){
-        std::cout << "Could not coppy gpu_array to host!" << '\n';
-        std::cout << "error code: " << err << '\n';
-        exit(1);
-    }
+    cudaHandleError( cudaMemcpy(array, gpu_array, sizeof(double2)*gsize, 
+                                cudaMemcpyDeviceToHost) );
 
 /*
     for (int i = 0; i < gsize; i++){
@@ -616,9 +611,6 @@ void fft_test(){
 */
 
     std::cout << "cufft test passed!\n";
-
-
-
 }
 
 // Simple test of CUDA grid stuff
@@ -695,12 +687,10 @@ void grid_test2d(){
         assert(block.z == par.threads.z);
     }
 
-    int total_threads = block.x * block.y * block.z;
-
     // Now we need to initialize our double * and send it to the gpu
     double *host_array, *device_array;
     host_array = (double *) malloc(sizeof(double)*gsize);
-    cudaMalloc((void**) &device_array, sizeof(double)*gsize);
+    cudaHandleError( cudaMalloc((void**) &device_array, sizeof(double)*gsize) );
 
     // initializing 2d array
     for (int i = 0; i < gsize; i++){
@@ -708,17 +698,16 @@ void grid_test2d(){
     }
 
     // Now to copy to device
-    cudaMemcpy(device_array, host_array,
-               sizeof(double)*gsize,
-               cudaMemcpyHostToDevice);
+    cudaHandleError( cudaMemcpy(device_array, host_array, sizeof(double)*gsize,
+                                cudaMemcpyHostToDevice) );
 
     // Test
     thread_test<<<grid,block>>>(device_array,device_array);
+    cudaCheckError();
 
     // Now to copy back and print
-    cudaMemcpy(host_array, device_array,
-               sizeof(double)*gsize,
-               cudaMemcpyDeviceToHost);
+    cudaHandleError( cudaMemcpy(host_array, device_array, sizeof(double)*gsize,
+                                cudaMemcpyDeviceToHost) );
     
     
     for (int i = 0; i < xDim; ++i){
@@ -810,13 +799,10 @@ void grid_test3d(){
         assert(block.z == par.threads.z);
     }
 
-
-    int total_threads = block.x * block.y * block.z;
-
     // Now we need to initialize our double * and send it to the gpu
     double *host_array, *device_array;
     host_array = (double *) malloc(sizeof(double)*gsize);
-    cudaMalloc((void**) &device_array, sizeof(double)*gsize);
+    cudaHandleError( cudaMalloc((void**) &device_array, sizeof(double)*gsize) );
 
     // initializing 2d array
     for (int i = 0; i < gsize; i++){
@@ -824,17 +810,16 @@ void grid_test3d(){
     }
 
     // Now to copy to device
-    cudaMemcpy(device_array, host_array,
-               sizeof(double)*gsize,
-               cudaMemcpyHostToDevice);
+    cudaHandleError( cudaMemcpy(device_array, host_array, sizeof(double)*gsize,
+                                cudaMemcpyHostToDevice) );
 
     // Test
     thread_test<<<grid,block>>>(device_array,device_array);
+    cudaCheckError();
 
     // Now to copy back and print
-    cudaMemcpy(host_array, device_array,
-               sizeof(double)*gsize,
-               cudaMemcpyDeviceToHost);
+    cudaHandleError( cudaMemcpy(host_array, device_array,sizeof(double)*gsize,
+                                cudaMemcpyDeviceToHost) );
     
     
     for (int i = 0; i < xDim; ++i){
@@ -842,7 +827,7 @@ void grid_test3d(){
             for (int k = 0; k < zDim; ++k){
                 int index = i*yDim*zDim + j*yDim + k;
                 if (host_array[index] != index){
-                    std::cout << "Threadding values improperly set!\n";
+                    std::cout << "Threading values improperly set!\n";
                     assert(host_array[index] == index);
                 }
             }
@@ -850,16 +835,12 @@ void grid_test3d(){
     }
 
     std::cout << "3d grid tests completed. now for 3d cases" << '\n';
-
 }
 
 // Test of the parSum function in 3d
 void parSum_test(){
 
     std::cout << "Beginning test of parallel summation.\n";
-
-    // Setting error
-    cudaError_t err;
 
     // first, we need to initialize the Grid and Cuda classes
     Grid par;
@@ -904,29 +885,21 @@ void parSum_test(){
     }
 
     double2 *gpu_wfc_array;
-    cudaMalloc((void**) &gpu_wfc_array, sizeof(cufftDoubleComplex)*gsize);
+    cudaHandleError(cudaMalloc((void**) &gpu_wfc_array,
+                    sizeof(cufftDoubleComplex)*gsize));
 
     // copying wfc to device
-    err = cudaMemcpy(gpu_wfc_array, wfc_array, sizeof(cufftDoubleComplex)*gsize,
-                     cudaMemcpyHostToDevice);
-
-    if (err!=cudaSuccess){
-        std::cout << "ERROR: Could not copy wfc to device!" << '\n';
-    }
+    cudaHandleError(cudaMemcpy(gpu_wfc_array, wfc_array,
+                    sizeof(cufftDoubleComplex)*gsize, cudaMemcpyHostToDevice));
 
     // Creating parsum on device
 
     parSum(gpu_wfc_array, par);
 
     // copying parsum back
-    err = cudaMemcpy(wfc_array, gpu_wfc_array, 
-                     sizeof(cufftDoubleComplex)*gsize, 
-                     cudaMemcpyDeviceToHost);
-    if (err!=cudaSuccess){
-        std::cout << err << '\n';
-        std::cout << "ERROR: Could not copy wfc to the host!" << '\n';
-        exit(1);
-    }
+    cudaHandleError(cudaMemcpy(wfc_array, gpu_wfc_array, 
+                    sizeof(cufftDoubleComplex)*gsize, 
+                    cudaMemcpyDeviceToHost));
 
     for (int i = 0; i < gsize; ++i){
         if (wfc_array[i].x != 2/sqrt(32768.0*dx*dy) ||
@@ -956,19 +929,15 @@ void parSum_test(){
     par.grid = grid;
 
     // copying host wfc back to device
-    err = cudaMemcpy(gpu_wfc_array, wfc_array, sizeof(cufftDoubleComplex)*gsize,
-                     cudaMemcpyHostToDevice);
+    cudaHandleError(cudaMemcpy(gpu_wfc_array, wfc_array,
+                    sizeof(cufftDoubleComplex)*gsize, cudaMemcpyHostToDevice));
 
     parSum(gpu_wfc_array, par);
 
     // copying parsum back
-    err = cudaMemcpy(wfc_array, gpu_wfc_array, 
-                     sizeof(cufftDoubleComplex)*gsize, 
-                     cudaMemcpyDeviceToHost);
-    if (err!=cudaSuccess){
-        std::cout << "ERROR: Could not copy wfc to the host!" << '\n';
-        exit(1);
-    }
+    cudaHandleError(cudaMemcpy(wfc_array, gpu_wfc_array, 
+                    sizeof(cufftDoubleComplex)*gsize, 
+                    cudaMemcpyDeviceToHost));
 
     for (int i = 0; i < gsize; ++i){
         if (wfc_array[i].x != 2/sqrt(32768.0*dx*dy*dz) ||
@@ -981,7 +950,6 @@ void parSum_test(){
     }
 
     std::cout << "Parallel summation test passed in 2 and 3D!\n";
-
 }
 
 // Test for the Grid structure with paramters in it
@@ -1042,6 +1010,9 @@ void parser_test(){
     assert(noarg_grid.dval("gammaY") == 1.0);
     assert(noarg_grid.ival("gsteps") == 1);
     assert(noarg_grid.ival("esteps") == 1);
+    assert(noarg_grid.bval("energy_calc") == false);
+    assert(noarg_grid.ival("energy_calc_steps") == 0);
+    assert(noarg_grid.dval("energy_calc_threshold") == -1);
     assert(noarg_grid.dval("gdt") == 1e-4);
     assert(noarg_grid.dval("dt") == 1e-4);
     assert(noarg_grid.ival("device") == 0);
@@ -1089,51 +1060,51 @@ void parser_test(){
 
     // I apologize for the mess... If you have a better way of creating the 
     // char ** for this without running into memory issues, let me know!
-    char *fake_fullargv[] = {strdup("./gpue"), 
-                             strdup("-A"), strdup("rotation"), 
-                             strdup("-a"),
-                             strdup("-b"), strdup("2.5e-5"), 
-                             strdup("-C"), strdup("0"), 
-                             strdup("-c"), strdup("3"), 
-                             strdup("-D"), strdup("data"), 
-                             strdup("-E"), 
-                             strdup("-e"), strdup("1"), 
-                             strdup("-f"), 
-                             strdup("-G"), strdup("1"),
-                             strdup("-g"), strdup("1"), 
-                             strdup("-i"), strdup("1"), 
-                             strdup("-K"), strdup("0"), 
-                             strdup("-k"), strdup("0"),
-                             strdup("-L"), strdup("0"), 
-                             strdup("-l"), 
-                             strdup("-n"), strdup("1"), 
-                             strdup("-O"), strdup("0"),
-                             strdup("-P"), strdup("0"), 
-                             strdup("-p"), strdup("100"),
-                             strdup("-Q"), strdup("0"), 
-                             strdup("-q"), strdup("0"), 
-                             strdup("-R"), strdup("1"), 
-                             //strdup("-r"),
-                             strdup("-S"), strdup("0"), 
-                             strdup("-s"),
-                             strdup("-T"), strdup("1e-4"), 
-                             strdup("-t"), strdup("1e-4"), 
-                             strdup("-U"), strdup("0"), 
-                             strdup("-V"), strdup("0"), 
-                             strdup("-W"), 
-                             strdup("-w"), strdup("0"), 
-                             strdup("-X"), strdup("1.0"),
-                             strdup("-x"), strdup("256"), 
-                             strdup("-Y"), strdup("1.0"), 
-                             strdup("-y"), strdup("256"),
-                             strdup("-Z"), strdup("6.283"), 
-                             strdup("-z"), strdup("256"), 
+    const char *fake_fullargv[] = {"./gpue", 
+                             "-A", "rotation", 
+                             "-a",
+                             "-b", "2.5e-5", 
+                             "-C", "0", 
+                             "-c", "3", 
+                             "-D", "data", 
+                             "-E", "0.001", "100",
+                             "-e", "1", 
+                             "-f", 
+                             "-G", "1",
+                             "-g", "1", 
+                             "-i", "1", 
+                             "-K", "0", 
+                             "-k", "0",
+                             "-L", "0", 
+                             "-l", 
+                             "-n", "1", 
+                             "-O", "0",
+                             "-P", "0", 
+                             "-p", "100",
+                             "-Q", "0", 
+                             "-q", "0", 
+                             "-R", "1", 
+                             //"-r",
+                             "-S", "0", 
+                             "-s",
+                             "-T", "1e-4", 
+                             "-t", "1e-4", 
+                             "-U", "0", 
+                             "-V", "0", 
+                             "-W", 
+                             "-w", "0", 
+                             "-X", "1.0",
+                             "-x", "256", 
+                             "-Y", "1.0", 
+                             "-y", "256",
+                             "-Z", "6.283", 
+                             "-z", "256", 
                              NULL};
     int fake_argc = sizeof(fake_fullargv) / sizeof(char *) - 1;
 
     // Now to read into gpue and see what happens
     Grid fullarg_grid;
-    fullarg_grid = parseArgs(fake_argc, fake_fullargv);
+    fullarg_grid = parseArgs(fake_argc, (char **)fake_fullargv);
 
     // Checking contents of fullarg_grid:
     assert(fullarg_grid.ival("xDim") == 256);
@@ -1143,6 +1114,9 @@ void parser_test(){
     assert(fullarg_grid.dval("gammaY") == 1.0);
     assert(fullarg_grid.ival("gsteps") == 1);
     assert(fullarg_grid.ival("esteps") == 1);
+    assert(fullarg_grid.bval("energy_calc") == true);
+    assert(fullarg_grid.ival("energy_calc_steps") == 100);
+    assert(fullarg_grid.dval("energy_calc_threshold") == 0.001);
     assert(fullarg_grid.dval("gdt") == 1e-4);
     assert(fullarg_grid.dval("dt") == 1e-4);
     assert(fullarg_grid.ival("device") == 0);
@@ -1253,6 +1227,8 @@ void evolve_test(){
     par.store("write_file", false);
     par.store("write_it", false);
     par.store("energy_calc", true);
+    par.store("energy_calc_steps", 2000);
+    par.store("energy_calc_threshold", 0.0001);
     par.store("corotating", true);
     par.store("omega",0.0);
     par.store("box_size", 0.00007);
@@ -1260,8 +1236,6 @@ void evolve_test(){
     par.store("yDim", 1);
     par.store("zDim", 1);
     par.store("wfc_num", 1);
-
-
 
     // Running through all the dimensions to check the energy
     for (int i = 1; i <= 3; ++i){
@@ -1291,7 +1265,7 @@ void evolve_test(){
 
         if (abs(energy - energy_check) > thresh*energy_check){
             std::cout << "Energy is not correct in imaginary-time for " 
-                      << i << "D!\n";
+                      << i << "D! Expected " << energy_check << " but received " << energy << "\n";
             assert(energy == energy_check);
         }
 
@@ -1302,7 +1276,7 @@ void evolve_test(){
 
         if (abs(energy - energy_ev) > thresh*energy_check){
             std::cout << "Energy is not constant in real-time for " 
-                      << i << "D!\n";
+                      << i << "D! Expected " << energy_ev << " but received " << energy << "\n";
             assert(energy == energy_ev);
         }
     }
@@ -1338,24 +1312,26 @@ void make_complex_test(){
     evolution_type[1] = 1;
     evolution_type[2] = 2;
 
-    cudaMalloc((void **)&dinput_array, sizeof(double)*3);
-    cudaMalloc((void **)&doutput_array, sizeof(double2)*3);
-    cudaMalloc((void **)&devolution_type, sizeof(int)*3);
+    cudaHandleError( cudaMalloc((void **)&dinput_array, sizeof(double)*3) );
+    cudaHandleError( cudaMalloc((void **)&doutput_array, sizeof(double2)*3) );
+    cudaHandleError( cudaMalloc((void **)&devolution_type, sizeof(int)*3) );
 
-    cudaMemcpy(dinput_array, input_array, sizeof(double)*3,
-               cudaMemcpyHostToDevice);
-    cudaMemcpy(devolution_type, evolution_type, sizeof(int)*3,
-               cudaMemcpyHostToDevice);
+    cudaHandleError( cudaMemcpy(dinput_array, input_array, sizeof(double)*3,
+                                cudaMemcpyHostToDevice) );
+    cudaHandleError( cudaMemcpy(devolution_type, evolution_type, sizeof(int)*3,
+                                cudaMemcpyHostToDevice) );
 
     dim3 threads = {1,1,1};
     dim3 grid = {1,1,1};
 
     make_complex_kernel<<<1,1>>>(dinput_array, devolution_type,
-                                           doutput_array);
-    cudaDeviceSynchronize();
+                                 doutput_array);
+    cudaCheckError();
+    
+    cudaHandleError( cudaDeviceSynchronize() );
 
-    cudaMemcpy(output_array, doutput_array, sizeof(double2)*3, 
-               cudaMemcpyDeviceToHost);
+    cudaHandleError( cudaMemcpy(output_array, doutput_array, sizeof(double2)*3, 
+                                cudaMemcpyDeviceToHost) );
 
     bool pass = true;
     double thresh = 0.000001;
@@ -1398,9 +1374,9 @@ void cMultPhi_test(){
     in2 = (double *)malloc(sizeof(double)*n);
     out = (double2 *)malloc(sizeof(double2)*n);
 
-    cudaMalloc((void **)&din1, sizeof(double2)*n);
-    cudaMalloc((void **)&din2, sizeof(double)*n);
-    cudaMalloc((void **)&dout, sizeof(double2)*n);
+    cudaHandleError( cudaMalloc((void **)&din1, sizeof(double2)*n) );
+    cudaHandleError( cudaMalloc((void **)&din2, sizeof(double)*n) );
+    cudaHandleError( cudaMalloc((void **)&dout, sizeof(double2)*n) );
 
     for (int i = 0; i < n; ++i){
         in1[i].x = i;
@@ -1408,13 +1384,14 @@ void cMultPhi_test(){
         in2[i] = n-i;
     }
 
-    cudaMemcpy(din1, in1, sizeof(double2)*n, cudaMemcpyHostToDevice);
-    cudaMemcpy(din2, in2, sizeof(double)*n, cudaMemcpyHostToDevice);
+    cudaHandleError( cudaMemcpy(din1, in1, sizeof(double2)*n, cudaMemcpyHostToDevice) );
+    cudaHandleError( cudaMemcpy(din2, in2, sizeof(double)*n, cudaMemcpyHostToDevice) );
 
     cMultPhi<<<1,n>>>(din1, din2, dout);
-    cudaDeviceSynchronize();
+    cudaCheckError();
+    cudaHandleError( cudaDeviceSynchronize() );
 
-    cudaMemcpy(out, dout, sizeof(double2)*n, cudaMemcpyDeviceToHost);
+    cudaHandleError( cudaMemcpy(out, dout, sizeof(double2)*n, cudaMemcpyDeviceToHost) );
 
     double thresh = 0.000001;
     bool result = true;
