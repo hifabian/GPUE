@@ -663,7 +663,7 @@ void transfer_sobel(Grid &par){
 
 // function to transform a wavefunction to a field of edges
 void find_edges(Grid &par,
-                double2* wfc, double* edges){
+                double2* wfc, std::vector<double*> edges){
 
     // for this, we simply need to take our sobel 3d sobel filter,
     // FFT forward, multiply, FFT back.
@@ -672,14 +672,16 @@ void find_edges(Grid &par,
     dim3 grid = par.grid;
     dim3 threads = par.threads;
 
-    double2 *wfc_gpu = par.cufftDoubleComplexval("wfc_gpu");
+    std::vector<double2 *> wfc_gpu_array = par.d2svecval("wfc_gpu_array");
     int xDim = par.ival("xDim");
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
     int gSize = xDim * yDim * zDim;
+    int wfc_num = par.ival("wfc_num");
 
-    double *density_d, *edges_gpu;
-    double2 *density_d2, *gradient_x_fft, *gradient_y_fft, *gradient_z_fft;
+    std::vector<double *> density_d(wfc_num), edges_gpu(wfc_num);
+    std::vector<double2 *> density_d2(wfc_num), gradient_x_fft(wfc_num),
+                           gradient_y_fft(wfc_num), gradient_z_fft(wfc_num);
 
     // Now we need to grab the Sobel operators
     if (par.bval("found_sobel") == false){
@@ -690,30 +692,37 @@ void find_edges(Grid &par,
         if (dimnum == 3){
             find_sobel(par);
         }
-        cudaHandleError( cudaMalloc((void**) &density_d, sizeof(double) * gSize) );
-        cudaHandleError( cudaMalloc((void**) &gradient_x_fft, sizeof(double2) * gSize) );
-        cudaHandleError( cudaMalloc((void**) &gradient_y_fft, sizeof(double2) * gSize) );
+        cudaHandleError(cudaMalloc((void**) &density_d[0],
+                                   sizeof(double) * gSize));
+        cudaHandleError(cudaMalloc((void**) &gradient_x_fft[0],
+                                   sizeof(double2) * gSize));
+        cudaHandleError(cudaMalloc((void**) &gradient_y_fft[0],
+                                   sizeof(double2) * gSize));
         if (dimnum == 3){
-            cudaHandleError( cudaMalloc((void**) &gradient_z_fft, sizeof(double2) * gSize) );
+            cudaHandleError(cudaMalloc((void**) &gradient_z_fft[0],
+                                       sizeof(double2) * gSize));
         }
-        cudaHandleError( cudaMalloc((void**) &density_d2, sizeof(double2) * gSize) );
-        cudaHandleError( cudaMalloc((void**) &edges_gpu, sizeof(double) * gSize) );
+        cudaHandleError(cudaMalloc((void**) &density_d2[0],
+                                   sizeof(double2) * gSize));
+        cudaHandleError(cudaMalloc((void**) &edges_gpu[0],
+                                   sizeof(double) * gSize));
     }
     else{
-        density_d = par.dsval("density_d");
-        edges_gpu = par.dsval("edges_gpu");
-        gradient_x_fft = par.cufftDoubleComplexval("gradient_x_fft");
-        gradient_y_fft = par.cufftDoubleComplexval("gradient_y_fft");
+        density_d = par.dsvecval("density_d");
+        edges_gpu = par.dsvecval("edges_gpu");
+        gradient_x_fft = par.d2svecval("gradient_x_fft");
+        gradient_y_fft = par.d2svecval("gradient_y_fft");
         if (dimnum == 3){
-            gradient_z_fft = par.cufftDoubleComplexval("gradient_z_fft");
+            gradient_z_fft = par.d2svecval("gradient_z_fft");
         }
-        density_d2 = par.cufftDoubleComplexval("density_d2");
+        density_d2 = par.d2svecval("density_d2");
     }
+
 
     cufftHandle plan_3d = par.ival("plan_3d");
 
     // now to perform the complexMagnitudeSquared operation
-    complexMagnitudeSquared<<<grid,threads>>>(wfc_gpu, density_d);
+    complexMagnitudeSquared<<<grid,threads>>>(wfc_gpu_array[0], density_d[0]);
     cudaCheckError();
 
     // Pulling operators from find_sobel(par)
@@ -729,46 +738,53 @@ void find_edges(Grid &par,
     //cufftHandle plan_3d2z;
     //cufftPlan3d(&plan_3d2z, xDim, yDim, zDim, CUFFT_D2Z);
 
-    make_cufftDoubleComplex<<<grid, threads>>>(density_d, density_d2);
+    make_cufftDoubleComplex<<<grid, threads>>>(density_d[0], density_d2[0]);
     cudaCheckError();
 
     // Now fft forward, multiply, fft back
-    cufftHandleError( cufftExecZ2Z(plan_3d, density_d2, gradient_x_fft, CUFFT_FORWARD) );
-    cufftHandleError( cufftExecZ2Z(plan_3d, density_d2, gradient_y_fft, CUFFT_FORWARD) );
+    cufftHandleError(cufftExecZ2Z(plan_3d, density_d2[0],
+                                  gradient_x_fft[0], CUFFT_FORWARD));
+    cufftHandleError(cufftExecZ2Z(plan_3d, density_d2[0],
+                                  gradient_y_fft[0], CUFFT_FORWARD));
     if (dimnum == 3){
-        cufftHandleError( cufftExecZ2Z(plan_3d, density_d2, gradient_z_fft, CUFFT_FORWARD) );
+        cufftHandleError(cufftExecZ2Z(plan_3d, density_d2[0],
+                                      gradient_z_fft[0], CUFFT_FORWARD));
     }
 
     // Now to perform the multiplication
-    cMult<<<grid, threads>>>(gradient_x_fft, sobel_x_gpu, gradient_x_fft);
+    cMult<<<grid, threads>>>(gradient_x_fft[0], sobel_x_gpu, gradient_x_fft[0]);
     cudaCheckError();
-    cMult<<<grid, threads>>>(gradient_y_fft, sobel_y_gpu, gradient_y_fft);
+    cMult<<<grid, threads>>>(gradient_y_fft[0], sobel_y_gpu, gradient_y_fft[0]);
     cudaCheckError();
     if (dimnum == 3){
-        cMult<<<grid, threads>>>(gradient_z_fft, sobel_z_gpu, gradient_z_fft);
-        cudaCheckError();
+        cMult<<<grid, threads>>>(gradient_z_fft[0], sobel_z_gpu,
+                                 gradient_z_fft[0]);
     }
     
     // FFT back
-    cufftHandleError( cufftExecZ2Z(plan_3d, gradient_x_fft, gradient_x_fft, CUFFT_INVERSE) );
-    cufftHandleError( cufftExecZ2Z(plan_3d, gradient_y_fft, gradient_y_fft, CUFFT_INVERSE) );
+    cufftHandleError(cufftExecZ2Z(plan_3d, gradient_x_fft[0],
+                                  gradient_x_fft[0], CUFFT_INVERSE));
+    cufftHandleError(cufftExecZ2Z(plan_3d, gradient_y_fft[0],
+                                  gradient_y_fft[0], CUFFT_INVERSE));
     if (dimnum == 3){
-        cufftHandleError( cufftExecZ2Z(plan_3d, gradient_z_fft, gradient_z_fft, CUFFT_INVERSE) );
+        cufftHandleError(cufftExecZ2Z(plan_3d, gradient_z_fft[0],
+                                       gradient_z_fft[0], CUFFT_INVERSE));
     }
 
     if (dimnum == 2){
-        l2_norm<<<grid, threads>>>(gradient_x_fft, gradient_y_fft, edges_gpu);
+        l2_norm<<<grid, threads>>>(gradient_x_fft[0],gradient_y_fft[0],
+                                   edges_gpu[0]);
         cudaCheckError();
     }
     else if (dimnum == 3){
-        l2_norm<<<grid, threads>>>(gradient_x_fft, gradient_y_fft, 
-                                   gradient_z_fft, edges_gpu);
+        l2_norm<<<grid, threads>>>(gradient_x_fft[0], gradient_y_fft[0], 
+                                   gradient_z_fft[0], edges_gpu[0]);
         cudaCheckError();
     }
 
     // Copying edges back
-    cudaHandleError( cudaMemcpy(edges, edges_gpu, sizeof(double) * gSize, 
-                                cudaMemcpyDeviceToHost) );
+    cudaHandleError(cudaMemcpy(edges[0], edges_gpu[0], sizeof(double) * gSize, 
+                               cudaMemcpyDeviceToHost));
 
     // Method to find edges based on window approach -- more efficient, 
     // but difficult to implement

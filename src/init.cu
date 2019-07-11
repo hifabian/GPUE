@@ -1,10 +1,12 @@
 #include "../include/init.h"
 #include "../include/dynamic.h"
+#include "../include/split_op.h"
 
 void check_memory(Grid &par){
     int xDim = par.ival("xDim");
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
+    int wfc_num = par.ival("wfc_num");
 
     bool energy_calc = par.bval("energy_calc");
 
@@ -17,9 +19,9 @@ void check_memory(Grid &par){
     // Note that this check is specifically for the case where we need to keep
     // 8 double2* values on the GPU. This is not the case for dynamic fields
     // and the test should be updated accordingly as these are used more.
-    size_t req_memory = 16*8*(size_t)gSize;
+    size_t req_memory = 16*8*(size_t)gSize*(size_t)wfc_num;
     if (energy_calc){
-        req_memory += 4*16*(size_t)gSize;
+        req_memory += 4*16*(size_t)gSize*(size_t)wfc_num;
     }
     if (free < req_memory){
         std::cout << "Not enough GPU memory for gridsize!\n";
@@ -50,6 +52,8 @@ int init(Grid &par){
     int xDim = par.ival("xDim");
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
+    int wfc_num = par.ival("wfc_num");
+    int step_offset = par.ival("step_offset");
     bool write_file = par.bval("write_file");
     bool cyl_coord = par.bval("cyl_coord");
     bool corotating = par.bval("corotating");
@@ -71,12 +75,16 @@ int init(Grid &par){
     double box_size = par.dval("box_size");
     double *Energy;
     double *r;
-    double *V_opt;
-    cufftDoubleComplex *wfc;
+    std::vector<double *> V_opt(wfc_num);
+    double *Energy_gpu;
+    std::vector<cufftDoubleComplex *> wfc_array(wfc_num);
     if (par.bval("read_wfc") == true){
-        wfc = par.cufftDoubleComplexval("wfc");
+        for (int i = 0; i < wfc_array.size(); ++i){
+            wfc_array = par.d2svecval("wfc_array");
+        }
     }
-    cufftDoubleComplex *EV_opt;
+    std::vector<cufftDoubleComplex *> EV_opt(wfc_num);
+    cufftDoubleComplex *wfc_backup;
     cufftDoubleComplex *EappliedField;
 
     std::cout << "gSize is: " << gSize << '\n';
@@ -175,10 +183,13 @@ int init(Grid &par){
        imaginary and real-time evolution operators . */
     Energy = (double*) malloc(sizeof(double) * gSize);
     r = (double *) malloc(sizeof(double) * gSize);
-    V_opt = (double *) malloc(sizeof(double) * gSize);
-    EV_opt = (cufftDoubleComplex *) malloc(sizeof(cufftDoubleComplex) * gSize);
-    EappliedField = (cufftDoubleComplex *) malloc(sizeof(cufftDoubleComplex) *
-                                                         gSize);
+    for (int i = 0; i < wfc_array.size(); ++i){
+        V_opt[i] = (double *) malloc(sizeof(double) * gSize);
+        EV_opt[i] = (cufftDoubleComplex *)
+                 malloc(sizeof(cufftDoubleComplex) * gSize);
+    }
+    EappliedField = (cufftDoubleComplex *) 
+                    malloc(sizeof(cufftDoubleComplex) * gSize);
 
     //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
 
@@ -200,109 +211,152 @@ int init(Grid &par){
         parse_param_file(par);
     }
     generate_fields(par);
-    double *K = par.dsval("K");
-    double *Ax = par.dsval("Ax");
-    double *Ay = par.dsval("Ay");
-    double *Az = par.dsval("Az");
-    double *V = par.dsval("V");
+    std::vector<double *> K = par.dsvecval("K");
+    std::vector<double *> Ax = par.dsvecval("Ax");
+    std::vector<double *> Ay = par.dsvecval("Ay");
+    std::vector<double *> Az = par.dsvecval("Az");
+    std::vector<double *> V = par.dsvecval("V");
 
-    double *pAx = par.dsval("pAx");
-    double *pAy = par.dsval("pAy");
-    double *pAz = par.dsval("pAz");
+    std::vector<double *> pAx = par.dsvecval("pAx");
+    std::vector<double *> pAy = par.dsvecval("pAy");
+    std::vector<double *> pAz = par.dsvecval("pAz");
 
     double *x = par.dsval("x");
     double *y = par.dsval("y");
     double *z = par.dsval("z");
 
-    double2 *GpAx = par.cufftDoubleComplexval("GpAx");
-    double2 *GpAy = par.cufftDoubleComplexval("GpAy");
-    double2 *GpAz = par.cufftDoubleComplexval("GpAz");
-    double2 *EpAx = par.cufftDoubleComplexval("EpAx");
-    double2 *EpAy = par.cufftDoubleComplexval("EpAy");
-    double2 *EpAz = par.cufftDoubleComplexval("EpAz");
+    std::vector<double2 *> GpAx = par.d2svecval("GpAx");
+    std::vector<double2 *> GpAy = par.d2svecval("GpAy");
+    std::vector<double2 *> GpAz = par.d2svecval("GpAz");
+    std::vector<double2 *> EpAx = par.d2svecval("EpAx");
+    std::vector<double2 *> EpAy = par.d2svecval("EpAy");
+    std::vector<double2 *> EpAz = par.d2svecval("EpAz");
 
-    double2 *GV = par.cufftDoubleComplexval("GV");
-    double2 *EV = par.cufftDoubleComplexval("EV");
-    double2 *GK = par.cufftDoubleComplexval("GK");
-    double2 *EK = par.cufftDoubleComplexval("EK");
+    std::vector<double2 *> GV = par.d2svecval("GV");
+    std::vector<double2 *> EV = par.d2svecval("EV");
+    std::vector<double2 *> GK = par.d2svecval("GK");
+    std::vector<double2 *> EK = par.d2svecval("EK");
 
-    wfc = par.cufftDoubleComplexval("wfc");
+    wfc_array = par.d2svecval("wfc_array");
 
-    for(int i=0; i < gSize; i++ ){
-        sum+=sqrt(wfc[i].x*wfc[i].x + wfc[i].y*wfc[i].y);
+
+    for(int i=0; i < wfc_array.size(); i++ ){
+        for (int j = 0; j < gSize; ++j){
+            sum+=sqrt(wfc_array[i][j].x*wfc_array[i][j].x
+                      +wfc_array[i][j].y*wfc_array[i][j].y);
+        }
     }
 
     if (write_file){
-        double *Bz;
-        double *Bx;
-        double *By;
+        std::vector<double *> Bz(wfc_num);
+        std::vector<double *> Bx(wfc_num);
+        std::vector<double *> By(wfc_num);
         if (dimnum == 2){
-            Bz = curl2d(par, Ax, Ay);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                Bz[i] = curl2d(par, Ax[i], Ay[i]);
+            }
         }
         if (dimnum == 3){
             std::cout << "Calculating the 3d curl..." << '\n';
-                    Bx = curl3d_x(par, Ax, Ay, Az);
-                    By = curl3d_y(par, Ax, Ay, Az);
-                    Bz = curl3d_z(par, Ax, Ay, Az);
-                    std::cout << "Finished calculating Curl" << '\n';
+            for (int i = 0; i < wfc_array.size(); ++i){
+                Bx[i] = curl3d_x(par, Ax[i], Ay[i], Az[i]);
+                By[i] = curl3d_y(par, Ax[i], Ay[i], Az[i]);
+                Bz[i] = curl3d_z(par, Ax[i], Ay[i], Az[i]);
+            }
+            std::cout << "Finished calculating Curl" << '\n';
         }
         std::cout << "writing initial variables to file..." << '\n';
         //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
         //hdfWriteDouble(xDim, V, 0, "V_0"); //HDF COMING SOON!
         //hdfWriteComplex(xDim, wfc, 0, "wfc_0");
         if (cyl_coord && dimnum > 2){
-            double *Br = curl3d_r(par, Bx, By);
-            double *Bphi = curl3d_phi(par, Bx, By);
+            std::vector<double *> Br(wfc_num);
+            std::vector<double *> Bphi(wfc_num);
 
-            FileIO::writeOutDouble(buffer, data_dir + "Br",Br,gSize,0);
-            FileIO::writeOutDouble(buffer, data_dir + "Bphi",Bphi,gSize,0);
-            FileIO::writeOutDouble(buffer, data_dir + "Bz",Bz,gSize,0);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                Br[i] = curl3d_r(par, Bx[i], By[i]);
+                Bphi[i] = curl3d_phi(par, Bx[i], By[i]);
 
-            free(Br);
-            free(Bx);
-            free(By);
-            free(Bz);
-            free(Bphi);
+                FileIO::writeOutDouble(data_dir + "Br_" + std::to_string(i),
+                                       Br[i],gSize,step_offset);
+                FileIO::writeOutDouble(data_dir + "Bphi_" + std::to_string(i),
+                                       Bphi[i],gSize,step_offset);
+                FileIO::writeOutDouble(data_dir + "Bz_" + std::to_string(i),
+                                       Bz[i],gSize,step_offset);
+
+                free(Br[i]);
+                free(Bx[i]);
+                free(By[i]);
+                free(Bz[i]);
+                free(Bphi[i]);
+            }
         }
         else{
             if (dimnum > 1){
-                FileIO::writeOutDouble(buffer, data_dir + "Bz",Bz,gSize,0);
-                free(Bz);
+                for (int i = 0; i < wfc_array.size(); ++i){
+                    FileIO::writeOutDouble(data_dir + "Bz_" + std::to_string(i),
+                                           Bz[i],gSize,step_offset);
+                    free(Bz[i]);
+                }
             }
             if (dimnum > 2){
-                FileIO::writeOutDouble(buffer, data_dir + "Bx",Bx,gSize,0);
-                FileIO::writeOutDouble(buffer, data_dir + "By",By,gSize,0);
-                free(Bx);
-                free(By);
+                for (int i = 0; i < wfc_array.size(); ++i){
+                    FileIO::writeOutDouble(data_dir + "Bx_"+std::to_string(i),
+                                           Bx[i],gSize,step_offset);
+                    FileIO::writeOutDouble(data_dir + "By_"+std::to_string(i),
+                                           By[i],gSize,step_offset);
+                    free(Bx[i]);
+                    free(By[i]);
+                }
             }
         }
 
-        FileIO::writeOutDouble(buffer, data_dir + "V",V,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "K",K,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "pAy",pAy,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "pAx",pAx,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "Ax",Ax,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "Ay",Ay,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "Az",Az,gSize,0);
-        FileIO::writeOutDouble(buffer, data_dir + "x",x,xDim,0);
-        FileIO::writeOutDouble(buffer, data_dir + "y",y,yDim,0);
-        FileIO::writeOutDouble(buffer, data_dir + "z",z,zDim,0);
-        FileIO::writeOut(buffer, data_dir + "WFC",wfc,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "EpAz",EpAz,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "EpAy",EpAy,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "EpAx",EpAx,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "GK",GK,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "GV",GV,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "GpAx",GpAx,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "GpAy",GpAy,gSize,0);
-        FileIO::writeOut(buffer, data_dir + "GpAz",GpAz,gSize,0);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            FileIO::writeOutDouble(data_dir + "V_"+std::to_string(i),
+                                   V[i],gSize,step_offset);
+            FileIO::writeOutDouble(data_dir + "K_"+std::to_string(i),
+                                   K[i],gSize,step_offset);
+            FileIO::writeOutDouble(data_dir+"pAy_"+std::to_string(i),
+                                   pAy[i],gSize,step_offset);
+            FileIO::writeOutDouble(data_dir+"pAx_"+std::to_string(i),
+                                   pAx[i],gSize,step_offset);
+            FileIO::writeOutDouble(data_dir + "Ax_"+std::to_string(i),
+                                   Ax[i],gSize,step_offset);
+            FileIO::writeOutDouble(data_dir + "Ay_"+std::to_string(i),
+                                   Ay[i],gSize,step_offset);
+            FileIO::writeOutDouble(data_dir + "Az_"+std::to_string(i),
+                                   Az[i],gSize,step_offset);
+            FileIO::writeOutDouble(data_dir + "x",x,xDim,step_offset);
+            FileIO::writeOutDouble(data_dir + "y",y,yDim,step_offset);
+            FileIO::writeOutDouble(data_dir + "z",z,zDim,step_offset);
+            FileIO::writeOut(data_dir+"WFC_"+std::to_string(i),
+                             wfc_array[i],gSize,step_offset);
+            FileIO::writeOut(data_dir + "EpAz_"+std::to_string(i),
+                             EpAz[i],gSize,step_offset);
+            FileIO::writeOut(data_dir + "EpAy_"+std::to_string(i),
+                             EpAy[i],gSize,step_offset);
+            FileIO::writeOut(data_dir + "EpAx_"+std::to_string(i),
+                             EpAx[i],gSize,step_offset);
+            FileIO::writeOut(data_dir + "GK_"+std::to_string(i),
+                             GK[i],gSize,step_offset);
+            FileIO::writeOut(data_dir + "GV_"+std::to_string(i),
+                             GV[i],gSize,step_offset);
+            FileIO::writeOut(data_dir + "GpAx_"+std::to_string(i),
+                             GpAx[i],gSize,step_offset);
+            FileIO::writeOut(data_dir + "GpAy_"+std::to_string(i),
+                             GpAy[i],gSize,step_offset);
+            FileIO::writeOut(data_dir + "GpAz_"+std::to_string(i),
+                             GpAz[i],gSize,step_offset);
+        }
     }
 
     if (par.bval("read_wfc") == false){
         sum=sqrt(sum*dx*dy*dz);
-        for (int i = 0; i < gSize; i++){
-            wfc[i].x = (wfc[i].x)/(sum);
-            wfc[i].y = (wfc[i].y)/(sum);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            for (int j = 0; j < gSize; j++){
+                wfc_array[i][j].x = (wfc_array[i][j].x)/(sum);
+                wfc_array[i][j].y = (wfc_array[i][j].y)/(sum);
+            }
         }
     }
 
@@ -330,7 +384,8 @@ int init(Grid &par){
     // Initializes uninitialized variables to 0 values
     par.store("Energy", Energy);
     par.store("r", r);
-    par.store("wfc", wfc);
+    par.store("Energy_gpu", Energy_gpu);
+    par.store("wfc_array", wfc_array);
     par.store("EV_opt", EV_opt);
     par.store("V_opt", V_opt);
     par.store("EappliedField", EappliedField);
@@ -361,16 +416,18 @@ void set_variables(Grid &par, bool ev_type){
     //      This might need to be fixed later
     double dx = par.dval("dx");
     double dy = par.dval("dy");
-    double *V_opt = par.dsval("V_opt");
-    double *pAy = par.dsval("pAy");
-    double *pAx = par.dsval("pAx");
-    double2 *pAy_gpu;
-    double2 *pAx_gpu;
-    double2 *pAz_gpu;
-    double2 *V_gpu;
-    double2 *K_gpu;
-    cufftDoubleComplex *wfc = par.cufftDoubleComplexval("wfc");
-    cufftDoubleComplex *wfc_gpu = par.cufftDoubleComplexval("wfc_gpu");
+    int wfc_num = par.ival("wfc_num");
+    std::vector<double *> V_opt = par.dsvecval("V_opt");
+    std::vector<double *> pAy = par.dsvecval("pAy");
+    std::vector<double *> pAx = par.dsvecval("pAx");
+    std::vector<double2 *> pAy_gpu(wfc_num);
+    std::vector<double2 *> pAx_gpu(wfc_num);
+    std::vector<double2 *> pAz_gpu(wfc_num);
+    std::vector<double2 *> V_gpu(wfc_num);
+    std::vector<double2 *> K_gpu(wfc_num);
+    std::vector<double2 *> wfc_array = par.d2svecval("wfc_array");
+    std::vector<double2 *> wfc_gpu_array =
+         par.d2svecval("wfc_gpu_array");
     int dimnum = par.ival("dimnum");
     int xDim = par.ival("xDim");
     int yDim = par.ival("yDim");
@@ -385,113 +442,168 @@ void set_variables(Grid &par, bool ev_type){
         gsize *= zDim;
     }
     if(!par.bval("V_time")){
-        cudaHandleError( cudaMalloc((void**) &V_gpu, sizeof(double2)*gsize) );
+        for (int i = 0; i < wfc_array.size(); ++i){
+            cudaHandleError(cudaMalloc((void**) &V_gpu[i],
+                           sizeof(double2)*gsize*wfc_num));
+        }
     }
     if(!par.bval("K_time")){
-        cudaHandleError( cudaMalloc((void**) &K_gpu, sizeof(double2)*gsize) );
+        for (int i = 0; i < wfc_array.size(); ++i){
+            cudaHandleError(cudaMalloc((void**) &K_gpu[i],
+                            sizeof(double2)*gsize*wfc_num));
+        }
     }
     if(!par.bval("Ax_time")){
-        cudaHandleError( cudaMalloc((void**) &pAx_gpu, sizeof(double2)*gsize) );
+        for (int i = 0; i < wfc_array.size(); ++i){
+            cudaHandleError(cudaMalloc((void**) &pAx_gpu[i],
+                            sizeof(double2)*gsize*wfc_num));
+        }
     }
     if(!par.bval("Ay_time") && dimnum > 1){
-        cudaHandleError( cudaMalloc((void**) &pAy_gpu, sizeof(double2)*gsize) );
+        for (int i = 0; i < wfc_array.size(); ++i){
+            cudaHandleError(cudaMalloc((void**) &pAy_gpu[i],
+                            sizeof(double2)*gsize*wfc_num));
+        }
     }
     if(!par.bval("Az_time") && dimnum > 2){
-        cudaHandleError( cudaMalloc((void**) &pAz_gpu, sizeof(double2)*gsize) );
+        for (int i = 0; i < wfc_array.size(); ++i){
+            cudaHandleError(cudaMalloc((void**) &pAz_gpu[i],
+                            sizeof(double2)*gsize*wfc_num));
+        }
     }
 
     if (ev_type == 0){
-        cufftDoubleComplex *GK = par.cufftDoubleComplexval("GK");
-        cufftDoubleComplex *GV = par.cufftDoubleComplexval("GV");
-        cufftDoubleComplex *GpAx = par.cufftDoubleComplexval("GpAx");
-        cufftDoubleComplex *GpAy = nullptr;
-        cufftDoubleComplex *GpAz = nullptr;
+        std::vector<double2 *> GK = par.d2svecval("GK");
+        std::vector<double2 *> GV = par.d2svecval("GV");
+        std::vector<double2 *> GpAx = par.d2svecval("GpAx");
+        std::vector<double2 *> GpAy(wfc_num);
+        std::vector<double2 *> GpAz(wfc_num);
 
         if(!par.bval("K_time")){
-            cudaHandleError( cudaMemcpy(K_gpu, GK, sizeof(cufftDoubleComplex)*gsize,
-                                        cudaMemcpyHostToDevice) );
+            for (int i = 0; i < wfc_array.size(); ++i){
+                cudaHandleError(cudaMemcpy(K_gpu[i], GK[i],
+                                sizeof(cufftDoubleComplex)*gsize,
+                                cudaMemcpyHostToDevice));
+            }
         }
         if(!par.bval("V_time")){
-            cudaHandleError( cudaMemcpy(V_gpu, GV, sizeof(cufftDoubleComplex)*gsize,
-                                        cudaMemcpyHostToDevice) );
+            for (int i = 0; i < wfc_array.size(); ++i){
+                cudaHandleError(cudaMemcpy(V_gpu[i], GV[i],
+                                sizeof(cufftDoubleComplex)*gsize,
+                                cudaMemcpyHostToDevice));
+            }
         }
         if(!par.bval("Ax_time")){
-            cudaHandleError( cudaMemcpy(pAx_gpu, GpAx, sizeof(cufftDoubleComplex)*gsize,
-                                        cudaMemcpyHostToDevice) );
+            for (int i = 0; i < wfc_array.size(); ++i){
+                cudaHandleError(cudaMemcpy(pAx_gpu[i], GpAx[i],
+                                sizeof(cufftDoubleComplex)*gsize,
+                                cudaMemcpyHostToDevice));
+            }
         }
-        cudaHandleError( cudaMemcpy(wfc_gpu, wfc, sizeof(cufftDoubleComplex)*gsize,
-                                    cudaMemcpyHostToDevice) );
+        for (int i = 0; i < wfc_array.size(); ++i){
+            cudaHandleError(cudaMemcpy(wfc_gpu_array[i], wfc_array[i],
+                            sizeof(cufftDoubleComplex)*gsize,
+                            cudaMemcpyHostToDevice));
+        }
         par.store("K_gpu", K_gpu);
         par.store("V_gpu", V_gpu);
-        par.store("wfc_gpu", wfc_gpu);
-        par.store("pAy_gpu", pAy_gpu);
+        par.store("wfc_gpu_array", wfc_gpu_array);
         par.store("pAx_gpu", pAx_gpu);
 
         // Special cases for 3d
         if (dimnum > 1 && !par.bval("Ay_time")){
-            GpAy = par.cufftDoubleComplexval("GpAy");
-            cudaHandleError( cudaMemcpy(pAy_gpu, GpAy, sizeof(cufftDoubleComplex)*gsize,
-                                        cudaMemcpyHostToDevice) );
+            GpAy = par.d2svecval("GpAy");
+            for (int i = 0; i < wfc_array.size(); ++i){
+                cudaHandleError(cudaMemcpy(pAy_gpu[i], GpAy[i],
+                                sizeof(cufftDoubleComplex)*gsize,
+                                cudaMemcpyHostToDevice));
+            }
             par.store("pAy_gpu", pAy_gpu);
 
         }
         if (dimnum > 2 && !par.bval("Az_time")){
-            GpAz = par.cufftDoubleComplexval("GpAz");
-            cudaHandleError( cudaMemcpy(pAz_gpu, GpAz, sizeof(cufftDoubleComplex)*gsize,
-                                        cudaMemcpyHostToDevice) );
+            GpAz = par.d2svecval("GpAz");
+            for (int i = 0; i < wfc_array.size(); ++i){
+                cudaHandleError(cudaMemcpy(pAz_gpu[i], GpAz[i],
+                                sizeof(cufftDoubleComplex)*gsize,
+                                cudaMemcpyHostToDevice));
+            }
             par.store("pAz_gpu", pAz_gpu);
 
         }
-        free(GV); free(GK); free(GpAy); free(GpAx); free(GpAz);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            free(GV[i]); free(GK[i]); free(GpAy[i]);
+            free(GpAx[i]); free(GpAz[i]);
+        }
     }
     else if (ev_type == 1){
 
-        cufftDoubleComplex *EV = par.cufftDoubleComplexval("EV");
-        cufftDoubleComplex *EK = par.cufftDoubleComplexval("EK");
-        cufftDoubleComplex *EpAx = par.cufftDoubleComplexval("EpAx");
-        cufftDoubleComplex *EpAy = nullptr;
-        cufftDoubleComplex *EpAz = nullptr;
+        std::vector<double2 *> EV = par.d2svecval("EV");
+        std::vector<double2 *> EK = par.d2svecval("EK");
+        std::vector<double2 *> EpAx = par.d2svecval("EpAx");
+        std::vector<double2 *> EpAy(wfc_num);
+        std::vector<double2 *> EpAz(wfc_num);
         if (!par.bval("K_time")){
-            cudaHandleError( cudaMemcpy(K_gpu, EK, sizeof(cufftDoubleComplex)*gsize,
-                                        cudaMemcpyHostToDevice) );
-            par.store("K_gpu", K_gpu);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                cudaHandleError(cudaMemcpy(K_gpu[i], EK[i],
+                                sizeof(cufftDoubleComplex)*gsize,
+                                cudaMemcpyHostToDevice));
+                par.store("K_gpu", K_gpu);
+            }
         }
         if(!par.bval("Ax_time")){
-            cudaHandleError( cudaMemcpy(pAx_gpu, EpAx, sizeof(cufftDoubleComplex)*gsize,
-                                        cudaMemcpyHostToDevice) );
-            par.store("pAx_gpu", pAx_gpu);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                cudaHandleError(cudaMemcpy(pAx_gpu[i], EpAx[i],
+                               sizeof(cufftDoubleComplex)*gsize,
+                               cudaMemcpyHostToDevice));
+                par.store("pAx_gpu", pAx_gpu);
+            }
         }
 
         if (!par.bval("V_time")){
-            cudaHandleError( cudaMemcpy(V_gpu, EV, sizeof(cufftDoubleComplex)*gsize,
-                                        cudaMemcpyHostToDevice) );
-            par.store("V_gpu", V_gpu);
+            for (int i = 0; i < wfc_array.size(); ++i){
+                cudaHandleError(cudaMemcpy(V_gpu[i], EV[i],
+                                sizeof(cufftDoubleComplex)*gsize,
+                                cudaMemcpyHostToDevice));
+                par.store("V_gpu", V_gpu);
+            }
         }
-        cudaHandleError( cudaMemcpy(wfc_gpu, wfc, sizeof(cufftDoubleComplex)*gsize,
-                                    cudaMemcpyHostToDevice) );
+        for (int i = 0; i < wfc_array.size(); ++i){
+            cudaHandleError(cudaMemcpy(wfc_gpu_array[i], wfc_array[i],
+                            sizeof(cufftDoubleComplex)*gsize,
+                            cudaMemcpyHostToDevice));
+        }
 
-        par.store("wfc_gpu", wfc_gpu);
+        par.store("wfc_gpu_array", wfc_gpu_array);
 
         // Special variables / instructions for 2/3d case
         if (dimnum > 1 && !par.bval("Ay_time")){
-            EpAy = par.cufftDoubleComplexval("EpAy");
-            cudaHandleError( cudaMemcpy(pAy_gpu, EpAy, sizeof(cufftDoubleComplex)*gsize,
-                                        cudaMemcpyHostToDevice) );
-            par.store("pAy_gpu", pAy_gpu);
+            EpAy = par.d2svecval("EpAy");
+            for (int i = 0; i < wfc_array.size(); ++i){
+                cudaHandleError(cudaMemcpy(pAy_gpu[i], EpAy[i],
+                                sizeof(cufftDoubleComplex)*gsize,
+                                cudaMemcpyHostToDevice));
+                par.store("pAy_gpu", pAy_gpu);
+            }
         }
 
         if (dimnum > 2 && !par.bval("Az_time")){
-            EpAz = par.cufftDoubleComplexval("EpAz");
-            cudaHandleError( cudaMemcpy(pAz_gpu, EpAz, sizeof(cufftDoubleComplex)*gsize,
-                                        cudaMemcpyHostToDevice) );
-            par.store("pAz_gpu", pAz_gpu);
+            EpAz = par.d2svecval("EpAz");
+            for (int i = 0; i < wfc_array.size(); ++i){
+                cudaHandleError(cudaMemcpy(pAz_gpu[i], EpAz[i],
+                                sizeof(cufftDoubleComplex)*gsize,
+                                cudaMemcpyHostToDevice));
+                par.store("pAz_gpu", pAz_gpu);
+            }
         }
 
-        free(EV);
-        free(EK);
-        free(EpAy);
-        free(EpAx);
-        free(EpAz);
+        for (int i = 0; i < wfc_array.size(); ++i){
+            free(EV[i]);
+            free(EK[i]);
+            free(EpAy[i]);
+            free(EpAx[i]);
+            free(EpAz[i]);
+        }
     }
 
 }
@@ -499,13 +611,12 @@ void set_variables(Grid &par, bool ev_type){
 int main(int argc, char **argv){
 
     Grid par = parseArgs(argc,argv);
-    //Grid par2 = parseArgs(argc,argv);
 
     int device = par.ival("device");
     int dimnum = par.ival("dimnum");
-    cudaHandleError( cudaSetDevice(device) );
+    int wfc_num = par.ival("wfc_num");
+    cudaHandleError(cudaSetDevice(device));
 
-    std::string buffer;
     time_t start,fin;
     time(&start);
     printf("Start: %s\n", ctime(&start));
@@ -526,16 +637,16 @@ int main(int argc, char **argv){
 
         // Initializing the wfc
         int gSize = xDim * yDim * zDim;
-        cufftDoubleComplex *wfc;
+        std::vector<double2 *> wfc_array(wfc_num);
 
         std::string infile = par.sval("infile");
         std::string infilei = par.sval("infilei");
         printf("Loading wavefunction...");
-        wfc=FileIO::readIn(infile,infilei,gSize);
-        par.store("wfc",wfc);
+        wfc_array[0]=FileIO::readIn(infile,infilei,gSize);
+        par.store("wfc_array",wfc_array);
         printf("Wavefunction loaded.\n");
         //std::string data_dir = par.sval("data_dir");
-        //FileIO::writeOut(buffer, data_dir + "WFC_CHECK",wfc,gSize,0);
+        //FileIO::writeOut(data_dir + "WFC_CHECK",wfc_array,gSize,step_offset);
     }
 
     init(par);
@@ -546,20 +657,20 @@ int main(int argc, char **argv){
     std::cout << "variables re-established" << '\n';
 
     if (par.bval("write_file")){
-        FileIO::writeOutParam(buffer, par, data_dir + "Params.dat");
+        FileIO::writeOutParam(par, data_dir + "Params.dat");
     }
 
     if(gsteps > 0){
         std::cout << "Imaginary-time evolution started..." << '\n';
         set_variables(par, 0);
 
-        evolve(par, gsteps, 0, buffer);
+        evolve(par, gsteps, 0);
     }
 
     if(esteps > 0){
         std::cout << "real-time evolution started..." << '\n';
         set_variables(par, 1);
-        evolve(par, esteps, 1, buffer);
+        evolve(par, esteps, 1);
     }
 
     std::cout << "done evolving" << '\n';

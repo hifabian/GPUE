@@ -441,19 +441,22 @@ void generate_K(Grid &par){
     double *pz_gpu = par.dsval("pz_gpu");
     double gSize = par.ival("gSize");
     double mass = par.dval("mass");
+    int wfc_num = par.ival("wfc_num");
 
     // Creating K to work with
-    double *K, *K_gpu;
-    K = (double*)malloc(sizeof(double)*gSize);
-    cudaHandleError( cudaMalloc((void**) &K_gpu, sizeof(double)*gSize) );
+    std::vector<double *> K(wfc_num), K_gpu(wfc_num);
+    for (int w = 0; w < wfc_num; ++w){
+        K[w] = (double*)malloc(sizeof(double)*gSize);
+        cudaHandleError(cudaMalloc((void**) &K_gpu[w], sizeof(double)*gSize));
 
-    simple_K<<<par.grid, par.threads>>>(px_gpu, py_gpu, pz_gpu, mass, K_gpu);
-    cudaCheckError();
+        simple_K<<<par.grid, par.threads>>>(px_gpu, py_gpu, pz_gpu,
+                                            mass, K_gpu[w]);
 
-    cudaHandleError( cudaMemcpy(K, K_gpu, sizeof(double)*gSize, cudaMemcpyDeviceToHost) );
+        cudaHandleError(cudaMemcpy(K[w], K_gpu[w], sizeof(double)*gSize,
+                        cudaMemcpyDeviceToHost));
+    }
     par.store("K",K);
     par.store("K_gpu",K_gpu);
-    
 }
 
 // Simple kernel for generating K
@@ -473,8 +476,10 @@ void generate_gauge(Grid &par){
 
     int gSize = par.ival("gSize");
     int dimnum = par.ival("dimnum");
+    int wfc_num = par.ival("wfc_num");
 
-    double *Ax, *Ay, *Az, *Ax_gpu, *Ay_gpu, *Az_gpu;
+    std::vector<double *> Ax(wfc_num), Ay(wfc_num), Az(wfc_num),
+                          Ax_gpu(wfc_num), Ay_gpu(wfc_num), Az_gpu(wfc_num);
     double *x_gpu = par.dsval("x_gpu");
     double *y_gpu = par.dsval("y_gpu");
     double *z_gpu = par.dsval("z_gpu");
@@ -493,86 +498,64 @@ void generate_gauge(Grid &par){
     }
     double omega = par.dval("omega");
     double fudge = par.dval("fudge");
+    for (int w = 0; w < wfc_num;++w){
 
-    Ax = (double *)malloc(sizeof(double)*gSize);
-    Ay = (double *)malloc(sizeof(double)*gSize);
-    Az = (double *)malloc(sizeof(double)*gSize);
+        Ax[w] = (double *)malloc(sizeof(double)*gSize);
+        Ay[w] = (double *)malloc(sizeof(double)*gSize);
+        Az[w] = (double *)malloc(sizeof(double)*gSize);
 
-    cudaHandleError( cudaMalloc((void**) &Ax_gpu, sizeof(double)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &Ay_gpu, sizeof(double)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &Az_gpu, sizeof(double)*gSize) );
+        cudaHandleError(cudaMalloc((void**) &Ax_gpu[w], sizeof(double)*gSize));
+        cudaHandleError(cudaMalloc((void**) &Ay_gpu[w], sizeof(double)*gSize));
+        cudaHandleError(cudaMalloc((void**) &Az_gpu[w], sizeof(double)*gSize));
 
-    if (par.Afn == "file"){
-        file_A(par.Axfile, Ax, omega);
-        cudaHandleError( cudaMemcpy(Ax_gpu, Ax, sizeof(double)*gSize, cudaMemcpyHostToDevice) );
+        if (par.Afn == "file"){
+            file_A(par.Axfile, Ax[w], omega);
+            cudaHandleError(cudaMemcpy(Ax_gpu[w], Ax[w], sizeof(double)*gSize,
+                            cudaMemcpyHostToDevice));
 
-        if (dimnum > 1){
-            file_A(par.Ayfile, Ay, omega);
-            cudaHandleError( cudaMemcpy(Ay_gpu,Ay,sizeof(double)*gSize,cudaMemcpyHostToDevice) );
-        }
-
-        if (dimnum == 3){
-            file_A(par.Azfile, Az, omega);
-            cudaHandleError( cudaMemcpy(Az_gpu,Az,sizeof(double)*gSize,cudaMemcpyHostToDevice) );
-        }
-
-        std::cout << "finished reading Ax / Ay / Az from file" << '\n';
-    }
-    else{
-        if (par.is_ast_gpu("Ax")){
-            double dx = par.dval("dx");
-            double dy = par.dval("dy");
-            double dz = par.dval("dz");
-            double xMax = par.dval("xMax");
-            double yMax = par.dval("yMax");
-            double zMax = 0;
-            if (dimnum == 3){ 
-                zMax = par.dval("zMax");
+            if (dimnum > 1){
+                file_A(par.Ayfile, Ay[w], omega);
+                cudaHandleError(cudaMemcpy(Ay_gpu[w],Ay[w],sizeof(double)*gSize,
+                                cudaMemcpyHostToDevice));
             }
 
-            EqnNode_gpu *eqn = par.astval("Ax");
-
-            find_field<<<par.grid, par.threads>>>(Ax_gpu, dx, dy, dz, 
-                                                  xMax, yMax, zMax, 0, eqn);
-            cudaCheckError();
-        }
-        else{
-            par.Ax_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
-                                                 xMax, yMax, zMax, 
-                                                 omegaX, omegaY, omegaZ, 
-                                                 omega, fudge, Ax_gpu);
-            cudaCheckError();
-        }
-        if (par.is_ast_gpu("Ay")){
-            double dx = par.dval("dx");
-            double dy = par.dval("dy");
-            double dz = par.dval("dz");
-            double xMax = par.dval("xMax");
-            double yMax = par.dval("yMax");
-            double zMax = 0;
             if (dimnum == 3){
-                zMax = par.dval("zMax");
+                file_A(par.Azfile, Az[w], omega);
+                cudaHandleError(cudaMemcpy(Az_gpu[w],Az[w],sizeof(double)*gSize,
+                                cudaMemcpyHostToDevice));
             }
 
-            EqnNode_gpu *eqn = par.astval("Ay");
-
-            find_field<<<par.grid, par.threads>>>(Ay_gpu, dx, dy, dz,
-                                                  xMax, yMax, zMax , 0, eqn);
-            cudaCheckError();
+            std::cout << "finished reading Ax / Ay / Az from file" << '\n';
         }
         else{
-            par.Ay_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
-                                                 xMax, yMax, zMax, 
-                                                 omegaX, omegaY, omegaZ, 
-                                                 omega, fudge, Ay_gpu);
-            cudaCheckError();
-        }
-        if (dimnum == 3){
-            if (par.is_ast_gpu("Az")){
+            if (par.is_ast_gpu("Ax")){
                 double dx = par.dval("dx");
                 double dy = par.dval("dy");
                 double dz = par.dval("dz");
+                double xMax = par.dval("xMax");
+                double yMax = par.dval("yMax");
+                double zMax = 0;
+                if (dimnum == 3){ 
+                    zMax = par.dval("zMax");
+                }
 
+                EqnNode_gpu *eqn = par.astval("Ax");
+
+                find_field<<<par.grid, par.threads>>>(Ax_gpu[w], dx, dy, dz, 
+                                                      xMax, yMax, zMax, 0, eqn);
+                cudaCheckError();
+            }
+            else{
+                par.Ax_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
+                                                     xMax, yMax, zMax, 
+                                                     omegaX, omegaY, omegaZ, 
+                                                     omega, fudge, Ax_gpu[w]);
+                cudaCheckError();
+            }
+            if (par.is_ast_gpu("Ay")){
+                double dx = par.dval("dx");
+                double dy = par.dval("dy");
+                double dz = par.dval("dz");
                 double xMax = par.dval("xMax");
                 double yMax = par.dval("yMax");
                 double zMax = 0;
@@ -580,32 +563,63 @@ void generate_gauge(Grid &par){
                     zMax = par.dval("zMax");
                 }
 
-                EqnNode_gpu *eqn = par.astval("Az");
+                EqnNode_gpu *eqn = par.astval("Ay");
 
-                find_field<<<par.grid, par.threads>>>(Az_gpu, dx, dy, dz,
-                                                      xMax, yMax, zMax,  
-                                                      0, eqn);
+                find_field<<<par.grid, par.threads>>>(Ay_gpu[w], dx, dy, dz,
+                                                      xMax, yMax, zMax, 0, eqn);
                 cudaCheckError();
             }
             else{
-                par.Az_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
+                par.Ay_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
                                                      xMax, yMax, zMax, 
                                                      omegaX, omegaY, omegaZ, 
-                                                     omega, fudge, Az_gpu);
+                                                     omega, fudge, Ay_gpu[w]);
+                cudaCheckError();
+            }
+            if (dimnum == 3){
+                if (par.is_ast_gpu("Az")){
+                    double dx = par.dval("dx");
+                    double dy = par.dval("dy");
+                    double dz = par.dval("dz");
+
+                    double xMax = par.dval("xMax");
+                    double yMax = par.dval("yMax");
+                    double zMax = 0;
+                    if (dimnum == 3){
+                        zMax = par.dval("zMax");
+                    }
+
+                    EqnNode_gpu *eqn = par.astval("Az");
+
+                    find_field<<<par.grid, par.threads>>>(Az_gpu[w], dx, dy, dz,
+                                                          xMax, yMax, zMax,  
+                                                          0, eqn);
+                    cudaCheckError();
+                }
+                else{
+                    par.Az_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
+                                                         xMax, yMax, zMax, 
+                                                         omegaX, omegaY,
+                                                         omegaZ, omega, fudge,
+                                                         Az_gpu[w]);
+                    cudaCheckError();
+                }
+            }
+            else{
+                kconstant_A<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
+                                                       xMax, yMax, zMax, 
+                                                       omegaX, omegaY, omegaZ, 
+                                                       omega, fudge, Az_gpu[w]);
                 cudaCheckError();
             }
         }
-        else{
-            kconstant_A<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
-                                                   xMax, yMax, zMax, 
-                                                   omegaX, omegaY, omegaZ, 
-                                                   omega, fudge, Az_gpu);
-            cudaCheckError();
-        }
+        cudaHandleError(cudaMemcpy(Ax[w], Ax_gpu[w],
+                   sizeof(double)*gSize,cudaMemcpyDeviceToHost));
+        cudaHandleError(cudaMemcpy(Ay[w], Ay_gpu[w],
+                   sizeof(double)*gSize,cudaMemcpyDeviceToHost));
+        cudaHandleError(cudaMemcpy(Az[w], Az_gpu[w],
+                   sizeof(double)*gSize,cudaMemcpyDeviceToHost));
     }
-    cudaHandleError( cudaMemcpy(Ax, Ax_gpu, sizeof(double)*gSize,cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaMemcpy(Ay, Ay_gpu, sizeof(double)*gSize,cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaMemcpy(Az, Az_gpu, sizeof(double)*gSize,cudaMemcpyDeviceToHost) );
 
     par.store("Ax", Ax);
     par.store("Ay", Ay);
@@ -725,9 +739,11 @@ void generate_fields(Grid &par){
     generate_K(par);
     generate_gauge(par);
 
+
     int gSize = par.ival("gSize");
     int dimnum = par.ival("dimnum");
     int winding = par.dval("winding");
+    int wfc_num = par.ival("wfc_num");
 
     bool energy_calc = par.bval("energy_calc");
 
@@ -739,10 +755,10 @@ void generate_fields(Grid &par){
     double *px_gpu = par.dsval("px_gpu");
     double *py_gpu = par.dsval("py_gpu");
     double *pz_gpu = par.dsval("pz_gpu");
-    double *Ax_gpu = par.dsval("Ax_gpu");
-    double *Ay_gpu = par.dsval("Ay_gpu");
-    double *Az_gpu = par.dsval("Az_gpu");
-    double *K_gpu = par.dsval("K_gpu");
+    std::vector<double *> Ax_gpu = par.dsvecval("Ax_gpu");
+    std::vector<double *> Ay_gpu = par.dsvecval("Ay_gpu");
+    std::vector<double *> Az_gpu = par.dsvecval("Az_gpu");
+    std::vector<double *> K_gpu = par.dsvecval("K_gpu");
 
     // Creating items list for kernels
 
@@ -799,170 +815,196 @@ void generate_fields(Grid &par){
 
     // Generating V
 
-    double *V, *V_gpu;
-
-    V = (double *)malloc(sizeof(double)*gSize);
-
-    cudaMalloc((void **) &V_gpu, sizeof(double)*gSize);
-
-    if (par.is_ast_gpu("V")){
-        double dx = par.dval("dx");
-        double dy = par.dval("dy");
-        double dz = par.dval("dz");
-
-        double xMax = par.dval("xMax");
-        double yMax = par.dval("yMax");
-        double zMax = 0;
-        if (dimnum == 3){ 
-            zMax = par.dval("zMax");
-        }
-
-        EqnNode_gpu *eqn = par.astval("V");
-        find_field<<<par.grid, par.threads>>>(V_gpu, dx, dy, dz, 
-                                              xMax, yMax, zMax, 0, eqn);
-        cudaCheckError();
-    }
-    else{
-        par.V_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, items_gpu,
-                                            Ax_gpu, Ay_gpu, Az_gpu, V_gpu);
-        cudaCheckError();
-    }
-
-    cudaHandleError( cudaMemcpy(V, V_gpu, sizeof(double)*gSize, cudaMemcpyDeviceToHost) );
+    std::vector<double *> V(wfc_num), V_gpu(wfc_num);
 
     // Generating wfc
-
-    double2 *wfc, *wfc_gpu;
-    double *phi, *phi_gpu;
-
-    wfc = (double2 *)malloc(sizeof(double2)*gSize);
-    phi = (double *)malloc(sizeof(double)*gSize);
-
-    cudaHandleError( cudaMalloc((void**) &wfc_gpu, sizeof(double2)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &phi_gpu, sizeof(double)*gSize) );
-
-    if (par.bval("read_wfc")){
-        wfc = par.cufftDoubleComplexval("wfc");
-        cudaHandleError( cudaMemcpy(wfc_gpu, wfc, sizeof(double2)*gSize, cudaMemcpyHostToDevice) );
-    }
-    else{
-        par.wfc_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, items_gpu,
-                                              winding, phi_gpu, wfc_gpu);
-        cudaCheckError();
-        cudaHandleError( cudaMemcpy(wfc, wfc_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost) );
-    }
-
-    cudaHandleError( cudaMemcpy(phi, phi_gpu, sizeof(double)*gSize, cudaMemcpyDeviceToHost) );
+    std::vector<double2 *> wfc_array(wfc_num), wfc_gpu_array(wfc_num);
+    std::vector<double *> phi(wfc_num), phi_gpu(wfc_num);
 
     // generating aux fields.
-    double2 *GV, *EV, *GK, *EK;
-    double2 *GV_gpu, *EV_gpu, *GK_gpu, *EK_gpu;
-    double2 *GpAx, *GpAy, *GpAz, *EpAx, *EpAy, *EpAz;
-    double2 *GpAx_gpu, *GpAy_gpu, *GpAz_gpu, *EpAx_gpu, *EpAy_gpu, *EpAz_gpu;
-    double *pAx, *pAy, *pAz;
-    double *pAx_gpu, *pAy_gpu, *pAz_gpu;
+    std::vector<double2 *> GV(wfc_num), EV(wfc_num), GK(wfc_num), EK(wfc_num);
+    std::vector<double2 *> GV_gpu(wfc_num), EV_gpu(wfc_num), GK_gpu(wfc_num),
+                           EK_gpu(wfc_num);
+    std::vector<double2 *> GpAx(wfc_num), GpAy(wfc_num), GpAz(wfc_num),
+                           EpAx(wfc_num), EpAy(wfc_num), EpAz(wfc_num);
+    std::vector<double2 *> GpAx_gpu(wfc_num), GpAy_gpu(wfc_num), 
+                           GpAz_gpu(wfc_num), EpAx_gpu(wfc_num),
+                           EpAy_gpu(wfc_num), EpAz_gpu(wfc_num);
+    std::vector<double *> pAx(wfc_num), pAy(wfc_num), pAz(wfc_num);
+    std::vector<double *> pAx_gpu(wfc_num), pAy_gpu(wfc_num), pAz_gpu(wfc_num);
+    
+    for (int w = 0; w < wfc_num; ++w){
 
-    GV = (double2 *)malloc(sizeof(double2)*gSize);
-    EV = (double2 *)malloc(sizeof(double2)*gSize);
-    GK = (double2 *)malloc(sizeof(double2)*gSize);
-    EK = (double2 *)malloc(sizeof(double2)*gSize);
+        V[w] = (double *)malloc(sizeof(double)*gSize);
 
-    GpAx = (double2 *)malloc(sizeof(double2)*gSize);
-    EpAx = (double2 *)malloc(sizeof(double2)*gSize);
-    GpAy = (double2 *)malloc(sizeof(double2)*gSize);
-    EpAy = (double2 *)malloc(sizeof(double2)*gSize);
-    GpAz = (double2 *)malloc(sizeof(double2)*gSize);
-    EpAz = (double2 *)malloc(sizeof(double2)*gSize);
+        cudaHandleError(cudaMalloc((void **) &V_gpu[w], sizeof(double)*gSize));
 
-    pAx = (double *)malloc(sizeof(double)*gSize);
-    pAy = (double *)malloc(sizeof(double)*gSize);
-    pAz = (double *)malloc(sizeof(double)*gSize);
+        if (par.is_ast_gpu("V")){
+            double dx = par.dval("dx");
+            double dy = par.dval("dy");
+            double dz = par.dval("dz");
 
-    cudaHandleError( cudaMalloc((void**) &GV_gpu, sizeof(double2)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &EV_gpu, sizeof(double2)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &GK_gpu, sizeof(double2)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &EK_gpu, sizeof(double2)*gSize) );
+            double xMax = par.dval("xMax");
+            double yMax = par.dval("yMax");
+            double zMax = 0;
+            if (dimnum == 3){ 
+                zMax = par.dval("zMax");
+            }
 
-    cudaHandleError( cudaMalloc((void**) &GpAx_gpu, sizeof(double2)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &EpAx_gpu, sizeof(double2)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &GpAy_gpu, sizeof(double2)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &EpAy_gpu, sizeof(double2)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &GpAz_gpu, sizeof(double2)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &EpAz_gpu, sizeof(double2)*gSize) );
+            EqnNode_gpu *eqn = par.astval("V");
+            find_field<<<par.grid, par.threads>>>(V_gpu[w], dx, dy, dz, 
+                                                  xMax, yMax, zMax, 0, eqn);
+            cudaCheckError();
+        }
+        else{
+            par.V_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, items_gpu,
+                                                Ax_gpu[w], Ay_gpu[w],
+                                                Az_gpu[w], V_gpu[w]);
+            cudaCheckError();
+        }
 
-    cudaHandleError( cudaMalloc((void**) &pAx_gpu, sizeof(double)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &pAy_gpu, sizeof(double)*gSize) );
-    cudaHandleError( cudaMalloc((void**) &pAz_gpu, sizeof(double)*gSize) );
+        cudaHandleError(cudaMemcpy(V[w], V_gpu[w], sizeof(double)*gSize,
+                        cudaMemcpyDeviceToHost));
 
-    aux_fields<<<par.grid, par.threads>>>(V_gpu, K_gpu, gdt, dt,
-                                          Ax_gpu, Ay_gpu, Az_gpu,
-                                          px_gpu, py_gpu, pz_gpu,
-                                          pAx_gpu, pAy_gpu, pAz_gpu,
-                                          GV_gpu, EV_gpu, GK_gpu, EK_gpu,
-                                          GpAx_gpu, GpAy_gpu, GpAz_gpu,
-                                          EpAx_gpu, EpAy_gpu, EpAz_gpu);
-    cudaCheckError();
+        wfc_array[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        phi[w] = (double *)malloc(sizeof(double)*gSize);
 
-    cudaHandleError( cudaMemcpy(GV, GV_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaMemcpy(EV, EV_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaMemcpy(GK, GK_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaMemcpy(EK, EK_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost) );
+        cudaHandleError(cudaMalloc((void**) &wfc_gpu_array[w],
+                        sizeof(double2)*gSize));
+        cudaHandleError(cudaMalloc((void**) &phi_gpu[w], sizeof(double)*gSize));
 
-    cudaHandleError( cudaMemcpy(GpAx, GpAx_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaMemcpy(EpAx, EpAx_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaMemcpy(GpAy, GpAy_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaMemcpy(EpAy, EpAy_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaMemcpy(GpAz, GpAz_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaMemcpy(EpAz, EpAz_gpu, sizeof(double2)*gSize, cudaMemcpyDeviceToHost) );
+        if (par.bval("read_wfc")){
+            wfc_array = par.d2svecval("wfc_array");
+            cudaHandleError(cudaMemcpy(wfc_gpu_array[w], wfc_array[w],
+                            sizeof(double2)*gSize, cudaMemcpyHostToDevice));
+        }
+        else{
+            par.wfc_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu,
+                                                  items_gpu, winding,
+                                                  phi_gpu[w], wfc_gpu_array[w]);
+            cudaHandleError(cudaMemcpy(wfc_array[w], wfc_gpu_array[w],
+                            sizeof(double2)*gSize, cudaMemcpyDeviceToHost));
+        }
+    
+        cudaHandleError(cudaMemcpy(phi[w], phi_gpu[w], sizeof(double)*gSize,
+                        cudaMemcpyDeviceToHost));
 
-    cudaHandleError( cudaMemcpy(pAx, pAx_gpu, sizeof(double)*gSize, cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaMemcpy(pAy, pAy_gpu, sizeof(double)*gSize, cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaMemcpy(pAz, pAz_gpu, sizeof(double)*gSize, cudaMemcpyDeviceToHost) );
+        GV[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        EV[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        GK[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        EK[w] = (double2 *)malloc(sizeof(double2)*gSize);
+    
+        GpAx[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        EpAx[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        GpAy[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        EpAy[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        GpAz[w] = (double2 *)malloc(sizeof(double2)*gSize);
+        EpAz[w] = (double2 *)malloc(sizeof(double2)*gSize);
+    
+        pAx[w] = (double *)malloc(sizeof(double)*gSize);
+        pAy[w] = (double *)malloc(sizeof(double)*gSize);
+        pAz[w] = (double *)malloc(sizeof(double)*gSize);
+    
+        cudaMalloc((void**) &GV_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &EV_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &GK_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &EK_gpu[w], sizeof(double2)*gSize);
+    
+        cudaMalloc((void**) &GpAx_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &EpAx_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &GpAy_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &EpAy_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &GpAz_gpu[w], sizeof(double2)*gSize);
+        cudaMalloc((void**) &EpAz_gpu[w], sizeof(double2)*gSize);
+    
+        cudaMalloc((void**) &pAx_gpu[w], sizeof(double)*gSize);
+        cudaMalloc((void**) &pAy_gpu[w], sizeof(double)*gSize);
+        cudaMalloc((void**) &pAz_gpu[w], sizeof(double)*gSize);
+    
+        aux_fields<<<par.grid, par.threads>>>(V_gpu[w], K_gpu[w], gdt, dt,
+                                              Ax_gpu[w], Ay_gpu[w], Az_gpu[w],
+                                              px_gpu, py_gpu, pz_gpu,
+                                              pAx_gpu[w], pAy_gpu[w],
+                                              pAz_gpu[w], GV_gpu[w], EV_gpu[w],
+                                              GK_gpu[w], EK_gpu[w], GpAx_gpu[w],
+                                              GpAy_gpu[w], GpAz_gpu[w],
+                                              EpAx_gpu[w], EpAy_gpu[w],
+                                              EpAz_gpu[w]);
+        cudaCheckError();
+    
+        cudaHandleError(cudaMemcpy(GV[w], GV_gpu[w], sizeof(double2)*gSize,
+                        cudaMemcpyDeviceToHost));
+        cudaHandleError(cudaMemcpy(EV[w], EV_gpu[w], sizeof(double2)*gSize,
+                        cudaMemcpyDeviceToHost));
+        cudaHandleError(cudaMemcpy(GK[w], GK_gpu[w], sizeof(double2)*gSize,
+                        cudaMemcpyDeviceToHost));
+        cudaHandleError(cudaMemcpy(EK[w], EK_gpu[w], sizeof(double2)*gSize,
+                        cudaMemcpyDeviceToHost));
 
-    // Storing variables
-    cudaHandleError( cudaFree(items_gpu) );
-    //cudaFree(phi_gpu);
-    cudaHandleError( cudaFree(GV_gpu) );
-    cudaHandleError( cudaFree(EV_gpu) );
-    cudaHandleError( cudaFree(GK_gpu) );
-    cudaHandleError( cudaFree(EK_gpu) );
+        cudaHandleError(cudaMemcpy(GpAx[w], GpAx_gpu[w], sizeof(double2)*gSize,
+                        cudaMemcpyDeviceToHost));
+        cudaHandleError(cudaMemcpy(EpAx[w], EpAx_gpu[w], sizeof(double2)*gSize,
+                        cudaMemcpyDeviceToHost));
+        cudaHandleError(cudaMemcpy(GpAy[w], GpAy_gpu[w], sizeof(double2)*gSize,
+                        cudaMemcpyDeviceToHost));
+        cudaHandleError(cudaMemcpy(EpAy[w], EpAy_gpu[w], sizeof(double2)*gSize,
+                        cudaMemcpyDeviceToHost));
+        cudaHandleError(cudaMemcpy(GpAz[w], GpAz_gpu[w], sizeof(double2)*gSize,
+                        cudaMemcpyDeviceToHost));
+        cudaHandleError(cudaMemcpy(EpAz[w], EpAz_gpu[w], sizeof(double2)*gSize,
+                        cudaMemcpyDeviceToHost));
 
-    cudaHandleError( cudaFree(pAx_gpu) );
-    cudaHandleError( cudaFree(pAy_gpu) );
-    cudaHandleError( cudaFree(pAz_gpu) );
+        cudaHandleError(cudaMemcpy(pAx[w], pAx_gpu[w], sizeof(double)*gSize,
+                        cudaMemcpyDeviceToHost));
+        cudaHandleError(cudaMemcpy(pAy[w], pAy_gpu[w], sizeof(double)*gSize,
+                        cudaMemcpyDeviceToHost));
+        cudaHandleError(cudaMemcpy(pAz[w], pAz_gpu[w], sizeof(double)*gSize,
+                        cudaMemcpyDeviceToHost));
 
-    cudaHandleError( cudaFree(GpAx_gpu) );
-    cudaHandleError( cudaFree(GpAy_gpu) );
-    cudaHandleError( cudaFree(GpAz_gpu) );
+        // Storing variables
+        cudaHandleError(cudaFree(items_gpu));
+        //cudaHandleError(cudaFree(phi_gpu));
+        cudaHandleError(cudaFree(GV_gpu[w]));
+        cudaHandleError(cudaFree(EV_gpu[w]));
+        cudaHandleError(cudaFree(GK_gpu[w]));
+        cudaHandleError(cudaFree(EK_gpu[w]));
 
-    cudaHandleError( cudaFree(EpAx_gpu) );
-    cudaHandleError( cudaFree(EpAy_gpu) );
-    cudaHandleError( cudaFree(EpAz_gpu) );
+        cudaHandleError(cudaFree(pAx_gpu[w]));
+        cudaHandleError(cudaFree(pAy_gpu[w]));
+        cudaHandleError(cudaFree(pAz_gpu[w]));
 
-    cudaHandleError( cudaFree(x_gpu) );
-    cudaHandleError( cudaFree(y_gpu) );
-    cudaHandleError( cudaFree(z_gpu) );
+        cudaHandleError(cudaFree(GpAx_gpu[w]));
+        cudaHandleError(cudaFree(GpAy_gpu[w]));
+        cudaHandleError(cudaFree(GpAz_gpu[w]));
 
-    cudaHandleError( cudaFree(px_gpu) );
-    cudaHandleError( cudaFree(py_gpu) );
-    cudaHandleError( cudaFree(pz_gpu) );
+        cudaHandleError(cudaFree(EpAx_gpu[w]));
+        cudaHandleError(cudaFree(EpAy_gpu[w]));
+        cudaHandleError(cudaFree(EpAz_gpu[w]));
 
-    if (!energy_calc){
-        cudaHandleError( cudaFree(K_gpu) );
-        cudaHandleError( cudaFree(V_gpu) );
-        cudaHandleError( cudaFree(Ax_gpu) );
-        cudaHandleError( cudaFree(Ay_gpu) );
-        cudaHandleError( cudaFree(Az_gpu) );
+        if (!energy_calc){
+            cudaHandleError(cudaFree(K_gpu[w]));
+            cudaHandleError(cudaFree(V_gpu[w]));
+            cudaHandleError(cudaFree(Ax_gpu[w]));
+            cudaHandleError(cudaFree(Ay_gpu[w]));
+            cudaHandleError(cudaFree(Az_gpu[w]));
+        }
+        else{
+            par.store("V_gpu",V_gpu);
+        }
     }
-    else{
-        par.store("V_gpu",V_gpu);
-    }
+    cudaHandleError(cudaFree(x_gpu));
+    cudaHandleError(cudaFree(y_gpu));
+    cudaHandleError(cudaFree(z_gpu));
+
+    cudaHandleError(cudaFree(px_gpu));
+    cudaHandleError(cudaFree(py_gpu));
+    cudaHandleError(cudaFree(pz_gpu));
 
     par.store("V",V);
     par.store("items", items);
     //par.store("items_gpu", items_gpu);
-    par.store("wfc", wfc);
-    par.store("wfc_gpu", wfc_gpu);
+    par.store("wfc_array", wfc_array);
+    par.store("wfc_gpu_array", wfc_gpu_array);
     par.store("Phi", phi);
     par.store("Phi_gpu", phi_gpu);
 
@@ -988,7 +1030,7 @@ void generate_fields(Grid &par){
     //par.store("pAx_gpu",pAx_gpu);
     //par.store("pAy_gpu",pAy_gpu);
     //par.store("pAz_gpu",pAz_gpu);
-    
+
 }
 
 __global__ void kharmonic_V(double *x, double *y, double *z, double* items,
@@ -1029,7 +1071,7 @@ __global__ void ktorus_V(double *x, double *y, double *z, double* items,
 }
 
 __global__ void kstd_wfc(double *x, double *y, double *z, double *items,
-                         double winding, double *phi, double2 *wfc){
+                         double winding, double *phi, double2 *wfc_array){
 
     int gid = getGid3d3d();
     int xid = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1038,11 +1080,11 @@ __global__ void kstd_wfc(double *x, double *y, double *z, double *items,
 
     phi[gid] = -fmod(winding*atan2(y[yid], x[xid]),2*PI);
 
-    wfc[gid].x = exp(-(x[xid]*x[xid]/(items[14]*items[14]*items[15]*items[15]) 
+    wfc_array[gid].x = exp(-(x[xid]*x[xid]/(items[14]*items[14]*items[15]*items[15]) 
                      + y[yid]*y[yid]/(items[14]*items[14]*items[16]*items[16]) 
                      + z[zid]*z[zid]/(items[14]*items[14]*items[17]*items[17])))
                      * cos(phi[gid]);
-    wfc[gid].y = -exp(-(x[xid]*x[xid]/(items[14]*items[14]*items[15]*items[15]) 
+    wfc_array[gid].y = -exp(-(x[xid]*x[xid]/(items[14]*items[14]*items[15]*items[15]) 
                      + y[yid]*y[yid]/(items[14]*items[14]*items[16]*items[16]) 
                      + z[zid]*z[zid]/(items[14]*items[14]*items[17]*items[17])))
                      * sin(phi[gid]);
@@ -1050,7 +1092,7 @@ __global__ void kstd_wfc(double *x, double *y, double *z, double *items,
 }
 
 __global__ void ktorus_wfc(double *x, double *y, double *z, double *items,
-                           double winding, double *phi, double2 *wfc){
+                           double winding, double *phi, double2 *wfc_array){
 
     int gid = getGid3d3d();
     int xid = blockDim.x*blockIdx.x + threadIdx.x;
@@ -1061,13 +1103,13 @@ __global__ void ktorus_wfc(double *x, double *y, double *z, double *items,
                       + (y[yid] - items[7]) * (y[yid] - items[7])) 
                       - 0.5*items[0];
 
-    wfc[gid].x = exp(-( pow((rad)/(items[14]*items[15]*0.5),2) +
+    wfc_array[gid].x = exp(-( pow((rad)/(items[14]*items[15]*0.5),2) +
                    pow((z[zid])/(items[14]*items[17]*0.5),2) ) );
-    wfc[gid].y = 0.0;
+    wfc_array[gid].y = 0.0;
 }
 
 __global__ void aux_fields(double *V, double *K, double gdt, double dt,
-                           double* Ax, double *Ay, double* Az, 
+                           double* Ax, double *Ay, double* Az,
                            double *px, double *py, double *pz,
                            double* pAx, double* pAy, double* pAz,
                            double2* GV, double2* EV, double2* GK, double2* EK,

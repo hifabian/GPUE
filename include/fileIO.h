@@ -47,82 +47,72 @@ namespace FileIO {
     * @param	length Overall length of the file to write out
     * @param	step Index for the filename. file_step,filei_step
     */
-    void writeOut(std::string buffer, std::string file, double2 *data, int length, int step);
+    void writeOut(std::string file, double2 *data, int length, int step);
 
 	/**
     * @brief	Writes the specified double array to a text file
     * @ingroup	helper
     *
-    * @param	*buffer Char buffer for use by function internals. char[100] usually
     * @param	*file Name of data file name for saving to
     * @param	*data double array to be written out
     * @param	length Overall length of the file to write out
     * @param	step Index for the filename. file_step
     */
-    void writeOutDouble(std::string buffer, std::string file, double *data,
-                        int length, int step);
+    void writeOutDouble(std::string file, double *data, int length, int step);
 
         /**
     * @brief    Writes the specified double array to a text file
     * @ingroup  helper
     *
-    * @param    *buffer Char buffer for use by function internals. char[100] usually
     * @param    *file Name of data file name for saving to
     * @param    *data bool array to be written out
     * @param    length Overall length of the file to write out
     * @param    step Index for the filename. file_step
     */
-    void writeOutBool(std::string buffer, std::string file, bool *data,
-                        int length, int step);
-
+    void writeOutBool(std::string file, bool *data, int length, int step);
 
 	/**
     * @brief	Writes the specified int array to a text file
     * @ingroup	helper
     *
-    * @param	*buffer Char buffer for use by function internals. char[100] usually
     * @param	*file Name of data file name for saving to
     * @param	*data int array to be written out
     * @param	length Overall length of the file to write out
     * @param	step Index for the filename. file_step
     */
-    void writeOutInt(std::string buffer, std::string file, int *data,
-                     int length, int step);
+    void writeOutInt(std::string file, int *data, int length, int step);
 
 	/**
     * @brief	Writes the specified int2 array to a text file
     * @ingroup	helper
     *
-    * @param	*buffer Char buffer for use by function internals. char[100] usually
     * @param	*file Name of data file name for saving to
     * @param	*data int2 array to be written out
     * @param	length Overall length of the file to write out
     * @param	step Index for the filename. file_step
     */
-    void writeOutInt2(std::string buffer, std::string file, int2 *data,
-                      int length, int step);
+    void writeOutInt2(std::string file, int2 *data, int length, int step);
 
 	/**
     * @brief	Writes the specified Vtx::Vortex array to a text file
     * @ingroup	helper
     *
-    * @param	*buffer Char buffer for use by function internals. char[100] usually
     * @param	*file Name of data file name for saving to
     * @param	*data Vtx::Vortex array to be written out
     * @param	step Index for the filename. file_step
     */
-    void writeOutVortex(std::string buffer, std::string file,
-                        std::vector<std::shared_ptr<Vtx::Vortex>> &data, int step);
+    void writeOutVortex(std::string file,
+                        std::vector<std::shared_ptr<Vtx::Vortex>> &data,
+                        int step);
 
 	/**
     * @brief	Writes the parameter file
     * @ingroup	helper
     *
-    * @param	*buffer Char buffer for use by function internals. char[100] usually
     * @param	arr struct Array holding the parameter values to be written out
     * @param	*file Name of data file name for saving to
     */
-    void writeOutParam(std::string buffer, Grid &par, std::string file);
+    void writeOutParam(Grid &par, std::string file);
 
 	/*
 	 * @brief	Opens and closes file. Nothing more. Nothing less.
@@ -135,14 +125,14 @@ namespace FileIO {
     * @brief	Write adjacency matrix of ints to a file in Mathematica readable format
     * @ingroup	graph
     *
-    * @param	*buffer Char buffer for use by function internals. char[100] usually
     * @param	*file Name of data file name for saving to
 	* @param	*mat Int Array holding the parameter values to be written out
 	* @param	*uids UID array
 	* @param	dim Dimension/length of the grid (xDim*yDim)
 	* @param	step Index for the filename.
     */
-    void writeOutAdjMat(std::string buffer, std::string file, int *mat, unsigned int *uids, int dim, int step);
+    void writeOutAdjMat(std::string file, int *mat, unsigned int *uids,
+                        int dim, int step);
 
 	/**
     * @brief	Write adjacency matrix of doubles to a file in Mathematica readable format
@@ -155,7 +145,7 @@ namespace FileIO {
 	* @param	dim Dimension/length of the grid (xDim*yDim)
 	* @param	step Index for the filename.
     */
-    void writeOutAdjMat(std::string buffer, std::string file, double *mat,
-                        unsigned int *uids, int dim, int step);
+    void writeOutAdjMat(std::string file, double *mat, unsigned int *uids,
+                        int dim, int step);
 }
 #endif

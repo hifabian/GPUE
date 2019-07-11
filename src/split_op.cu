@@ -22,7 +22,6 @@ unsigned int LatticeGraph::Edge::suid = 0;
 unsigned int LatticeGraph::Node::suid = 0;
 //std::size_t Vtx::Vortex::suid = 0;
 
-char buffer[100]; //Buffer for printing out. Need to replace by a better write-out procedure. Consider binary or HDF.
 int verbose; //Print more info. Not curently implemented.
 int device; //GPU ID choice.
 int kick_it; //Kicking mode: 0 = off, 1 = multiple, 2 = single
@@ -133,16 +132,16 @@ void parSum(double2* gpuWfc, Grid &par){
 ** Moire super-lattice project.
 **/
 void optLatSetup(std::shared_ptr<Vtx::Vortex> centre, const double* V,
-                 std::vector<std::shared_ptr<Vtx::Vortex>> &vArray, double theta_opt,
-                 double intensity, double* v_opt, const double *x, const double *y,
-                 Grid &par){
+                 std::vector<std::shared_ptr<Vtx::Vortex>> &vArray,
+                 double theta_opt, double intensity, double* v_opt,
+                 const double *x, const double *y, Grid &par){
     std::string data_dir = par.sval("data_dir");
     int xDim = par.ival("xDim");
     int yDim = par.ival("yDim");
     double dx = par.dval("dx");
     double dy = par.dval("dy");
     double dt = par.dval("dt");
-    cufftDoubleComplex *EV_opt = par.cufftDoubleComplexval("EV_opt");
+    std::vector<double2 *> EV_opt = par.d2svecval("EV_opt");
     int i,j;
     double sepMin = Tracker::vortSepAvg(vArray,centre);
     sepMin = sepMin*(1 + sepMinEpsilon);
@@ -164,7 +163,6 @@ void optLatSetup(std::shared_ptr<Vtx::Vortex> centre, const double* V,
 
     double2 *r_opt = (double2*) malloc(sizeof(double2)*xDim);
 
-    //FileIO::writeOut(buffer,data_dir + "r_opt",r_opt,xDim,0);
     par.store("k[0].x",(double)k[0].x);
     par.store("k[0].y",(double)k[0].y);
     par.store("k[1].x",(double)k[1].x);
@@ -192,9 +190,9 @@ void optLatSetup(std::shared_ptr<Vtx::Vortex> centre, const double* V,
                                 pow( ( cos( k[2].x*( x[i] + x_shift ) +
                                        k[2].y*( y[j] + y_shift ) ) ), 2)
                                 );
-            EV_opt[(j*xDim + i)].x=cos( -(V[(j*xDim + i)] +
+            EV_opt[0][(j*xDim + i)].x=cos( -(V[(j*xDim + i)] +
                                    v_opt[j*xDim + i])*(dt/(2*HBAR)));
-            EV_opt[(j*xDim + i)].y=sin( -(V[(j*xDim + i)] +
+            EV_opt[0][(j*xDim + i)].y=sin( -(V[(j*xDim + i)] +
                                    v_opt[j*xDim + i])*(dt/(2*HBAR)));
         }
     }
@@ -206,8 +204,8 @@ void optLatSetup(std::shared_ptr<Vtx::Vortex> centre, const double* V,
 }
 
 double energy_calc(Grid &par, double2* wfc){
-    double* K = par.dsval("K_gpu");
-    double* V = par.dsval("V_gpu");
+    std::vector<double*> K = par.dsvecval("K_gpu");
+    std::vector<double*> V = par.dsvecval("V_gpu");
 
     dim3 grid = par.grid;
     dim3 threads = par.threads;
@@ -261,7 +259,7 @@ double energy_calc(Grid &par, double2* wfc){
     scalarMult<<<grid, threads>>>(wfc_k, renorm_factor, wfc_k);
     cudaCheckError();
 
-    vecMult<<<grid, threads>>>(wfc_k, K, energy_k);
+    vecMult<<<grid, threads>>>(wfc_k, K[0], energy_k);
     cudaCheckError();
     cudaHandleError( cudaFree(wfc_k) );
 
@@ -286,7 +284,7 @@ double energy_calc(Grid &par, double2* wfc){
                                       0.5*gDenConst*interaction,
                                       real_comp);
         cudaCheckError();
-        vecSum<<<grid, threads>>>(real_comp, V, real_comp);
+        vecSum<<<grid, threads>>>(real_comp, V[0], real_comp);
         cudaCheckError();
         vecMult<<<grid, threads>>>(wfc, real_comp, energy_r);
         cudaCheckError();
@@ -294,7 +292,7 @@ double energy_calc(Grid &par, double2* wfc){
         cudaHandleError( cudaFree(real_comp) );
     }
     else{
-        vecMult<<<grid, threads>>>(wfc, V, energy_r);
+        vecMult<<<grid, threads>>>(wfc, V[0], energy_r);
         cudaCheckError();
     }
 
@@ -312,34 +310,36 @@ double energy_calc(Grid &par, double2* wfc){
     if (corotating && dimnum > 1){
 
         double2 *energy_l, *dwfc;
-        double *A;
+        std::vector<double *> A;
+        double *check;
+        check = (double *)malloc(sizeof(double)*10);
 
         cudaHandleError( cudaMalloc((void **) &energy_l, sizeof(double2)*gsize) );
         cudaHandleError( cudaMalloc((void **) &dwfc, sizeof(double2)*gsize) );
 
-        A = par.dsval("Ax_gpu");
+        A = par.dsvecval("Ax_gpu");
 
         derive<<<grid, threads>>>(wfc, energy_l, 1, gsize, dx);
         cudaCheckError();
 
-        vecMult<<<grid, threads>>>(energy_l, A, energy_l);
+        vecMult<<<grid, threads>>>(energy_l, A[0], energy_l); 
         cudaCheckError();
 
-        A = par.dsval("Ay_gpu");
+        A = par.dsvecval("Ay_gpu");
         derive<<<grid, threads>>>(wfc, dwfc, xDim, gsize, dy);
         cudaCheckError();
 
-        vecMult<<<grid, threads>>>(dwfc, A, dwfc);
+        vecMult<<<grid, threads>>>(dwfc, A[0], dwfc); 
         cudaCheckError();
         sum<<<grid, threads>>>(dwfc,energy_l, energy_l);
         cudaCheckError();
 
         if (dimnum == 3){
-            A = par.dsval("Az_gpu");
+            A = par.dsvecval("Az_gpu");
 
             derive<<<grid, threads>>>(wfc, dwfc, xDim*yDim, gsize, dz);
             cudaCheckError();
-            vecMult<<<grid, threads>>>(dwfc, A, dwfc);
+            vecMult<<<grid, threads>>>(dwfc, A[0], dwfc); 
             cudaCheckError();
 
             sum<<<grid, threads>>>(dwfc,energy_l, energy_l);

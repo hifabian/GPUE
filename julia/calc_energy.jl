@@ -86,10 +86,10 @@ function calculate(param_file::String, data_dir::String)
 
     g = parse(Float64, parameters["gDenConst"])
 
-    Ax = readdlm(data_dir*"Ax_0")
-    Ay = readdlm(data_dir*"Ay_0")
-    K = readdlm(data_dir*"K_0")
-    V = readdlm(data_dir*"V_0")
+    Ax = readdlm(data_dir*"Ax_0_0")
+    Ay = readdlm(data_dir*"Ay_0_0")
+    K = readdlm(data_dir*"K_0_0")
+    V = readdlm(data_dir*"V_0_0")
 
     Ax = reshape(Ax, xDim, yDim)
     Ay = reshape(Ay, xDim, yDim)

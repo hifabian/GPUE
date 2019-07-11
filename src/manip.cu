@@ -30,11 +30,11 @@ void WFC::phaseWinding(double *phi, int winding, double *x, double *y, double dx
     }
 }
 
-void WFC::applyPhase(double *phi, double2 *wfc, int dim){
+void WFC::applyPhase(double *phi, double2 *wfc_array, int dim){
     for(int ii=dim-1; ii >= 0; --ii){
         for(int jj=dim-1; jj >= 0; --jj){
-            wfc[ii*dim + jj].x *= cos(phi[ii*dim + jj]);
-            wfc[ii*dim + jj].y *= -sin(phi[ii*dim + jj]);
+            wfc_array[ii*dim + jj].x *= cos(phi[ii*dim + jj]);
+            wfc_array[ii*dim + jj].y *= -sin(phi[ii*dim + jj]);
         }
     }
 }

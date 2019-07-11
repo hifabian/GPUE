@@ -60,7 +60,7 @@ namespace Tracker {
 
     #ifdef VORT_MIN
     [[deprecated]]
-    int findVortex(int *marker, const double2* wfc, double radius, int xDim,
+    int findVortex(int *marker, const double2* wfc_array, double radius, int xDim,
                    const double* x, int timestep){
 
         double gridValues[9];
@@ -72,15 +72,15 @@ namespace Tracker {
         for (i=1; i<xDim-1; ++i ){
             for(j=1; j<xDim-1;++j){
                 if(sqrt(x[i]*x[i] + x[j]*x[j]) < radius){
-                    gridValues[0] = Minions::psi2(wfc[(i-1)*xDim + (j-1)]);
-                    gridValues[1] = Minions::psi2(wfc[(i-1)*xDim + j]);
-                    gridValues[2] = Minions::psi2(wfc[(i-1)*xDim + (j+1)]);
-                    gridValues[3] = Minions::psi2(wfc[(i)*xDim + (j-1)]);
-                    gridValues[4] = Minions::psi2(wfc[(i)*xDim + j]);
-                    gridValues[5] = Minions::psi2(wfc[(i)*xDim + (j+1)]);
-                    gridValues[6] = Minions::psi2(wfc[(i+1)*xDim + (j-1)]);
-                    gridValues[7] = Minions::psi2(wfc[(i+1)*xDim + j]);
-                    gridValues[8] = Minions::psi2(wfc[(i+1)*xDim + (j+1)]);
+                    gridValues[0] = Minions::psi2(wfc_array[(i-1)*xDim + (j-1)]);
+                    gridValues[1] = Minions::psi2(wfc_array[(i-1)*xDim + j]);
+                    gridValues[2] = Minions::psi2(wfc_array[(i-1)*xDim + (j+1)]);
+                    gridValues[3] = Minions::psi2(wfc_array[(i)*xDim + (j-1)]);
+                    gridValues[4] = Minions::psi2(wfc_array[(i)*xDim + j]);
+                    gridValues[5] = Minions::psi2(wfc_array[(i)*xDim + (j+1)]);
+                    gridValues[6] = Minions::psi2(wfc_array[(i+1)*xDim + (j-1)]);
+                    gridValues[7] = Minions::psi2(wfc_array[(i+1)*xDim + j]);
+                    gridValues[8] = Minions::psi2(wfc_array[(i+1)*xDim + (j+1)]);
                     if(fabs((gridValues[4]-Minions::minValue(gridValues,9)) /
                              gridValues[4]) < 1e-7){
                         //printf ("%d,%d\n",i,j);
@@ -99,7 +99,7 @@ namespace Tracker {
     /**
      * Phase winding method to determine vortex positions. Calculates the phase around a loop and checks if ~ +/-2Pi.
      */
-    int findVortex(int *marker, const double2* wfc, double radius, int xDim, const double *x, int timestep){
+    int findVortex(int *marker, const double2* wfc_array, double radius, int xDim, const double *x, int timestep){
             double2 *g = (double2*) malloc(sizeof(double2)*4);
             double *phiDelta = (double*) malloc(sizeof(double)*4);
         int i,j,found;
@@ -112,25 +112,25 @@ namespace Tracker {
             for( j=0; j < xDim-1; ++j ){
                 if(sqrt(x[i]*x[i] + x[j]*x[j]) < radius){
                     g[0] = Minions::complexScale(
-                        Minions::complexDiv( wfc[i*xDim + j],
-                        wfc[(i+1)*xDim + j] ),
-                        (Minions::complexMag(wfc[(i+1)*xDim+j])
-                        / Minions::complexMag(wfc[i*xDim+j])));
+                        Minions::complexDiv( wfc_array[i*xDim + j],
+                        wfc_array[(i+1)*xDim + j] ),
+                        (Minions::complexMag(wfc_array[(i+1)*xDim+j])
+                        / Minions::complexMag(wfc_array[i*xDim+j])));
                     g[1] = Minions::complexScale(
-                        Minions::complexDiv(wfc[(i+1)*xDim+j],
-                        wfc[(i+1)*xDim + (j+1)] ),
-                        (Minions::complexMag(wfc[(i+1)*xDim+(j+1)])
-                        / Minions::complexMag( wfc[(i+1)*xDim + j] )));
+                        Minions::complexDiv(wfc_array[(i+1)*xDim+j],
+                        wfc_array[(i+1)*xDim + (j+1)] ),
+                        (Minions::complexMag(wfc_array[(i+1)*xDim+(j+1)])
+                        / Minions::complexMag( wfc_array[(i+1)*xDim + j] )));
                     g[2] = Minions::complexScale(
-                        Minions::complexDiv( wfc[(i+1)*xDim + (j+1)],
-                        wfc[i*xDim + (j+1)] ),
-                        ( Minions::complexMag( wfc[i*xDim + (j+1)])
-                        / Minions::complexMag( wfc[(i+1)*xDim + (j+1)] )));
+                        Minions::complexDiv( wfc_array[(i+1)*xDim + (j+1)],
+                        wfc_array[i*xDim + (j+1)] ),
+                        ( Minions::complexMag( wfc_array[i*xDim + (j+1)])
+                        / Minions::complexMag( wfc_array[(i+1)*xDim + (j+1)] )));
                     g[3] = Minions::complexScale(
-                        Minions::complexDiv( wfc[i*xDim + (j+1)],
-                        wfc[i*xDim + j] ),
-                       ( Minions::complexMag( wfc[i*xDim + j])
-                       / Minions::complexMag( wfc[i*xDim + (j+1)] )));
+                        Minions::complexDiv( wfc_array[i*xDim + (j+1)],
+                        wfc_array[i*xDim + j] ),
+                       ( Minions::complexMag( wfc_array[i*xDim + j])
+                       / Minions::complexMag( wfc_array[i*xDim + (j+1)] )));
                     for (int k=0; k<4; ++k){
                         phiDelta[k] = atan2( g[k].y, g[k].x );
                         if(phiDelta[k] <= -PI){
@@ -182,16 +182,16 @@ namespace Tracker {
     /**
      * Tests the phase winding of the wavefunction, looking for vortices
      */
-    int phaseTest(int2 vLoc, const double2* wfc, int xDim){
+    int phaseTest(int2 vLoc, const double2* wfc_array, int xDim){
         int result = 0;
         double2 gridValues[4];
         double phiDelta[4];
         double sum=0.0;
         int i=vLoc.x, j=vLoc.y;
-        gridValues[0] = Minions::complexScale( Minions::complexDiv(wfc[i*xDim + j],wfc[(i+1)*xDim + j]),             (Minions::complexMag(wfc[(i+1)*xDim + j])     / Minions::complexMag(wfc[i*xDim + j])));
-        gridValues[1] = Minions::complexScale( Minions::complexDiv(wfc[(i+1)*xDim + j],wfc[(i+1)*xDim + (j+1)]),     (Minions::complexMag(wfc[(i+1)*xDim + (j+1)])/ Minions::complexMag(wfc[(i+1)*xDim + j])));
-        gridValues[2] = Minions::complexScale( Minions::complexDiv(wfc[(i+1)*xDim + (j+1)],wfc[i*xDim + (j+1)]),     (Minions::complexMag(wfc[i*xDim + (j+1)])     / Minions::complexMag(wfc[(i+1)*xDim + (j+1)])));
-        gridValues[3] = Minions::complexScale( Minions::complexDiv(wfc[i*xDim + (j+1)],wfc[i*xDim + j]),             (Minions::complexMag(wfc[i*xDim + j])         / Minions::complexMag(wfc[i*xDim + (j+1)])));
+        gridValues[0] = Minions::complexScale( Minions::complexDiv(wfc_array[i*xDim + j],wfc_array[(i+1)*xDim + j]),             (Minions::complexMag(wfc_array[(i+1)*xDim + j])     / Minions::complexMag(wfc_array[i*xDim + j])));
+        gridValues[1] = Minions::complexScale( Minions::complexDiv(wfc_array[(i+1)*xDim + j],wfc_array[(i+1)*xDim + (j+1)]),     (Minions::complexMag(wfc_array[(i+1)*xDim + (j+1)])/ Minions::complexMag(wfc_array[(i+1)*xDim + j])));
+        gridValues[2] = Minions::complexScale( Minions::complexDiv(wfc_array[(i+1)*xDim + (j+1)],wfc_array[i*xDim + (j+1)]),     (Minions::complexMag(wfc_array[i*xDim + (j+1)])     / Minions::complexMag(wfc_array[(i+1)*xDim + (j+1)])));
+        gridValues[3] = Minions::complexScale( Minions::complexDiv(wfc_array[i*xDim + (j+1)],wfc_array[i*xDim + j]),             (Minions::complexMag(wfc_array[i*xDim + j])         / Minions::complexMag(wfc_array[i*xDim + (j+1)])));
 
         for (int k=0; k<4; ++k){
             phiDelta[k] = atan2(gridValues[k].y,gridValues[k].x);
@@ -314,7 +314,7 @@ namespace Tracker {
     /**
      * Performs least squares fitting to get exact vortex core position.
      */
-    void lsFit(std::vector<std::shared_ptr<Vtx::Vortex> > &vortCoords, const double2 *wfc, int xDim){
+    void lsFit(std::vector<std::shared_ptr<Vtx::Vortex> > &vortCoords, const double2 *wfc_array, int xDim){
         double2 *wfc_grid = (double2*) malloc(sizeof(double2)*4);
         double2 *res = (double2*) malloc(sizeof(double2)*3);
         double2 R;
@@ -324,10 +324,10 @@ namespace Tracker {
             //vortCoords[ii]->getCoordsD().x = 0.0; vortCoords[ii]->getCoordsD().y = 0.0;
             coordsAdjusted.x=0.; coordsAdjusted.y=0.;
 
-            wfc_grid[0] = wfc[vortCoords[ii]->getCoords().x*xDim + vortCoords[ii]->getCoords().y];
-            wfc_grid[1] = wfc[(vortCoords[ii]->getCoords().x + 1)*xDim + vortCoords[ii]->getCoords().y];
-            wfc_grid[2] = wfc[vortCoords[ii]->getCoords().x*xDim + (vortCoords[ii]->getCoords().y + 1)];
-            wfc_grid[3] = wfc[(vortCoords[ii]->getCoords().x + 1)*xDim + (vortCoords[ii]->getCoords().y + 1)];
+            wfc_grid[0] = wfc_array[vortCoords[ii]->getCoords().x*xDim + vortCoords[ii]->getCoords().y];
+            wfc_grid[1] = wfc_array[(vortCoords[ii]->getCoords().x + 1)*xDim + vortCoords[ii]->getCoords().y];
+            wfc_grid[2] = wfc_array[vortCoords[ii]->getCoords().x*xDim + (vortCoords[ii]->getCoords().y + 1)];
+            wfc_grid[3] = wfc_array[(vortCoords[ii]->getCoords().x + 1)*xDim + (vortCoords[ii]->getCoords().y + 1)];
 
             for(int jj=0; jj<3; ++jj) {
                 res[jj].x = lsq[jj][0]*wfc_grid[0].x + lsq[jj][1]*wfc_grid[1].x + lsq[jj][2]*wfc_grid[2].x + lsq[jj][3]*wfc_grid[3].x;

@@ -25,6 +25,9 @@ class params:
     end = 1
     incr = 1
 
+    # specifying component to use for plotting
+    comp = 0
+
     # item to work with
     item = "wfc"
 
@@ -50,12 +53,12 @@ def plot_var(xDim, yDim, data_dir, pltval):
     plt.show()
 
 # function to plot a variable with a range
-def plot_var_range(xDim, yDim, data_dir, pltval, start, end, incr):
+def plot_var_range(xDim, yDim, data_dir, pltval, start, end, incr, comp):
     if data_dir[0] != "/":
         data_dir = "../" + data_dir
     for i in range(start, end, incr):
         print(i)
-        output = pltval + "%s" % i
+        output = pltval + "_%s_%s" % (comp, i)
         data = data_dir + "/" + output
         lines = np.loadtxt(data)
         val = np.reshape(lines, (xDim,yDim))
@@ -72,16 +75,16 @@ def plot_var_range(xDim, yDim, data_dir, pltval, start, end, incr):
 
     
 # Function to plot wfc with pltvar as a variable to modify the type of plot
-def plot_wfc(xDim, yDim, data_dir, pltval, start, end, incr):
+def plot_wfc(xDim, yDim, data_dir, pltval, start, end, incr, comp):
     if data_dir[0] != "/":
         data_dir = "../" + data_dir
     for i in range(start,end,incr):
         print(i)
-        data_real = data_dir + "/wfc_0_const_%s" % i
-        data_im = data_dir + "/wfc_0_consti_%s" % i
+        data_real = data_dir + "/wfc_%s_const_%s" % (comp, i)
+        data_im = data_dir + "/wfc_%s_consti_%s" % (comp, i)
         if pltval == "wfc_ev":
-            data_real = data_dir + "/wfc_ev_%s" % i
-            data_im = data_dir + "/wfc_evi_%s" % i
+            data_real = data_dir + "/wfc_%s_ev_%s" % (comp, i)
+            data_im = data_dir + "/wfc_%s_evi_%s" % (comp, i)
 
         #data_x = data_dir + "x_0" % i
         #data_y = data_dir + "y_0" % i
@@ -110,40 +113,41 @@ def plot_wfc(xDim, yDim, data_dir, pltval, start, end, incr):
         #fig.savefig('wfc.png')
 
 # Function to plot complex vals with pltvar as the variable
-def plot_complex(xDim, yDim, data_dir, pltval, start, end, incr):
+def plot_complex(xDim, yDim, data_dir, pltval, start, end, incr, comp):
     if data_dir[0] != "/":
         data_dir = "../" + data_dir
 
-    data_real = data_dir + "/" + pltval + "_0"
-    data_im = data_dir + "/" + pltval + "i_0"
+    for i in range(start, end, incr):
+        data_real = data_dir + "/" + pltval + "%s_%s" % (comp, i)
+        data_im = data_dir + "/" + pltval + "i_%s_%s" % (comp, i)
     
-    lines_real = np.loadtxt(data_real)
-    lines_im = np.loadtxt(data_im)
-    wfc_real = np.reshape(lines_real, (xDim,yDim));
-    wfc_im = np.reshape(lines_im, (xDim,yDim));
+        lines_real = np.loadtxt(data_real)
+        lines_im = np.loadtxt(data_im)
+        wfc_real = np.reshape(lines_real, (xDim,yDim));
+        wfc_im = np.reshape(lines_im, (xDim,yDim));
     
-    wfc = abs(wfc_real + 1j * wfc_im)
-    wfc = wfc * wfc
+        wfc = abs(wfc_real + 1j * wfc_im)
+        wfc = wfc * wfc
         
-    plt.imshow(wfc, extent=(1,xDim,1,yDim), interpolation='nearest',
-               cmap = cm.jet)
-    plt.colorbar()
-    plt.show()
-    #fig = plt.figure()
-    #fig.savefig('wfc.png')
+        plt.imshow(wfc, extent=(1,xDim,1,yDim), interpolation='nearest',
+                   cmap = cm.jet)
+        plt.colorbar()
+        plt.show()
+        #fig = plt.figure()
+        #fig.savefig('wfc.png')
 
 # Function to plot wfc with pltvar as a variable to modify the type of plot
-def plot_wfc_k(xDim, yDim, data_dir, pltval, start, end, incr):
+def plot_wfc_k(xDim, yDim, data_dir, pltval, start, end, incr, comp):
     if data_dir[0] != "/":
         data_dir = "../" + data_dir
 
     for i in range(start,end,incr):
         print(i)
-        data_real = data_dir + "/wfc_0_const_%s" % i
-        data_im = data_dir + "/wfc_0_consti_%s" % i
+        data_real = data_dir + "/wfc_%s_const_%s" % (comp, i)
+        data_im = data_dir + "/wfc_%s_consti_%s" % (comp, i)
         if pltval == "wfc_k_ev":
-            data_real = data_dir + "/wfc_ev_%s" % i
-            data_im = data_dir + "/wfc_0_evi_%s" % i
+            data_real = data_dir + "/wfc_%s_ev_%s" % (comp, i)
+            data_im = data_dir + "/wfc_%s_evi_%s" % (comp, i)
 
         lines_real = np.loadtxt(data_real)
         lines_im = np.loadtxt(data_im)
@@ -164,16 +168,16 @@ def plot_wfc_k(xDim, yDim, data_dir, pltval, start, end, incr):
         #fig.savefig('wfc.png')
 
 # Function to plot wfc with pltvar as a variable to modify the type of plot
-def plot_wfc_phase(xDim, yDim, data_dir, pltval, start, end, incr):
+def plot_wfc_phase(xDim, yDim, data_dir, pltval, start, end, incr, comp):
     if data_dir[0] != "/":
         data_dir = "../" + data_dir
     for i in range(start,end,incr):
         print(i)
-        data_real = data_dir + "/wfc_0_const_%s" % i
-        data_im = data_dir + "/wfc_0_consti_%s" % i
+        data_real = data_dir + "/wfc_%s_const_%s" % (comp, i)
+        data_im = data_dir + "/wfc_%s_consti_%s" % (comp, i)
         if pltval == "wfc_phase_ev":
-            data_real = data_dir + "/wfc_ev_%s" % i
-            data_im = data_dir + "/wfc_evi_%s" % i
+            data_real = data_dir + "/wfc_%s_ev_%s" % (comp, i)
+            data_im = data_dir + "/wfc_%s_evi_%s" % (comp, i)
 
         lines_real = np.loadtxt(data_real)
         lines_im = np.loadtxt(data_im)
@@ -191,16 +195,16 @@ def plot_wfc_phase(xDim, yDim, data_dir, pltval, start, end, incr):
         #fig.savefig('wfc.png')
 
 # Function to plot wfc cut
-def plot_wfc_cut(xDim, yDim, data_dir, pltval, start, end, incr):
+def plot_wfc_cut(xDim, yDim, data_dir, pltval, start, end, incr, comp):
     if data_dir[0] != "/":
         data_dir = "../" + data_dir
     for i in range(start,end,incr):
         print(i)
-        data_real = data_dir + "/wfc_0_const_%s" % i
-        data_im = data_dir + "/wfc_0_consti_%s" % i
+        data_real = data_dir + "/wfc_%s_const_%s" % (comp, i)
+        data_im = data_dir + "/wfc_%s_consti_%s" % (comp, i)
         if pltval == "wfc_cut_ev":
-            data_real = data_dir + "/wfc_ev_%s" % i
-            data_im = data_dir + "/wfc_evi_%s" % i
+            data_real = data_dir + "/wfc_%s_ev_%s" % (comp, i)
+            data_im = data_dir + "/wfc_%s_evi_%s" % (comp, i)
 
         lines_real = np.loadtxt(data_real)
         lines_im = np.loadtxt(data_im)
@@ -248,6 +252,10 @@ def parse_args(string_list):
         elif (string_list[i] == "i"):
             par.item = string_list[i+1]
             i += 2
+        # -c for "component" -- The component of the thing to plot
+        elif (string_list[i] == "c"):
+            par.comp = string_list[i+1]
+            i += 2
         # -r for "range"
         elif (string_list[i] == "r"):
             par.start = int(string_list[i+1])
@@ -265,22 +273,22 @@ def parse_args(string_list):
 def plot(par):
     if (par.item == "wfc" or par.item == "wfc_ev"):
         plot_wfc(par.xDim, par.yDim, par.data_dir, par.item, 
-                 par.start, par.end, par.incr)
+                 par.start, par.end, par.incr, par.comp)
     elif (par.item == "wfc_k" or par.item == "wfc_k_ev"):
         plot_wfc_k(par.xDim, par.yDim, par.data_dir, par.item,
-                   par.start, par.end, par.incr)
+                   par.start, par.end, par.incr, par.comp)
     elif (par.item == "wfc_phase" or par.item == "wfc_phase_ev"):
         plot_wfc_phase(par.xDim, par.yDim, par.data_dir, par.item,
-                       par.start, par.end, par.incr)
+                       par.start, par.end, par.incr, par.comp)
     elif (par.item == "GK" or par.item == "GV"):
         plot_complex(par.xDim, par.yDim, par.data_dir, par.item,
-                     par.start, par.end, par.incr)
+                     par.start, par.end, par.incr, par.comp)
     elif (par.item == "wfc_cut" or par.item == "wfc_cut_ev"):
         plot_wfc_cut(par.xDim, par.yDim, par.data_dir, par.item, 
-                     par.start, par.end, par.incr)
+                     par.start, par.end, par.incr, par.comp)
     elif (par.end != 1):
         plot_var_range(par.xDim, par.yDim, par.data_dir, par.item,
-                 par.start, par.end, par.incr)
+                       par.start, par.end, par.incr, par.comp)
     else:
         plot_var(par.xDim, par.yDim, par.data_dir, par.item)
 

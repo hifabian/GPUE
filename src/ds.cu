@@ -140,6 +140,17 @@ void Grid::store(std::string id, EqnNode astparam){
     param_ast_cpu[id] = astparam;
 }
 
+// Function to store double* vec into param_dstar
+void Grid::store(std::string id, std::vector<double *> dsvecparam){
+    param_dsvec[id] = dsvecparam;
+}
+
+// Function to store double2* vec into param_dstar
+void Grid::store(std::string id, std::vector<double2 *> d2svecparam){
+    param_d2svec[id] = d2svecparam;
+}
+
+
 // Two boolean functions to check whether a string exists in 
 // param_double or param_dstar
 bool Grid::is_double(std::string id){
@@ -205,6 +216,28 @@ double *Grid::dsval(std::string id){
         std::cout << "ERROR: could not find string " << id
                   << " in Grid::param_dstar." << '\n';
         assert(it != param_dstar.end());
+    }
+    return it->second;
+}
+
+// Function to retrieve double star vec values from param_dsvec
+std::vector<double *> Grid::dsvecval(std::string id){
+    auto it = param_dsvec.find(id);
+    if (it == param_dsvec.end()){
+        std::cout << "ERROR: could not find string " << id
+                  << " in Grid::param_dsvec." << '\n';
+        assert(it != param_dsvec.end());
+    }
+    return it->second;
+}
+
+// Function to retrieve double2 star vec values from param_dsvec
+std::vector<double2 *> Grid::d2svecval(std::string id){
+    auto it = param_d2svec.find(id);
+    if (it == param_d2svec.end()){
+        std::cout << "ERROR: could not find string " << id
+                  << " in Grid::param_d2svec." << '\n';
+        assert(it != param_d2svec.end());
     }
     return it->second;
 }

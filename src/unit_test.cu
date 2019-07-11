@@ -849,6 +849,7 @@ void parSum_test(){
 
     // For now, we will assume an 64x64 array for summing
     dim3 threads(16, 1, 1);
+    int total_threads = threads.x*threads.y*threads.z;
 
     double dx = 0.1;
     double dy = 0.1;
@@ -872,37 +873,41 @@ void parSum_test(){
     par.grid = grid;
 
     // now we need to initialize the wfc to all 1's;
-    double2 *wfc;
-    wfc = (cufftDoubleComplex *) malloc(sizeof(cufftDoubleComplex) * gsize);
+    double2 *wfc_array, *host_sum;
+    wfc_array = (cufftDoubleComplex *)malloc(sizeof(cufftDoubleComplex)*gsize);
+    host_sum = (cufftDoubleComplex *) 
+               malloc(sizeof(cufftDoubleComplex) * gsize / total_threads);
 
     // init wfc
     for (int i = 0; i < gsize; i++){
-        wfc[i].x = 2;
-        wfc[i].y = 2;
+        wfc_array[i].x = 2;
+        wfc_array[i].y = 2;
     }
 
-    double2 *gpu_wfc;
-    cudaHandleError( cudaMalloc((void**) &gpu_wfc, sizeof(cufftDoubleComplex)*gsize) );
+    double2 *gpu_wfc_array;
+    cudaHandleError(cudaMalloc((void**) &gpu_wfc_array,
+                    sizeof(cufftDoubleComplex)*gsize));
 
     // copying wfc to device
-    cudaHandleError( cudaMemcpy(gpu_wfc, wfc, sizeof(cufftDoubleComplex)*gsize,
-                                cudaMemcpyHostToDevice) );
+    cudaHandleError(cudaMemcpy(gpu_wfc_array, wfc_array,
+                    sizeof(cufftDoubleComplex)*gsize, cudaMemcpyHostToDevice));
 
     // Creating parsum on device
 
-    parSum(gpu_wfc, par);
+    parSum(gpu_wfc_array, par);
 
     // copying parsum back
-    cudaHandleError( cudaMemcpy(wfc, gpu_wfc, sizeof(cufftDoubleComplex)*gsize, 
-                                cudaMemcpyDeviceToHost) );
+    cudaHandleError(cudaMemcpy(wfc_array, gpu_wfc_array, 
+                    sizeof(cufftDoubleComplex)*gsize, 
+                    cudaMemcpyDeviceToHost));
 
     for (int i = 0; i < gsize; ++i){
-        if (wfc[i].x != 2/sqrt(32768.0*dx*dy) ||
-            wfc[i].y != 2/sqrt(32768.0*dx*dy)){
+        if (wfc_array[i].x != 2/sqrt(32768.0*dx*dy) ||
+            wfc_array[i].y != 2/sqrt(32768.0*dx*dy)){
             std::cout << "Wavefunction not normalized!" << '\n';
-            std::cout << i << '\t' << wfc[i].x << '\t' << wfc[i].y << '\n';
-            assert(wfc[i].x == 2/sqrt(32768.0*dx*dy));
-            assert(wfc[i].y == 2/sqrt(32768.0*dx*dy));
+            std::cout << i << '\t' << wfc_array[i].x << '\t' << wfc_array[i].y << '\n';
+            assert(wfc_array[i].x == 2/sqrt(32768.0*dx*dy));
+            assert(wfc_array[i].y == 2/sqrt(32768.0*dx*dy));
         }
     }
 
@@ -924,22 +929,23 @@ void parSum_test(){
     par.grid = grid;
 
     // copying host wfc back to device
-    cudaHandleError( cudaMemcpy(gpu_wfc, wfc, sizeof(cufftDoubleComplex)*gsize,
-                                cudaMemcpyHostToDevice) );
+    cudaHandleError(cudaMemcpy(gpu_wfc_array, wfc_array,
+                    sizeof(cufftDoubleComplex)*gsize, cudaMemcpyHostToDevice));
 
-    parSum(gpu_wfc, par);
+    parSum(gpu_wfc_array, par);
 
     // copying parsum back
-    cudaHandleError( cudaMemcpy(wfc, gpu_wfc, sizeof(cufftDoubleComplex)*gsize, 
-                                cudaMemcpyDeviceToHost) );
+    cudaHandleError(cudaMemcpy(wfc_array, gpu_wfc_array, 
+                    sizeof(cufftDoubleComplex)*gsize, 
+                    cudaMemcpyDeviceToHost));
 
     for (int i = 0; i < gsize; ++i){
-        if (wfc[i].x != 2/sqrt(32768.0*dx*dy*dz) ||
-            wfc[i].y != 2/sqrt(32768.0*dx*dy*dz)){
+        if (wfc_array[i].x != 2/sqrt(32768.0*dx*dy*dz) ||
+            wfc_array[i].y != 2/sqrt(32768.0*dx*dy*dz)){
             std::cout << "Wavefunction not normalized!" << '\n';
-            std::cout << wfc[i].x << '\t' << wfc[i].y << '\n';
-            assert(wfc[i].x == 2/sqrt(32768.0*dx*dy*dz));
-            assert(wfc[i].y == 2/sqrt(32768.0*dx*dy*dz));
+            std::cout << wfc_array[i].x << '\t' << wfc_array[i].y << '\n';
+            assert(wfc_array[i].x == 2/sqrt(32768.0*dx*dy*dz));
+            assert(wfc_array[i].y == 2/sqrt(32768.0*dx*dy*dz));
         }
     }
 
@@ -1206,7 +1212,6 @@ void evolve_test(){
 
 
     double thresh = 0.01;
-    std::string buffer;
     int gsteps = 30001;
     int esteps = 30001;
 
@@ -1230,6 +1235,7 @@ void evolve_test(){
     par.store("xDim", res);
     par.store("yDim", 1);
     par.store("zDim", 1);
+    par.store("wfc_num", 1);
 
     // Running through all the dimensions to check the energy
     for (int i = 1; i <= 3; ++i){
@@ -1243,14 +1249,14 @@ void evolve_test(){
         init(par);
 
         if (par.bval("write_file")){
-            FileIO::writeOutParam(buffer, par, "data/Params.dat");
+            FileIO::writeOutParam(par, "data/Params.dat");
         }
 
         double omegaX = par.dval("omegaX");
         set_variables(par, 0);
 
         // Evolve and find the energy
-        evolve(par, gsteps, 0, buffer);
+        evolve(par, gsteps, 0);
 
         // Check that the energy is correct
         double energy = par.dval("energy");
@@ -1265,7 +1271,7 @@ void evolve_test(){
 
         // Run in real time to make sure that the energy is constant
         set_variables(par, 1);
-        evolve(par, esteps, 1, buffer);
+        evolve(par, esteps, 1);
         double energy_ev = par.dval("energy");
 
         if (abs(energy - energy_ev) > thresh*energy_check){

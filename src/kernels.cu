@@ -362,30 +362,69 @@ __global__ void l2_norm(double2 *in1, double2 *in2, double *out){
 /**
  * Performs the non-linear evolution term of Gross--Pitaevskii equation.
  */
-__global__ void cMultDensity(double2* in1, double2* in2, double2* out, double dt, int gstate, double gDenConst){
+__global__ void cMultDensity(double2* V, double2* wfc_in,
+                             double2* wfc_out, double dt, int gstate,
+                             double gDenConst){
     double2 result;
     double gDensity;
 
     int gid = getGid3d3d();
-    double2 tin1 = in1[gid];
-    double2 tin2 = in2[gid];
-    gDensity = gDenConst*complexMagnitudeSquared(in2[gid])*(dt/HBAR);
+    gDensity = gDenConst*complexMagnitudeSquared(wfc_in[gid])*(dt/HBAR);
 
     if(gstate == 0){
-        double tmp = in1[gid].x*exp(-gDensity);
-        result.x = (tmp)*tin2.x - (tin1.y)*tin2.y;
-        result.y = (tmp)*tin2.y + (tin1.y)*tin2.x;
+        double tmp = V[gid].x*exp(-gDensity);
+        result.x = (tmp)*wfc_in[gid].x - (V[gid].y)*wfc_in[gid].y;
+        result.y = (tmp)*wfc_in[gid].y + (V[gid].y)*wfc_in[gid].x;
     }
     else{
         double2 tmp;
-        tmp.x = tin1.x*cos(-gDensity) - tin1.y*sin(-gDensity);
-        tmp.y = tin1.y*cos(-gDensity) + tin1.x*sin(-gDensity);
+        tmp.x = V[gid].x*cos(-gDensity) - V[gid].y*sin(-gDensity);
+        tmp.y = V[gid].y*cos(-gDensity) + V[gid].x*sin(-gDensity);
         
-        result.x = (tmp.x)*tin2.x - (tmp.y)*tin2.y;
-        result.y = (tmp.x)*tin2.y + (tmp.y)*tin2.x;
+        result.x = (tmp.x)*wfc_in[gid].x - (tmp.y)*wfc_in[gid].y;
+        result.y = (tmp.x)*wfc_in[gid].y + (tmp.y)*wfc_in[gid].x;
     }
-    out[gid] = result;
+    wfc_out[gid] = result;
 }
+
+/**
+ * Performs the non-linear evolution term of Gross--Pitaevskii equation.
+ */
+__global__ void cMultDensity_multicomp(double2* V, double2* wfc_in,
+                                       double2* wfc_out,
+                                       double2** wfc_array,
+                                       double* interactions,
+                                       double dt, int gstate,
+                                       double gDenConst, int wfc_num, int w){
+    double2 result;
+    double gDensity;
+
+    int gid = getGid3d3d();
+    gDensity = 0;
+    for (int i = 0; i < wfc_num; ++i){
+        int index = wfc_num*w + i;
+        gDensity += interactions[index]
+                    *complexMagnitudeSquared(wfc_array[i][gid]);
+    }
+    gDensity *= gDenConst*(dt/HBAR);
+
+
+    if(gstate == 0){
+        double tmp = V[gid].x*exp(-gDensity);
+        result.x = (tmp)*wfc_in[gid].x - (V[gid].y)*wfc_in[gid].y;
+        result.y = (tmp)*wfc_in[gid].y + (V[gid].y)*wfc_in[gid].x;
+    }
+    else{
+        double2 tmp;
+        tmp.x = V[gid].x*cos(-gDensity) - V[gid].y*sin(-gDensity);
+        tmp.y = V[gid].y*cos(-gDensity) + V[gid].x*sin(-gDensity);
+        
+        result.x = (tmp.x)*wfc_in[gid].x - (tmp.y)*wfc_in[gid].y;
+        result.y = (tmp.x)*wfc_in[gid].y + (tmp.y)*wfc_in[gid].x;
+    }
+    wfc_out[gid] = result;
+}
+
 
 //cMultDensity for ast V
 __global__ void cMultDensity_ast(EqnNode_gpu *eqn, double2* in, double2* out, 
@@ -507,13 +546,13 @@ __global__ void vecConjugate(double2 *in, double2 *out){
     out[gid] = result;
 }
 
-__global__ void angularOp(double omega, double dt, double2* wfc, double* xpyypx, double2* out){
+__global__ void angularOp(double omega, double dt, double2* wfc_array, double* xpyypx, double2* out){
     unsigned int gid = getGid3d3d();
     double2 result;
     double op;
     op = exp( -omega*xpyypx[gid]*dt);
-    result.x=wfc[gid].x*op;
-    result.y=wfc[gid].y*op;
+    result.x=wfc_array[gid].x*op;
+    result.y=wfc_array[gid].y*op;
     out[gid]=result;
 }
 
@@ -590,24 +629,24 @@ __global__ void multipass(double* input, double* output){
 /*
 * Calculates all of the energy of the current state. sqrt_omegaz_mass = sqrt(omegaZ/mass), part of the nonlin interaction term
 */
-__global__ void energyCalc(double2 *wfc, double2 *op, double dt, double2 *energy, int gnd_state, int op_space, double sqrt_omegaz_mass, double gDenConst){
+__global__ void energyCalc(double2 *wfc_array, double2 *op, double dt, double2 *energy, int gnd_state, int op_space, double sqrt_omegaz_mass, double gDenConst){
     unsigned int gid = getGid3d3d();
     //double hbar_dt = HBAR/dt;
     double2 result;
     if(op_space == 0){
-        double g_local = gDenConst*sqrt_omegaz_mass*complexMagnitudeSquared(wfc[gid]);
+        double g_local = gDenConst*sqrt_omegaz_mass*complexMagnitudeSquared(wfc_array[gid]);
         op[gid].x += g_local;
     }
 
     if (op_space < 2){
-        result = braKetMult(wfc[gid], energy[gid]);
+        result = braKetMult(wfc_array[gid], energy[gid]);
         energy[gid].x += result.x;
         energy[gid].y += result.y;
     }
     else{
-        result = complexMultiply(op[gid],wfc[gid]);
+        result = complexMultiply(op[gid],wfc_array[gid]);
     }
-    result = braKetMult(wfc[gid], complexMultiply(op[gid],wfc[gid]));
+    result = braKetMult(wfc_array[gid], complexMultiply(op[gid],wfc_array[gid]));
     energy[gid].x += result.x;
     energy[gid].y += result.y;
 
