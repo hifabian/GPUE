@@ -1,6 +1,6 @@
-#include "../include/parser.h"
-#include "../include/unit_test.h"
-#include "../include/operators.h"
+#include "parser.h"
+#include "unit_test.h"
+#include "operators.h"
 
 struct stat st = {0};
 

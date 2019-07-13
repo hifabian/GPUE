@@ -24,7 +24,7 @@
 #include <vector>
 #include "node.h"
 #include "edge.h"
-#include "tracker.h"
+//#include "tracker.h"
 
 namespace LatticeGraph {
 

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <cuda_runtime.h>
-#include "../include/fileIO.h"
+#include "fileIO.h"
 
 namespace FileIO{
 

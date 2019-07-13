@@ -24,8 +24,8 @@
 #include<math.h>
 #include<vector>
 #include<stdio.h>
-#include<cuda.h>
-#include<cuda_runtime.h>
+#include <cuda.h>
+#include <cuda_runtime.h>
 #include "vort.h"
 
 //##############################################################################
