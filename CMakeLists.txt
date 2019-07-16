@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(gpue_build LANGUAGES CXX CUDA)
+project(gpue_build LANGUAGES C CXX CUDA)
 find_package(CUDA QUIET REQUIRED)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -8,9 +8,18 @@ execute_process(WORKING_DIRECTORY ./bin/
                 COMMAND bash install_hdf5.sh
                 COMMAND tee /dev/tty
                 COMMAND tail -n 1
-                OUTPUT_VARIABLE HDF5_INCLUDE_DIR)
+                OUTPUT_VARIABLE HDF5_SCRIPT_OUTPUT)
 
-include_directories (${HDF5_INCLUDE_DIR})
+set(CMAKE_PREFIX_PATH "./bin/CMake-hdf5-1.10.5/build/HDF5-1.10.5-Linux/HDF_Group/HDF5/1.10.5/share/cmake/hdf5/")
+find_package(HDF5 COMPONENTS CXX REQUIRED)
+
+message("HDF5_LIBRARY_DIRS: ${HDF5_LIBRARY_DIRS}")
+message("HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
+message("HDF5_CXX_LIBRARIES: ${HDF5_CXX_LIBRARIES}")
+message("CUDA_LIBRARIES: ${CUDA_LIBRARIES}")
+
+link_directories( ${HDF5_LIBRARY_DIRS} )
+include_directories( ${HDF5_INCLUDE_DIRS} )
 
 set(
     CUDA_NVCC_FLAGS
@@ -84,5 +93,5 @@ add_executable(
 )
 
 target_compile_features(gpue PUBLIC cxx_std_11)
-target_link_libraries(gpue ${CUDA_LIBRARIES} ${CUDA_CUFFT_LIBRARIES})
+target_link_libraries(gpue ${CUDA_LIBRARIES} ${CUDA_CUFFT_LIBRARIES} ${HDF5_CXX_LIBRARIES})
 set_target_properties(gpue PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
