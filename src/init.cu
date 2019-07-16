@@ -44,6 +44,8 @@ int init(Grid &par){
     check_memory(par);
     set_fns(par);
 
+    FileIO::init(par);
+
     // Re-establishing variables from parsed Grid class
     // Initializes uninitialized variables to 0 values
     std::string data_dir = par.sval("data_dir");

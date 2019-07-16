@@ -4,10 +4,17 @@
 #include <string.h>
 #include <cuda_runtime.h>
 #include "H5Cpp.h"
+using namespace H5;
 
 #include "../include/fileIO.h"
 
 namespace FileIO{
+
+
+    void init(Grid &par) {
+        // Load file
+        H5File output(par.sval("data_dir") + "output.h5", H5F_ACC_TRUNC );
+    }
 
     /*
      * Reads datafile into memory.

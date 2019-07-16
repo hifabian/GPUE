@@ -25,6 +25,8 @@
 /** Check source file for further information on functions **/
 namespace FileIO {
 
+    void init(Grid &par);
+
     /**
     * @brief	Reads in the real and imaginary components from text files
     * @ingroup	helper
