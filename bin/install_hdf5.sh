@@ -1,7 +1,7 @@
 HDF_VER_NO_PATCH="1.10"
 HDF_VER="1.10.5"
 ROOT_PATH="$PWD"
-LOCAL_HDF_PATH="CMake-hdf5-$HDF_VER/hdf5-$HDF_VER/include"
+LOCAL_HDF_PATH="CMake-hdf5-$HDF_VER/hdf5-$HDF_VER/"
 
 if [ -d "./$LOCAL_HDF_PATH" ]; then
     echo "$PWD/$LOCAL_HDF_PATH"
