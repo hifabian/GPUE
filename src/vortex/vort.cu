@@ -1,5 +1,4 @@
-#include "../include/vort.h"
-
+#include "vort.h"
 
 //@todo Implement this
 namespace Vtx {

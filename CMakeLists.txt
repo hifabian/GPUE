@@ -1,9 +1,33 @@
-cmake_minimum_required(VERSION 3.8)
-project(gpue_build LANGUAGES C CXX CUDA)
-find_package(CUDA QUIET REQUIRED)
+################################################################################
 
+cmake_minimum_required(VERSION 3.8)
+set(GPUE_TEXT "
+    ▄▄▄▄   ▄▄▄▄▄▄    ▄▄    ▄▄  ▄▄▄▄▄▄▄▄ 
+  ██▀▀▀▀█  ██▀▀▀▀█▄  ██    ██  ██▀▀▀▀▀▀ 
+ ██        ██    ██  ██    ██  ██       
+ ██  ▄▄▄▄  ██████▀   ██    ██  ███████  
+ ██  ▀▀██  ██        ██    ██  ██       
+  ██▄▄▄██  ██        ▀██▄▄██▀  ██▄▄▄▄▄▄ 
+    ▀▀▀▀   ▀▀          ▀▀▀▀    ▀▀▀▀▀▀▀▀ 
+")
+message(${GPUE_TEXT})
+project(gpue LANGUAGES C CXX CUDA)
+
+# Echo makefile compilation commands
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
+# Require build directory; forbid modifying the source files during compilation
+set(CMAKE_DISABLE_IN_SOURCE_BUILD OFF)
+set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
+
+# Ensure C++11 enabled
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Use release build type (performance optimised) with debugging symbols
+set(CMAKE_BUILD_TYPE RELWITHDEBINFO)
+
+# Install and find HDF5
 execute_process(WORKING_DIRECTORY ./bin/
                 COMMAND bash install_hdf5.sh
                 COMMAND tee /dev/tty
@@ -21,77 +45,45 @@ message("CUDA_LIBRARIES: ${CUDA_LIBRARIES}")
 link_directories( ${HDF5_LIBRARY_DIRS} )
 include_directories( ${HDF5_INCLUDE_DIRS} )
 
-set(
-    CUDA_NVCC_FLAGS
-    ${CUDA_NVCC_FLAGS};
-    -O3 -gencode arch=compute_37,code=sm_37 -lcufft -fopenmp
+# For non-standard library paths, provide Find<packagename> files in this dir.
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
+
+# Enable RDC and passing build flags to underlying compiler
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-rdc=true;-O3;-Xcompiler -std=c++11;")
+
+add_subdirectory(src)
+find_package(CUDA REQUIRED)
+
+################################################################################
+
+if(false)
+# libgpue.so
+add_library(gpue SHARED)
+target_link_libraries(gpue 
+    gpue_vortex 
+    gpue_io 
+    gpue_simulator 
+    gpue_tests
+    # gpue_utils
+    ${CUDA_LIBRARIES} 
+    ${CUDA_CUFFT_LIBRARIES}
+    ${HDF5_CXX_LIBRARIES}
+)
+endif()
+
+# gpue
+add_executable(gpue-exe ${CMAKE_SOURCE_DIR}/src/main.cu)
+target_link_libraries(gpue-exe 
+    gpue_vortex
+    gpue_io
+    gpue_simulator
+    gpue_tests
+    # gpue_utils
+    ${CUDA_LIBRARIES}
+    ${CUDA_CUFFT_LIBRARIES}
+    ${HDF5_CXX_LIBRARIES}
 )
 
-find_file( EXAMPLE_CFG example.cfg src/ )
-add_library(unitTest OBJECT src/unit_test.cu include/unit_test.h include/kernels.h)
-set( CFG_FILE_PATH _CFG_FILE_PATH="${EXAMPLE_CFG}" )
-target_compile_options(
-    unitTest PRIVATE -D${CFG_FILE_PATH} -dc -std=c++11
-)
-
-add_executable(
-    gpue
-    src/dynamic.cu
-    include/dynamic.h
-
-    src/ds.cu
-    include/ds.h
-
-    src/edge.cu
-    include/edge.h
-
-    src/evolution.cu
-    include/evolution.h
-
-    src/fileIO.cu
-    include/fileIO.h
-
-    src/kernels.cu
-    include/kernels.h
-
-    src/manip.cu
-    include/manip.h
-
-    src/lattice.cu
-    include/lattice.h
-
-    src/minions.cu
-    include/minions.h
-
-    src/multigpu.cu
-
-    src/node.cu
-    include/node.h
-
-    src/operators.cu
-    include/operators.h
-
-    src/parser.cu
-    include/parser.h
-
-    src/split_op.cu
-    include/split_op.h
-
-    src/tracker.cu
-    include/tracker.h
-
-    $<TARGET_OBJECTS:unitTest>
-
-    src/vort.cu
-    include/vort.h
-
-    src/vortex_3d.cu
-    include/vortex_3d.h
-
-    src/init.cu
-    include/init.h
-)
-
-target_compile_features(gpue PUBLIC cxx_std_11)
-target_link_libraries(gpue ${CUDA_LIBRARIES} ${CUDA_CUFFT_LIBRARIES} ${HDF5_CXX_LIBRARIES})
-set_target_properties(gpue PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_compile_features(gpue-exe PUBLIC cxx_std_11)
+set_target_properties(gpue-exe PROPERTIES OUTPUT_NAME gpue)
+set_target_properties(gpue-exe PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

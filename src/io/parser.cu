@@ -1,6 +1,6 @@
-#include "../include/parser.h"
-#include "../include/unit_test.h"
-#include "../include/operators.h"
+#include "parser.h"
+#include "unit_test.h"
+#include "operators.h"
 
 struct stat st = {0};
 
@@ -120,7 +120,7 @@ Grid parseArgs(int argc, char** argv){
     optind = 1;
 
     while ((opt = getopt (argc, argv, 
-           "b:d:D:C:x:y:w:m:G:g:e:T:t:n:p:rQ:L:E::lsi:P:X:Y:O:k:WU:V:S:ahz:H:uA:v:Z:fc:F:K:R:q:I:j:J;")) !=-1)
+           "b:d:D:C:x:y:w:m:G:g:e:T:t:n:p:rQ:L:E::lsi:P:X:Y:O:k:WU:V:S:ahz:H:uA:v:Z:fc:F:K:R:q:I:j:JN:;")) !=-1)
     {
         switch (opt)
         {
@@ -365,14 +365,14 @@ Grid parseArgs(int argc, char** argv){
             }
             case 'h':
             {
-                std::string command = "src/print_help.sh ";
+                std::string command = "src/utils/print_help.sh ";
                 system(command.c_str());
                 exit(0);
                 break;
             }
             case 'H':
             {
-                std::string command = "src/print_help.sh ";
+                std::string command = "src/utils/print_help.sh ";
                 command.append(optarg);
                 system(command.c_str());
                 exit(0);

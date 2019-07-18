@@ -1,5 +1,5 @@
 
-#include "../include/minions.h"
+#include "minions.h"
 
 namespace Minions{
 

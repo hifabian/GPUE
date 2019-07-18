@@ -7,7 +7,7 @@
  *  @version 0.1
  */
  //##############################################################################
-#include "../include/manip.h"
+#include "manip.h"
 
 void WFC::phaseWinding(double *phi, int winding, double *x, double *y, double dx, double dy, double posx, double posy, int dim){
     for(int ii=0; ii < dim; ++ii){

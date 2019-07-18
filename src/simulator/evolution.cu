@@ -1,5 +1,5 @@
-#include "../include/evolution.h"
-#include "../include/vortex_3d.h"
+#include "evolution.h"
+#include "vortex_3d.h"
 
 // 3D
 void apply_gauge(Grid &par, double2 *wfc, double2 *Ax, double2 *Ay,

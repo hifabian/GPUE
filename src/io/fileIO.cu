@@ -6,7 +6,7 @@
 #include "H5Cpp.h"
 using namespace H5;
 
-#include "../include/fileIO.h"
+#include "fileIO.h"
 
 namespace FileIO{
 

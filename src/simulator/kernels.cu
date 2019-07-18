@@ -1,6 +1,6 @@
-#include "../include/constants.h"
-#include "../include/dynamic.h"
-#include "../include/ds.h"
+#include "constants.h"
+#include "dynamic.h"
+#include "ds.h"
 #include <stdio.h>
 
 __device__ double2 subtract(double2 a, double2 b){

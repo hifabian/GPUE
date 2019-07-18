@@ -1,10 +1,10 @@
-#include "../include/ds.h"
-#include "../include/unit_test.h"
-#include "../include/parser.h"
-#include "../include/evolution.h"
-#include "../include/init.h"
-#include "../include/dynamic.h"
-#include "../include/vortex_3d.h"
+#include "ds.h"
+#include "unit_test.h"
+#include "parser.h"
+#include "evolution.h"
+#include "init.h"
+#include "dynamic.h"
+#include "vortex_3d.h"
 #include <string.h>
 #include <assert.h>
 #include <cufft.h>

@@ -1,17 +1,17 @@
-#include "../include/split_op.h"
-#include "../include/kernels.h"
-#include "../include/constants.h"
-#include "../include/fileIO.h"
-#include "../include/tracker.h"
-#include "../include/minions.h"
-#include "../include/parser.h"
+#include "split_op.h"
+#include "kernels.h"
+#include "constants.h"
+#include "fileIO.h"
+#include "tracker.h"
+#include "minions.h"
+#include "parser.h"
 
-#include "../include/lattice.h"
-#include "../include/node.h"
-#include "../include/edge.h"
-#include "../include/manip.h"
-#include "../include/vort.h"
-#include "../include/evolution.h"
+#include "lattice.h"
+#include "node.h"
+#include "edge.h"
+#include "manip.h"
+#include "vort.h"
+#include "evolution.h"
 #include <string>
 #include <iostream>
 
@@ -38,7 +38,8 @@ int kill_idx = -1;
 
 void cudaHandleError(cudaError_t result) {
     if (result != cudaSuccess) {
-        std::cout << "Cuda operation failed!\n Error code: " << result << '\n';
+        std::cout << "Cuda operation failed!\n Error: " 
+                  << cudaGetErrorString(result) << '\n';
         exit(1);
     }
 }
@@ -46,14 +47,15 @@ void cudaHandleError(cudaError_t result) {
 void cudaCheckError() {
     cudaError_t result = cudaGetLastError();
     if (result != cudaSuccess) {
-        std::cout << "Cuda kernel failed!\n Error code: " << result << '\n';
+        std::cout << "Cuda kernel failed!\n Error: " 
+                  << cudaGetErrorString(result) << '\n';
         exit(1);
     }
 }
 
 void cufftHandleError(cufftResult result) {
     if (result != CUFFT_SUCCESS) {
-        std::cout << "cufft operation failed!\n Error code: " << result << '\n';
+        std::cout << "cufft operation failed!\n Error: " << result << '\n';
     }
 }
 

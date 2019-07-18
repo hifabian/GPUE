@@ -4,9 +4,9 @@
 #include <cufft.h>
 #include <fstream>
 
-#include "../include/dynamic.h"
-#include "../include/ds.h"
-#include "../include/kernels.h"
+#include "dynamic.h"
+#include "ds.h"
+#include "kernels.h"
 
 __device__ double factorial(double val){
     double ret_val = val;

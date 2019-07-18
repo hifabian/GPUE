@@ -1,5 +1,5 @@
 
-#include "../include/lattice.h"
+#include "lattice.h"
 #include <iostream>
 
 using namespace LatticeGraph;

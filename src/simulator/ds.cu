@@ -1,7 +1,7 @@
 
-#include "../include/ds.h"
-#include "../include/operators.h"
-#include "../include/split_op.h"
+#include "ds.h"
+#include "operators.h"
+#include "split_op.h"
 
 /*----------------------------------------------------------------------------//
 * AUX
