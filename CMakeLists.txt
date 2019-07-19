@@ -28,7 +28,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_BUILD_TYPE RELWITHDEBINFO)
 
 # Disable CMake 3.12 policy that looks for <PackageName>_ROOT, since HDF5 does that automatically
-cmake_policy(SET CMP0074 OLD)
+if (POLICY CMP0074)
+    cmake_policy(SET CMP0074 OLD)
+endif ()
 
 # Install and find HDF5
 execute_process(WORKING_DIRECTORY ./bin/
@@ -64,10 +66,10 @@ find_package(CUDA REQUIRED)
 ################################################################################
 
 set(LIBS
-    $<TARGET_OBJECTS:gpue_vortex>
-    $<TARGET_OBJECTS:gpue_io>
-    $<TARGET_OBJECTS:gpue_simulator> 
-    $<TARGET_OBJECTS:gpue_tests>)
+    $<TARGET_OBJECTS: gpue_vortex>
+    $<TARGET_OBJECTS: gpue_io>
+    $<TARGET_OBJECTS: gpue_simulator>
+    $<TARGET_OBJECTS: gpue_tests>)
 
 if(false)
 # libgpue.so
