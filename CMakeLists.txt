@@ -67,10 +67,10 @@ find_package(CUDA REQUIRED)
 ################################################################################
 
 set(LIBS
-    $<TARGET_OBJECTS: gpue_vortex>
-    $<TARGET_OBJECTS: gpue_io>
-    $<TARGET_OBJECTS: gpue_simulator>
-    $<TARGET_OBJECTS: gpue_tests>)
+    $<TARGET_OBJECTS:gpue_vortex>
+    $<TARGET_OBJECTS:gpue_io>
+    $<TARGET_OBJECTS:gpue_simulator>
+    $<TARGET_OBJECTS:gpue_tests>)
 
 if(false)
 # libgpue.so
