@@ -45,7 +45,8 @@ message("HDF5_ROOT: $ENV{HDF5_ROOT}")
 find_package(HDF5 COMPONENTS CXX REQUIRED)
 
 link_directories( ${HDF5_LIBRARY_DIRS} )
-include_directories( ${HDF5_INCLUDE_DIRS} )
+include_directories( ${HDF5_INCLUDE_DIRS}
+                    ./include/ )
 
 # For non-standard library paths, provide Find<packagename> files in this dir.
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
