@@ -63,14 +63,17 @@ find_package(CUDA REQUIRED)
 
 ################################################################################
 
+set(LIBS
+    $<TARGET_OBJECTS:gpue_vortex>
+    $<TARGET_OBJECTS:gpue_io>
+    $<TARGET_OBJECTS:gpue_simulator> 
+    $<TARGET_OBJECTS:gpue_tests>)
+
 if(false)
 # libgpue.so
 add_library(gpue SHARED)
 target_link_libraries(gpue 
-    gpue_vortex 
-    gpue_io 
-    gpue_simulator 
-    gpue_tests
+    ${LIBS}
     # gpue_utils
     ${CUDA_LIBRARIES} 
     ${CUDA_CUFFT_LIBRARIES}
@@ -81,10 +84,7 @@ endif()
 # gpue
 add_executable(gpue-exe ${CMAKE_SOURCE_DIR}/src/main.cu)
 target_link_libraries(gpue-exe 
-    gpue_vortex
-    gpue_io
-    gpue_simulator
-    gpue_tests
+    ${LIBS}
     # gpue_utils
     ${CUDA_LIBRARIES}
     ${CUDA_CUFFT_LIBRARIES}
