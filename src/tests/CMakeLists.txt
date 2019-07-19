@@ -1,6 +1,5 @@
 project(gpue_tests LANGUAGES CUDA)
 add_library(gpue_tests OBJECT unit_test.cu)
-target_link_libraries(gpue_tests PUBLIC gpue_simulator)
 set_property(TARGET gpue_tests PROPERTY COMPILE_FLAGS "-dc")
 
 #enable_testing()
