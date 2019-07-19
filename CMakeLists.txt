@@ -42,12 +42,6 @@ message("HDF5_ROOT: $ENV{HDF5_ROOT}")
 
 find_package(HDF5 COMPONENTS CXX REQUIRED)
 
-message("HDF5_LIBRARY_DIRS: ${HDF5_LIBRARY_DIRS}")
-message("HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
-message("HDF5_CXX_LIBRARIES: ${HDF5_CXX_LIBRARIES}")
-message("CUDA_LIBRARIES: ${CUDA_LIBRARIES}")
-message("CUDA_CUFFT_LIBRARIES: ${CUDA_CUFFT_LIBRARIES}")
-
 link_directories( ${HDF5_LIBRARY_DIRS} )
 include_directories( ${HDF5_INCLUDE_DIRS} )
 
@@ -59,6 +53,13 @@ set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-rdc=true;-O3;-Xcompiler -std=c++11;")
 
 add_subdirectory(src)
 find_package(CUDA REQUIRED)
+
+# message("HDF5_LIBRARY_DIRS: ${HDF5_LIBRARY_DIRS}")
+# message("HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
+# message("HDF5_CXX_LIBRARIES: ${HDF5_CXX_LIBRARIES}")
+# message("CUDA_LIBRARIES: ${CUDA_LIBRARIES}")
+# message("CUDA_CUFFT_LIBRARIES: ${CUDA_CUFFT_LIBRARIES}")
+# message("CUDA_cudadevrt_LIBRARY: ${CUDA_cudadevrt_LIBRARY}")
 
 ################################################################################
 

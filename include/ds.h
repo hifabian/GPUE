@@ -25,7 +25,6 @@
 #include <vector>
 #include <fstream>
 #include <cuda.h>
-#include <cuda_runtime.h>
 #include <cufft.h>
 #include <typeinfo>
 #include <cassert>

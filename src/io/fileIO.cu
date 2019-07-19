@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <cuda_runtime.h>
 #include "H5Cpp.h"
 using namespace H5;
 

@@ -24,7 +24,6 @@
 #include <string>
 #include <ctime>
 #include <cuda.h>
-#include <cuda_runtime.h>
 #include <cufft.h>
 #include <ctype.h>
 #include <getopt.h>
@@ -39,10 +38,8 @@
 #include "unit_test.h"
 #include "vortex_3d.h"
 
-
-
 // UPDATE LIST LATER
- /**
+/**
  * @brief       performs real or imaginary time evolution
  * @ingroup     data
  * @param       Parameter set

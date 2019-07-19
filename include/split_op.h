@@ -24,7 +24,6 @@
 #include <string>
 #include <ctime>
 #include <cuda.h>
-#include <cuda_runtime.h>
 #include <cufft.h>
 #include <ctype.h>
 #include <getopt.h>

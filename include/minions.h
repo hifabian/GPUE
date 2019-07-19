@@ -19,7 +19,6 @@
 #include <cuda.h>
 #include <stdio.h>
 #include <math.h>
-#include <cuda_runtime.h>
 #include "tracker.h"
 
 namespace Minions{
