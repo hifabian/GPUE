@@ -5,14 +5,103 @@
 #include "H5Cpp.h"
 using namespace H5;
 
+/* HDF5 structure:
+ * # data_dir/output.h5
+ * /
+ * /WFC
+ * /WFC/CONST
+ * /WFC/CONST/i
+ * /WFC/EV
+ * /WFC/EV/i
+ * /V
+ * /V/i
+ * /K
+ * /K/i
+ * ...
+ * Where "/" is the root,
+ * "i" is the dataset for the i-th iteration,
+ * and all other "directories" are groups.
+ *
+*/
+
 #include "fileIO.h"
 
 namespace FileIO{
 
+    H5File *output;
+
+    Group *wfc;
+    Group *wfc_const;
+    Group *wfc_ev;
+    Group *v;
+    Group *k;
+
+    CompType *hdf_double2;
+
+    DataSpace *wfc_space;
+    DataSpace *v_space;
+    DataSpace *k_space;
 
     void init(Grid &par) {
-        // Load file
-        H5File output(par.sval("data_dir") + "output.h5", H5F_ACC_TRUNC );
+        int xDim = par.ival("xDim");
+        int yDim = par.ival("yDim");
+        int zDim = par.ival("zDim");
+        int dimnum = par.ival("dimnum");
+        int wfc_num = par.ival("wfc_num");
+
+        // In case `init` gets called multiple times
+        if (FileIO::output == NULL) {
+            // Open file
+            FileIO::output = new H5File(par.sval("data_dir") + "output.h5", H5F_ACC_TRUNC);
+
+            // Create groups
+            FileIO::wfc = new Group(FileIO::output->createGroup("/WFC"));
+            FileIO::wfc_const = new Group(FileIO::output->createGroup("/WFC/CONST"));
+            FileIO::wfc_ev = new Group(FileIO::output->createGroup("/WFC/EV"));
+
+            FileIO::v = new Group(FileIO::output->createGroup("/V"));
+            FileIO::k = new Group(FileIO::output->createGroup("/K"));
+
+            // Initialize composite data type
+            FileIO::hdf_double2 = new CompType(2 * sizeof(double));
+            FileIO::hdf_double2->insertMember("re", HOFFSET(double2, x), PredType::NATIVE_DOUBLE);
+            FileIO::hdf_double2->insertMember("im", HOFFSET(double2, y), PredType::NATIVE_DOUBLE);
+
+            // Create DataSpaces
+            int rank = 1 + dimnum; // number of components x spatial dimensions
+            hsize_t *dims = (hsize_t *)malloc(rank * sizeof(hsize_t));
+            dims[0] = wfc_num;
+            if (rank > 1) {
+              dims[1] = xDim;
+            }
+            if (rank > 2) {
+              dims[2] = yDim;
+            }
+            if (rank > 3) {
+              dims[3] = zDim;
+            }
+
+            FileIO::wfc_space = new DataSpace(rank, dims);
+            FileIO::v_space = new DataSpace(rank, dims);
+            FileIO::k_space = new DataSpace(rank, dims);
+        }
+    }
+
+    void destroy() {
+      delete FileIO::output;
+      delete FileIO::output;
+
+      delete FileIO::wfc;
+      delete FileIO::wfc_const;
+      delete FileIO::wfc_ev;
+      delete FileIO::v;
+      delete FileIO::k;
+
+      delete FileIO::hdf_double2;
+
+      delete FileIO::wfc_space;
+      delete FileIO::v_space;
+      delete FileIO::k_space;
     }
 
     /*
