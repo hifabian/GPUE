@@ -52,10 +52,10 @@ include_directories( ${HDF5_INCLUDE_DIRS}
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # Enable RDC and passing build flags to underlying compiler
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-rdc=true;-O3;-Xcompiler -std=c++11;")
+set(CMAKE_CUDA_FLAGS "-rdc=true -std=c++11")
 
-add_subdirectory(src)
 find_package(CUDA REQUIRED)
+add_subdirectory(src)
 
 # message("HDF5_LIBRARY_DIRS: ${HDF5_LIBRARY_DIRS}")
 # message("HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
@@ -67,17 +67,15 @@ find_package(CUDA REQUIRED)
 ################################################################################
 
 set(LIBS
-    $<TARGET_OBJECTS: gpue_vortex>
-    $<TARGET_OBJECTS: gpue_io>
-    $<TARGET_OBJECTS: gpue_simulator>
-    $<TARGET_OBJECTS: gpue_tests>)
+    $<TARGET_OBJECTS:gpue_vortex>
+    $<TARGET_OBJECTS:gpue_io>
+    $<TARGET_OBJECTS:gpue_simulator>
+    $<TARGET_OBJECTS:gpue_tests>)
 
 if(false)
 # libgpue.so
-add_library(gpue SHARED)
+add_library(gpue SHARED ${LIBS})
 target_link_libraries(gpue 
-    ${LIBS}
-    # gpue_utils
     ${CUDA_LIBRARIES} 
     ${CUDA_CUFFT_LIBRARIES}
     ${HDF5_CXX_LIBRARIES}
@@ -85,15 +83,12 @@ target_link_libraries(gpue
 endif()
 
 # gpue
-add_executable(gpue-exe ${CMAKE_SOURCE_DIR}/src/main.cu)
+add_executable(gpue-exe ${CMAKE_SOURCE_DIR}/src/main.cu ${LIBS})
 target_link_libraries(gpue-exe 
-    ${LIBS}
-    # gpue_utils
     ${CUDA_LIBRARIES}
     ${CUDA_CUFFT_LIBRARIES}
     ${HDF5_CXX_LIBRARIES}
 )
 
-target_compile_features(gpue-exe PUBLIC cxx_std_11)
 set_target_properties(gpue-exe PROPERTIES OUTPUT_NAME gpue)
 set_target_properties(gpue-exe PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
