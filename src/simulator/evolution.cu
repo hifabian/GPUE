@@ -494,9 +494,7 @@ void evolve(Grid &par,
     
                             // Now we need to output everything
                             if (write_it){
-                                FileIO::writeOutDouble(data_dir+"Edges",
-                                                       edges[w], gridSize,
-                                                       i+step_offset);
+                                FileIO::writeOutEdges(par, edges, i);
                             }
                             free(edges[w]);
     
@@ -579,16 +577,7 @@ void evolve(Grid &par,
                                                         *xDim*yDim*wfc_num,
                                                     cudaMemcpyHostToDevice));
                                 }
-                                // Write out the newly specified potential
-                                // and exp potential to files
                                 if(write_it){
-                                    FileIO::writeOutDouble(data_dir+"V_opt_1",
-                                                           V_opt[w],xDim * yDim,
-                                                           step_offset);
-                                    FileIO::writeOut(data_dir+"EV_opt_1",
-                                                     EV_opt[w],
-                                                     xDim * yDim, step_offset);
-        
                                     FileIO::writeOutParam(par,
                                                           data_dir
                                                           + "Params.dat");
@@ -779,10 +768,7 @@ void evolve(Grid &par,
     
                 //std::cout << "writing" << '\n';
                 if (write_it) {
-                    FileIO::writeOut(data_dir + fileName,
-                                     wfc_array[w], xDim*yDim*zDim,
-                                     i+step_offset);
-                    FileIO::writeOutWfc(par, wfc_array, i + step_offset, (bool)gstate);
+                    FileIO::writeOutWfc(par, wfc_array, i, (bool)gstate);
                 }
                 //std::cout << "written" << '\n';
             }

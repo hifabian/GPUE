@@ -17,7 +17,8 @@ using namespace H5;
  * /V/i
  * /K
  * /K/i
- * ...
+ * /VORTEX/EDGES/i
+ *
  * Where "/" is the root,
  * "i" is the dataset for the i-th iteration,
  * and all other "directories" are groups.
@@ -35,6 +36,8 @@ namespace FileIO{
     Group *wfc_ev;
     Group *v;
     Group *k;
+    Group *vortex;
+    Group *vortex_edges;
 
     CompType *hdf_double2;
     DataType *hdf_double;
@@ -42,6 +45,7 @@ namespace FileIO{
     DataSpace *wfc_space;
     DataSpace *v_space;
     DataSpace *k_space;
+    DataSpace *edge_space;
 
     void init(Grid &par) {
         int xDim = par.ival("xDim");
@@ -52,7 +56,6 @@ namespace FileIO{
 
         // In case `init` gets called multiple times
         if (FileIO::output == NULL) {
-            std::cout << "Created File!\n\n";
             // Open file
             FileIO::output = new H5File(par.sval("data_dir") + "output.h5", H5F_ACC_TRUNC);
 
@@ -63,6 +66,9 @@ namespace FileIO{
 
             FileIO::v = new Group(FileIO::output->createGroup("/V"));
             FileIO::k = new Group(FileIO::output->createGroup("/K"));
+
+            FileIO::vortex = new Group(FileIO::output->createGroup("/VORTEX"));
+            FileIO::vortex_edges = new Group(FileIO::output->createGroup("/VORTEX/EDGES"));
 
             // Initialize composite data type
             FileIO::hdf_double2 = new CompType(2 * sizeof(double));
@@ -88,12 +94,16 @@ namespace FileIO{
             FileIO::wfc_space = new DataSpace(rank, dims);
             FileIO::v_space = new DataSpace(rank, dims);
             FileIO::k_space = new DataSpace(rank, dims);
+            FileIO::edge_space = new DataSpace(rank, dims);
+
+            free(dims);
         }
     }
 
     template<typename T>
     void writeNd(Grid &par, std::string dataset_name, DataType *hdf_type, DataSpace *hdf_space, T **data) {
         if (FileIO::output == NULL) {
+            std::cout << "Output file is not open!\n\n\n";  
             return;
         }
 
@@ -137,6 +147,13 @@ namespace FileIO{
         FileIO::writeNd(par, dataset_name, FileIO::hdf_double, FileIO::k_space, k.data());
     }
 
+    void writeOutEdges(Grid &par, std::vector<double *> edges, int i) {
+        std::cout << "Writing out edges...\n\n";
+        std::string dataset_name = "/VORTEX/EDGES/" + std::to_string(i);
+        
+        FileIO::writeNd(par, dataset_name, FileIO::hdf_double, FileIO::edge_space, edges.data());
+    }
+
     void destroy() {
       delete FileIO::output;
       FileIO::output = NULL;
@@ -151,6 +168,10 @@ namespace FileIO{
       FileIO::v = NULL;
       delete FileIO::k;
       FileIO::k = NULL;
+      delete FileIO::vortex;
+      FileIO::vortex = NULL;
+      delete FileIO::vortex_edges;
+      FileIO::vortex_edges = NULL;
 
       delete FileIO::hdf_double2;
       FileIO::hdf_double2 = NULL;
@@ -161,6 +182,8 @@ namespace FileIO{
       FileIO::v_space = NULL;
       delete FileIO::k_space;
       FileIO::k_space = NULL;
+      delete FileIO::edge_space;
+      FileIO::edge_space = NULL;
     }
 
     /*

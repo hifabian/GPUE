@@ -408,7 +408,6 @@ int init(Grid &par){
     par.store("Ay_time", false);
     par.store("Az_time", false);
 
-
     std::cout << "variables stored" << '\n';
 
     return 0;
