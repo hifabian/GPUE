@@ -37,6 +37,7 @@ namespace FileIO{
     Group *k;
 
     CompType *hdf_double2;
+    DataType *hdf_double;
 
     DataSpace *wfc_space;
     DataSpace *v_space;
@@ -51,6 +52,7 @@ namespace FileIO{
 
         // In case `init` gets called multiple times
         if (FileIO::output == NULL) {
+            std::cout << "Created File!\n\n";
             // Open file
             FileIO::output = new H5File(par.sval("data_dir") + "output.h5", H5F_ACC_TRUNC);
 
@@ -66,6 +68,8 @@ namespace FileIO{
             FileIO::hdf_double2 = new CompType(2 * sizeof(double));
             FileIO::hdf_double2->insertMember("re", HOFFSET(double2, x), PredType::NATIVE_DOUBLE);
             FileIO::hdf_double2->insertMember("im", HOFFSET(double2, y), PredType::NATIVE_DOUBLE);
+
+            FileIO::hdf_double = new DataType(PredType::NATIVE_DOUBLE);
 
             // Create DataSpaces
             int rank = 1 + dimnum; // number of components x spatial dimensions
@@ -87,21 +91,76 @@ namespace FileIO{
         }
     }
 
+    template<typename T>
+    void writeNd(Grid &par, std::string dataset_name, DataType *hdf_type, DataSpace *hdf_space, T **data) {
+        if (FileIO::output == NULL) {
+            return;
+        }
+
+        int n = par.ival("wfc_num");
+        int gsize = par.ival("xDim") * par.ival("yDim") * par.ival("zDim");
+
+        std::cout << "Writing dataset " << dataset_name << std::endl;
+        DataSet dataset = FileIO::output->createDataSet(dataset_name, *hdf_type, *hdf_space);
+
+        T *tmp = (T *)malloc(n * gsize * sizeof(T));
+        if (tmp == NULL) {
+            std::cout << "ERROR: could not allocate buffer for writing dataset " << dataset_name << std::endl;
+            return;
+        }
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < gsize; j++) {
+                tmp[i * gsize + j] = data[i][j];
+            }
+        }
+
+        dataset.write(tmp, *hdf_type);
+        free(tmp);
+    }
+
+    void writeOutWfc(Grid &par, std::vector<double2 *> wfc, int i, bool gstate) {
+        std::string dataset_name = (gstate ? "/WFC/EV/" : "/WFC/CONST/") + std::to_string(i);
+
+        FileIO::writeNd(par, dataset_name, FileIO::hdf_double2, FileIO::wfc_space, wfc.data());
+    }
+
+    void writeOutV(Grid &par, std::vector<double *> v, int i) {
+        std::string dataset_name = "/V/" + std::to_string(i);
+
+        FileIO::writeNd(par, dataset_name, FileIO::hdf_double, FileIO::v_space, v.data());
+    }
+
+    void writeOutK(Grid &par, std::vector<double *> k, int i) {
+        std::string dataset_name = "/K/" + std::to_string(i);
+
+        FileIO::writeNd(par, dataset_name, FileIO::hdf_double, FileIO::k_space, k.data());
+    }
+
     void destroy() {
       delete FileIO::output;
-      delete FileIO::output;
+      FileIO::output = NULL;
 
       delete FileIO::wfc;
+      FileIO::wfc = NULL;
       delete FileIO::wfc_const;
+      FileIO::wfc_const = NULL;
       delete FileIO::wfc_ev;
+      FileIO::wfc_ev = NULL;
       delete FileIO::v;
+      FileIO::v = NULL;
       delete FileIO::k;
+      FileIO::k = NULL;
 
       delete FileIO::hdf_double2;
+      FileIO::hdf_double2 = NULL;
 
       delete FileIO::wfc_space;
+      FileIO::wfc_space = NULL;
       delete FileIO::v_space;
+      FileIO::v_space = NULL;
       delete FileIO::k_space;
+      FileIO::k_space = NULL;
     }
 
     /*

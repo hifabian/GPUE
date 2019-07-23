@@ -26,6 +26,10 @@
 namespace FileIO {
 
     void init(Grid &par);
+    void writeOutWfc(Grid &par, std::vector<double2 *> wfc, int i, bool gstate);
+    void writeOutV(Grid &par, std::vector<double *> v, int i);
+    void writeOutK(Grid &par, std::vector<double *> k, int i);
+    void destroy();
 
     /**
     * @brief	Reads in the real and imaginary components from text files

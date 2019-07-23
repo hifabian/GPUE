@@ -782,6 +782,7 @@ void evolve(Grid &par,
                     FileIO::writeOut(data_dir + fileName,
                                      wfc_array[w], xDim*yDim*zDim,
                                      i+step_offset);
+                    FileIO::writeOutWfc(par, wfc_array, i + step_offset, (bool)gstate);
                 }
                 //std::cout << "written" << '\n';
             }
@@ -1040,6 +1041,8 @@ void evolve(Grid &par,
     }
     par.store("wfc_array", wfc_array);
     par.store("wfc_gpu_array", gpuWfc_array);
+
+    FileIO::destroy();
 
     cudaHandleError(cudaFree(device_wfc_array));
     cudaCheckError();

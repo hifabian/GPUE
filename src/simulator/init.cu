@@ -44,8 +44,6 @@ int init(Grid &par){
     check_memory(par);
     set_fns(par);
 
-    FileIO::init(par);
-
     // Re-establishing variables from parsed Grid class
     // Initializes uninitialized variables to 0 values
     std::string data_dir = par.sval("data_dir");
@@ -252,6 +250,7 @@ int init(Grid &par){
     }
 
     if (write_file){
+        FileIO::init(par);
         std::vector<double *> Bz(wfc_num);
         std::vector<double *> Bx(wfc_num);
         std::vector<double *> By(wfc_num);
@@ -315,6 +314,9 @@ int init(Grid &par){
             }
         }
 
+        FileIO::writeOutV(par, V, 0);
+        FileIO::writeOutK(par, K, 0);
+
         for (int i = 0; i < wfc_array.size(); ++i){
             FileIO::writeOutDouble(data_dir + "V_"+std::to_string(i),
                                    V[i],gSize,step_offset);
@@ -333,8 +335,6 @@ int init(Grid &par){
             FileIO::writeOutDouble(data_dir + "x",x,xDim,step_offset);
             FileIO::writeOutDouble(data_dir + "y",y,yDim,step_offset);
             FileIO::writeOutDouble(data_dir + "z",z,zDim,step_offset);
-            FileIO::writeOut(data_dir+"WFC_"+std::to_string(i),
-                             wfc_array[i],gSize,step_offset);
             FileIO::writeOut(data_dir + "EpAz_"+std::to_string(i),
                              EpAz[i],gSize,step_offset);
             FileIO::writeOut(data_dir + "EpAy_"+std::to_string(i),
