@@ -180,7 +180,14 @@ namespace FileIO{
         } else {
             std::cout << "Writing dataset " << dataset_name << std::endl;
             DSetCreatPropList props;
-            props.setDeflate(0);
+            int rank = hdf_space->getSimpleExtentNdims();
+            auto dims = new hsize_t[rank];
+            hdf_space->getSimpleExtentDims(dims, NULL);
+            for (int i = 0; i < rank; i++) {
+                dims[i] = (hsize_t)floor(sqrt((double)dims[i]));
+            }
+            props.setChunk(rank, dims);
+            props.setDeflate(6);
             dataset = FileIO::output->createDataSet(dataset_name, *hdf_type, *hdf_space, props);
         }
 
