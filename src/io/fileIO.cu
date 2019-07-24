@@ -47,6 +47,8 @@ namespace FileIO{
     DataSpace *k_space;
     DataSpace *edge_space;
 
+    std::unordered_map<std::string, DataSet> datasets = {};
+
     void init(Grid &par) {
         int xDim = par.ival("xDim");
         int yDim = par.ival("yDim");
@@ -103,15 +105,22 @@ namespace FileIO{
     template<typename T>
     void writeNd(Grid &par, std::string dataset_name, DataType *hdf_type, DataSpace *hdf_space, T **data) {
         if (FileIO::output == NULL) {
-            std::cout << "Output file is not open!\n\n\n";  
+            std::cout << "Output file is not open!" << std::endl;  
             return;
+        }
+
+        DataSet dataset;
+
+        if (FileIO::output->exists(dataset_name)) {
+            std::cout << "Overwriting dataset " << dataset_name << std::endl;
+            dataset = FileIO::datasets[dataset_name];
+        } else {
+            std::cout << "Writing dataset " << dataset_name << std::endl;
+            dataset = FileIO::output->createDataSet(dataset_name, *hdf_type, *hdf_space);
         }
 
         int n = par.ival("wfc_num");
         int gsize = par.ival("xDim") * par.ival("yDim") * par.ival("zDim");
-
-        std::cout << "Writing dataset " << dataset_name << std::endl;
-        DataSet dataset = FileIO::output->createDataSet(dataset_name, *hdf_type, *hdf_space);
 
         T *tmp = (T *)malloc(n * gsize * sizeof(T));
         if (tmp == NULL) {
@@ -126,6 +135,8 @@ namespace FileIO{
         }
 
         dataset.write(tmp, *hdf_type);
+        datasets[dataset_name] = dataset;
+
         free(tmp);
     }
 
@@ -148,13 +159,14 @@ namespace FileIO{
     }
 
     void writeOutEdges(Grid &par, std::vector<double *> edges, int i) {
-        std::cout << "Writing out edges...\n\n";
         std::string dataset_name = "/VORTEX/EDGES/" + std::to_string(i);
         
         FileIO::writeNd(par, dataset_name, FileIO::hdf_double, FileIO::edge_space, edges.data());
     }
 
     void destroy() {
+      // Nullify deleted pointers in case the file needs to be re-opened
+
       delete FileIO::output;
       FileIO::output = NULL;
 
