@@ -201,21 +201,25 @@ namespace FileIO{
         int n = par.ival("wfc_num");
         int gsize = par.ival("xDim") * par.ival("yDim") * par.ival("zDim");
 
-        T *tmp = (T *)malloc(n * gsize * sizeof(T));
-        if (tmp == NULL) {
-            std::cout << "ERROR: could not allocate buffer for writing dataset " << dataset_name << std::endl;
-            return;
-        }
-
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < gsize; j++) {
-                tmp[i * gsize + j] = data[i][j];
+        if (n > 1) {
+            T *tmp = (T *)malloc(n * gsize * sizeof(T));
+            if (tmp == NULL) {
+                std::cout << "ERROR: could not allocate buffer for writing dataset " << dataset_name << std::endl;
+                return;
             }
+
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < gsize; j++) {
+                    tmp[i * gsize + j] = data[i][j];
+                }
+            }
+
+            FileIO::write1d(dataset_name, hdf_type, hdf_space, tmp);
+
+            free(tmp);
+        } else {
+            FileIO::write1d(dataset_name, hdf_type, hdf_space, data[0]);
         }
-
-        FileIO::write1d(dataset_name, hdf_type, hdf_space, tmp);
-
-        free(tmp);
     }
 
     void writeOutWfc(Grid &par, std::vector<double2 *> wfc, int i, bool gstate) {
