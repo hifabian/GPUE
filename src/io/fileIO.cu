@@ -18,6 +18,14 @@ using namespace H5;
  * /K
  * /K/i
  * /VORTEX/EDGES/i
+ * /A
+ * /A/AX
+ * /A/AY
+ * /A/AZ
+ * /DOMAIN
+ * /DOMAIN/X
+ * /DOMAIN/Y
+ * /DOMAIN/Z
  *
  * Where "/" is the root,
  * "i" is the dataset for the i-th iteration,
@@ -38,14 +46,28 @@ namespace FileIO{
     Group *k;
     Group *vortex;
     Group *vortex_edges;
+    Group *a;
+    Group *ax;
+    Group *ay;
+    Group *az;
+    Group *domain;
+    Group *x;
+    Group *y;
+    Group *z;
 
     CompType *hdf_double2;
     DataType *hdf_double;
+    DataType *hdf_int;
 
     DataSpace *wfc_space;
     DataSpace *v_space;
     DataSpace *k_space;
     DataSpace *edge_space;
+    DataSpace *a_space;
+    DataSpace *x_space;
+    DataSpace *y_space;
+    DataSpace *z_space;
+    DataSpace *attr_space;
 
     std::unordered_map<std::string, DataSet> datasets = {};
 
@@ -57,53 +79,94 @@ namespace FileIO{
         int wfc_num = par.ival("wfc_num");
 
         // In case `init` gets called multiple times
-        if (FileIO::output == NULL) {
-            // Open file
-            FileIO::output = new H5File(par.sval("data_dir") + "output.h5", H5F_ACC_TRUNC);
-
-            // Create groups
-            FileIO::wfc = new Group(FileIO::output->createGroup("/WFC"));
-            FileIO::wfc_const = new Group(FileIO::output->createGroup("/WFC/CONST"));
-            FileIO::wfc_ev = new Group(FileIO::output->createGroup("/WFC/EV"));
-
-            FileIO::v = new Group(FileIO::output->createGroup("/V"));
-            FileIO::k = new Group(FileIO::output->createGroup("/K"));
-
-            FileIO::vortex = new Group(FileIO::output->createGroup("/VORTEX"));
-            FileIO::vortex_edges = new Group(FileIO::output->createGroup("/VORTEX/EDGES"));
-
-            // Initialize composite data type
-            FileIO::hdf_double2 = new CompType(2 * sizeof(double));
-            FileIO::hdf_double2->insertMember("re", HOFFSET(double2, x), PredType::NATIVE_DOUBLE);
-            FileIO::hdf_double2->insertMember("im", HOFFSET(double2, y), PredType::NATIVE_DOUBLE);
-
-            FileIO::hdf_double = new DataType(PredType::NATIVE_DOUBLE);
-
-            // Create DataSpaces
-            int rank = 1 + dimnum; // number of components x spatial dimensions
-            hsize_t *dims = (hsize_t *)malloc(rank * sizeof(hsize_t));
-            dims[0] = wfc_num;
-            if (rank > 1) {
-              dims[1] = xDim;
-            }
-            if (rank > 2) {
-              dims[2] = yDim;
-            }
-            if (rank > 3) {
-              dims[3] = zDim;
-            }
-
-            FileIO::wfc_space = new DataSpace(rank, dims);
-            FileIO::v_space = new DataSpace(rank, dims);
-            FileIO::k_space = new DataSpace(rank, dims);
-            FileIO::edge_space = new DataSpace(rank, dims);
-
-            free(dims);
+        if (FileIO::output != NULL) {
+            std::cout << "Output file initialized while open!" << std::endl;
+            return;
         }
+
+        // Open file
+        FileIO::output = new H5File(par.sval("data_dir") + "output.h5", H5F_ACC_TRUNC);
+
+        // Create groups
+        FileIO::wfc = new Group(FileIO::output->createGroup("/WFC"));
+        FileIO::wfc_const = new Group(FileIO::output->createGroup("/WFC/CONST"));
+        FileIO::wfc_ev = new Group(FileIO::output->createGroup("/WFC/EV"));
+
+        FileIO::v = new Group(FileIO::output->createGroup("/V"));
+        FileIO::k = new Group(FileIO::output->createGroup("/K"));
+
+        FileIO::vortex = new Group(FileIO::output->createGroup("/VORTEX"));
+        FileIO::vortex_edges = new Group(FileIO::output->createGroup("/VORTEX/EDGES"));
+
+        FileIO::a = new Group(FileIO::output->createGroup("/A"));
+        FileIO::ax = new Group(FileIO::output->createGroup("/A/AX"));
+        FileIO::ay = new Group(FileIO::output->createGroup("/A/AY"));
+        FileIO::az = new Group(FileIO::output->createGroup("/A/AZ"));
+
+        FileIO::domain = new Group(FileIO::output->createGroup("/DOMAIN"));
+        FileIO::x = new Group(FileIO::output->createGroup("/DOMAIN/X"));
+        FileIO::y = new Group(FileIO::output->createGroup("/DOMAIN/Y"));
+        FileIO::z = new Group(FileIO::output->createGroup("/DOMAIN/Z"));
+
+        // Initialize composite data type
+        FileIO::hdf_double2 = new CompType(2 * sizeof(double));
+        FileIO::hdf_double2->insertMember("re", HOFFSET(double2, x), PredType::NATIVE_DOUBLE);
+        FileIO::hdf_double2->insertMember("im", HOFFSET(double2, y), PredType::NATIVE_DOUBLE);
+
+        FileIO::hdf_double = new DataType(PredType::NATIVE_DOUBLE);
+        FileIO::hdf_int = new DataType(PredType::NATIVE_INT);
+
+        // Create DataSpaces
+        int rank = 1 + dimnum; // number of components x spatial dimensions
+        hsize_t *dims = (hsize_t *)malloc(rank * sizeof(hsize_t));
+        dims[0] = wfc_num;
+        if (rank > 1) {
+          dims[1] = xDim;
+        }
+        if (rank > 2) {
+          dims[2] = yDim;
+        }
+        if (rank > 3) {
+          dims[3] = zDim;
+        }
+
+        FileIO::wfc_space = new DataSpace(rank, dims);
+        FileIO::v_space = new DataSpace(rank, dims);
+        FileIO::k_space = new DataSpace(rank, dims);
+        FileIO::edge_space = new DataSpace(rank, dims);
+        FileIO::a_space = new DataSpace(rank, dims);
+
+        hsize_t xSize[1] = { (hsize_t)xDim };
+        hsize_t ySize[1] = { (hsize_t)yDim };
+        hsize_t zSize[1] = { (hsize_t)zDim };
+        FileIO::x_space = new DataSpace(1, xSize);
+        FileIO::y_space = new DataSpace(1, ySize);
+        FileIO::z_space = new DataSpace(1, zSize);
+
+        hsize_t one[1] = { (hsize_t)1 };
+        FileIO::attr_space = new DataSpace(1, one);
+
+        free(dims);
     }
 
     template<typename T>
-    void writeNd(Grid &par, std::string dataset_name, DataType *hdf_type, DataSpace *hdf_space, T **data) {
+    void writeAttribute(std::string attribute_name, DataType *hdf_type, T value, H5Object *target) {
+        if (FileIO::output == NULL) {
+            std::cout << "Cannot write attribute " << attribute_name << " to closed file!" << std::endl;
+            return;
+        }
+
+        if (target->attrExists(attribute_name)) {
+            target->removeAttr(attribute_name);
+        }
+
+        Attribute attr = target->createAttribute(attribute_name, *hdf_type, *FileIO::attr_space);
+
+        attr.write(*hdf_type, &value);
+    }
+
+    template<typename T>
+    void write1d(std::string dataset_name, DataType *hdf_type, DataSpace *hdf_space, T *data) {
         if (FileIO::output == NULL) {
             std::cout << "Output file is not open!" << std::endl;  
             return;
@@ -119,6 +182,12 @@ namespace FileIO{
             dataset = FileIO::output->createDataSet(dataset_name, *hdf_type, *hdf_space);
         }
 
+        dataset.write(data, *hdf_type);
+        datasets[dataset_name] = dataset;
+    }
+
+    template<typename T>
+    void writeNd(Grid &par, std::string dataset_name, DataType *hdf_type, DataSpace *hdf_space, T **data) {
         int n = par.ival("wfc_num");
         int gsize = par.ival("xDim") * par.ival("yDim") * par.ival("zDim");
 
@@ -134,8 +203,7 @@ namespace FileIO{
             }
         }
 
-        dataset.write(tmp, *hdf_type);
-        datasets[dataset_name] = dataset;
+        FileIO::write1d(dataset_name, hdf_type, hdf_space, tmp);
 
         free(tmp);
     }
@@ -160,8 +228,55 @@ namespace FileIO{
 
     void writeOutEdges(Grid &par, std::vector<double *> edges, int i) {
         std::string dataset_name = "/VORTEX/EDGES/" + std::to_string(i);
-        
+
         FileIO::writeNd(par, dataset_name, FileIO::hdf_double, FileIO::edge_space, edges.data());
+    }
+
+    void writeOutAx(Grid &par, std::vector<double *> ax, int i) {
+        std::string dataset_name = "/A/AX/" + std::to_string(i);
+
+        FileIO::writeNd(par, dataset_name, FileIO::hdf_double, FileIO::a_space, ax.data());
+    }
+
+    void writeOutAy(Grid &par, std::vector<double *> ay, int i) {
+        std::string dataset_name = "/A/AY/" + std::to_string(i);
+
+        FileIO::writeNd(par, dataset_name, FileIO::hdf_double, FileIO::a_space, ay.data());
+    }
+
+    void writeOutAz(Grid &par, std::vector<double *> az, int i) {
+        std::string dataset_name = "/A/AZ/" + std::to_string(i);
+      
+        FileIO::writeNd(par, dataset_name, FileIO::hdf_double, FileIO::a_space, az.data());
+    }
+
+    void writeOutX(double *x, int i) {
+        std::string dataset_name = "/DOMAIN/X/" + std::to_string(i);
+
+        FileIO::write1d(dataset_name, FileIO::hdf_double, FileIO::x_space, x);
+    }
+
+    void writeOutY(double *y, int i) {
+        std::string dataset_name = "/DOMAIN/Y/" + std::to_string(i);
+
+        FileIO::write1d(dataset_name, FileIO::hdf_double, FileIO::y_space, y);
+    }
+
+    void writeOutZ(double *z, int i) {
+        std::string dataset_name = "/DOMAIN/Z/" + std::to_string(i);
+
+        FileIO::write1d(dataset_name, FileIO::hdf_double, FileIO::z_space, z);
+    }
+
+    void writeOutParams(Grid &par){
+        std::cout << "Writing out params" << std::endl;
+        for (auto item : par.getDoubleMap()) {
+            FileIO::writeAttribute(item.first, FileIO::hdf_double, item.second, FileIO::output);
+        }
+
+        for (auto item : par.getIntMap()) {
+          FileIO::writeAttribute(item.first, FileIO::hdf_int, item.second, FileIO::output);
+      }
     }
 
     void destroy() {
@@ -208,13 +323,6 @@ namespace FileIO{
         }
         fclose(f);
         return arr;
-    }
-
-    /*
-     * Writes out the parameter file.
-     */
-    void writeOutParam(Grid &par, std::string file){
-        par.write(file);
     }
 
     /*

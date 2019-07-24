@@ -578,9 +578,7 @@ void evolve(Grid &par,
                                                     cudaMemcpyHostToDevice));
                                 }
                                 if(write_it){
-                                    FileIO::writeOutParam(par,
-                                                          data_dir
-                                                          + "Params.dat");
+                                    FileIO::writeOutParams(par);
                                 }
                             }
                             // If i!=0 and the number of vortices changes

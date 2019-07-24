@@ -181,9 +181,6 @@ class Grid{
         // Function to call back ast
         EqnNode ast_cpuval(std::string id);
 
-        // Function for file writing
-        void write(std::string filename);
-
         // Two boolean functions to check whether a string exists in 
         // param_double or param_dstar
         bool is_double(std::string id);
@@ -206,6 +203,12 @@ class Grid{
         // Key values for operators
         // Note that Vector potential only have a single string for x, y, z
         std::string Kfn, Vfn, Afn, Axfile, Ayfile, Azfile, Wfcfn;
+
+        // Getter for the double map
+        std::unordered_map<std::string, double> getDoubleMap();
+
+        // Getter for the integer map
+        std::unordered_map<std::string, int> getIntMap();
 };
 typedef class Grid Grid;
 

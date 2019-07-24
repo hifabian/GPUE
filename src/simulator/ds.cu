@@ -297,27 +297,14 @@ EqnNode Grid::ast_cpuval(std::string id){
     return it->second;
 }
 
+// Get the unordered map of double-typed parameters
+std::unordered_map<std::string, double> Grid::getDoubleMap() {
+    return param_double;
+}
 
-// Function for file writing (to replace fileIO::writeOutParam)
-void Grid::write(std::string filename){
-    std::ofstream output;
-    output.open(filename);
-
-    //Needed to recognise Params.dat as .ini format for python post processing
-    output << "[Params]" <<"\n";
-
-    // We simply iterate through the int and double param maps
-    for (auto item : param_double){
-        output << item.first << "=" << item.second << '\n';
-        std::cout << item.first << "=" << item.second << '\n';
-    }
-
-    for (auto item : param_int){
-        output << item.first << "=" << item.second << '\n';
-        std::cout << item.first << "=" << item.second << '\n';
-    }
-
-    output.close();
+// Get the unordered map of integer-typed parameters
+std::unordered_map<std::string, int> Grid::getIntMap() {
+    return param_int;
 }
 
 // Function to print all available variables

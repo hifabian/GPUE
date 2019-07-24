@@ -251,107 +251,19 @@ int init(Grid &par){
 
     if (write_file){
         FileIO::init(par);
-        std::vector<double *> Bz(wfc_num);
-        std::vector<double *> Bx(wfc_num);
-        std::vector<double *> By(wfc_num);
-        if (dimnum == 2){
-            for (int i = 0; i < wfc_array.size(); ++i){
-                Bz[i] = curl2d(par, Ax[i], Ay[i]);
-            }
-        }
-        if (dimnum == 3){
-            std::cout << "Calculating the 3d curl..." << '\n';
-            for (int i = 0; i < wfc_array.size(); ++i){
-                Bx[i] = curl3d_x(par, Ax[i], Ay[i], Az[i]);
-                By[i] = curl3d_y(par, Ax[i], Ay[i], Az[i]);
-                Bz[i] = curl3d_z(par, Ax[i], Ay[i], Az[i]);
-            }
-            std::cout << "Finished calculating Curl" << '\n';
-        }
+
         std::cout << "writing initial variables to file..." << '\n';
-        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
-        //hdfWriteDouble(xDim, V, 0, "V_0"); //HDF COMING SOON!
-        //hdfWriteComplex(xDim, wfc, 0, "wfc_0");
-        if (cyl_coord && dimnum > 2){
-            std::vector<double *> Br(wfc_num);
-            std::vector<double *> Bphi(wfc_num);
-
-            for (int i = 0; i < wfc_array.size(); ++i){
-                Br[i] = curl3d_r(par, Bx[i], By[i]);
-                Bphi[i] = curl3d_phi(par, Bx[i], By[i]);
-
-                FileIO::writeOutDouble(data_dir + "Br_" + std::to_string(i),
-                                       Br[i],gSize,step_offset);
-                FileIO::writeOutDouble(data_dir + "Bphi_" + std::to_string(i),
-                                       Bphi[i],gSize,step_offset);
-                FileIO::writeOutDouble(data_dir + "Bz_" + std::to_string(i),
-                                       Bz[i],gSize,step_offset);
-
-                free(Br[i]);
-                free(Bx[i]);
-                free(By[i]);
-                free(Bz[i]);
-                free(Bphi[i]);
-            }
-        }
-        else{
-            if (dimnum > 1){
-                for (int i = 0; i < wfc_array.size(); ++i){
-                    FileIO::writeOutDouble(data_dir + "Bz_" + std::to_string(i),
-                                           Bz[i],gSize,step_offset);
-                    free(Bz[i]);
-                }
-            }
-            if (dimnum > 2){
-                for (int i = 0; i < wfc_array.size(); ++i){
-                    FileIO::writeOutDouble(data_dir + "Bx_"+std::to_string(i),
-                                           Bx[i],gSize,step_offset);
-                    FileIO::writeOutDouble(data_dir + "By_"+std::to_string(i),
-                                           By[i],gSize,step_offset);
-                    free(Bx[i]);
-                    free(By[i]);
-                }
-            }
-        }
 
         FileIO::writeOutV(par, V, 0);
         FileIO::writeOutK(par, K, 0);
 
-        for (int i = 0; i < wfc_array.size(); ++i){
-            FileIO::writeOutDouble(data_dir + "V_"+std::to_string(i),
-                                   V[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir + "K_"+std::to_string(i),
-                                   K[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir+"pAy_"+std::to_string(i),
-                                   pAy[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir+"pAx_"+std::to_string(i),
-                                   pAx[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir + "Ax_"+std::to_string(i),
-                                   Ax[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir + "Ay_"+std::to_string(i),
-                                   Ay[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir + "Az_"+std::to_string(i),
-                                   Az[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir + "x",x,xDim,step_offset);
-            FileIO::writeOutDouble(data_dir + "y",y,yDim,step_offset);
-            FileIO::writeOutDouble(data_dir + "z",z,zDim,step_offset);
-            FileIO::writeOut(data_dir + "EpAz_"+std::to_string(i),
-                             EpAz[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "EpAy_"+std::to_string(i),
-                             EpAy[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "EpAx_"+std::to_string(i),
-                             EpAx[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "GK_"+std::to_string(i),
-                             GK[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "GV_"+std::to_string(i),
-                             GV[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "GpAx_"+std::to_string(i),
-                             GpAx[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "GpAy_"+std::to_string(i),
-                             GpAy[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "GpAz_"+std::to_string(i),
-                             GpAz[i],gSize,step_offset);
-        }
+        FileIO::writeOutAx(par, Ax, 0);
+        FileIO::writeOutAy(par, Ay, 0);
+        FileIO::writeOutAz(par, Az, 0);
+
+        FileIO::writeOutX(x, 0);
+        FileIO::writeOutY(y, 0);
+        FileIO::writeOutZ(z, 0);
     }
 
     if (par.bval("read_wfc") == false){
@@ -375,11 +287,6 @@ int init(Grid &par){
         generate_plan_other3d(&plan_dim2, par, 1);
     }
     cufftHandleError( cufftPlan3d(&plan_3d, xDim, yDim, zDim, CUFFT_Z2Z) );
-
-    //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
-
-    //std::cout << GV[0].x << '\t' << GK[0].x << '\t'
-    //          << pAy[0] << '\t' << pAx[0] << '\n';
 
     //std::cout << "storing variables..." << '\n';
 

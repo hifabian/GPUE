@@ -39,8 +39,6 @@ int main(int argc, char **argv){
         wfc_array[0]=FileIO::readIn(infile,infilei,gSize);
         par.store("wfc_array",wfc_array);
         printf("Wavefunction loaded.\n");
-        //std::string data_dir = par.sval("data_dir");
-        //FileIO::writeOut(data_dir + "WFC_CHECK",wfc_array,gSize,step_offset);
     }
 
     init(par);
@@ -51,7 +49,7 @@ int main(int argc, char **argv){
     std::cout << "variables re-established" << '\n';
 
     if (par.bval("write_file")){
-        FileIO::writeOutParam(par, data_dir + "Params.dat");
+        FileIO::writeOutParams(par);
     }
 
     if(gsteps > 0){

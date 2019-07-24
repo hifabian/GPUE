@@ -30,6 +30,13 @@ namespace FileIO {
     void writeOutV(Grid &par, std::vector<double *> v, int i);
     void writeOutK(Grid &par, std::vector<double *> k, int i);
     void writeOutEdges(Grid &par, std::vector<double *> edges, int i);
+    void writeOutAx(Grid &par, std::vector<double *> ax, int i);
+    void writeOutAy(Grid &par, std::vector<double *> ay, int i);
+    void writeOutAz(Grid &par, std::vector<double *> az, int i);
+    void writeOutX(double *x, int i);
+    void writeOutY(double *y, int i);
+    void writeOutZ(double *z, int i);
+    void writeOutParams(Grid &par);
     void destroy();
 
     /**
@@ -111,15 +118,6 @@ namespace FileIO {
     void writeOutVortex(std::string file,
                         std::vector<std::shared_ptr<Vtx::Vortex>> &data,
                         int step);
-
-	/**
-    * @brief	Writes the parameter file
-    * @ingroup	helper
-    *
-    * @param	arr struct Array holding the parameter values to be written out
-    * @param	*file Name of data file name for saving to
-    */
-    void writeOutParam(Grid &par, std::string file);
 
 	/*
 	 * @brief	Opens and closes file. Nothing more. Nothing less.
