@@ -165,37 +165,24 @@ namespace FileIO{
     }
 
     void destroy() {
-      // Nullify deleted pointers in case the file needs to be re-opened
+        delete FileIO::output;
 
-      delete FileIO::output;
-      FileIO::output = NULL;
+        delete FileIO::wfc;
+        delete FileIO::wfc_const;
+        delete FileIO::wfc_ev;
 
-      delete FileIO::wfc;
-      FileIO::wfc = NULL;
-      delete FileIO::wfc_const;
-      FileIO::wfc_const = NULL;
-      delete FileIO::wfc_ev;
-      FileIO::wfc_ev = NULL;
-      delete FileIO::v;
-      FileIO::v = NULL;
-      delete FileIO::k;
-      FileIO::k = NULL;
-      delete FileIO::vortex;
-      FileIO::vortex = NULL;
-      delete FileIO::vortex_edges;
-      FileIO::vortex_edges = NULL;
+        delete FileIO::v;
+        delete FileIO::k;
 
-      delete FileIO::hdf_double2;
-      FileIO::hdf_double2 = NULL;
+        delete FileIO::vortex;
+        delete FileIO::vortex_edges;
 
-      delete FileIO::wfc_space;
-      FileIO::wfc_space = NULL;
-      delete FileIO::v_space;
-      FileIO::v_space = NULL;
-      delete FileIO::k_space;
-      FileIO::k_space = NULL;
-      delete FileIO::edge_space;
-      FileIO::edge_space = NULL;
+        delete FileIO::hdf_double2;
+
+        delete FileIO::wfc_space;
+        delete FileIO::v_space;
+        delete FileIO::k_space;
+        delete FileIO::edge_space;
     }
 
     /*
