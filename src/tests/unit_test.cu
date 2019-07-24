@@ -115,6 +115,8 @@ void test_all(){
 
     check_memory_test();
 
+    FileIO::destroy(); // Close file in case we were writing data
+
     std::cout << "All tests completed. GPUE passed." << '\n';
 }
 

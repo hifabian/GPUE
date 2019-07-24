@@ -67,6 +67,9 @@ int main(int argc, char **argv){
         evolve(par, esteps, 1);
     }
 
+    // Close the output file
+    FileIO::destroy();
+
     std::cout << "done evolving" << '\n';
     time(&fin);
     printf("Finish: %s\n", ctime(&fin));
