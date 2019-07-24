@@ -179,8 +179,11 @@ namespace FileIO{
             dataset = FileIO::datasets[dataset_name];
         } else {
             std::cout << "Writing dataset " << dataset_name << std::endl;
-            dataset = FileIO::output->createDataSet(dataset_name, *hdf_type, *hdf_space);
+            DSetCreatPropList props;
+            props.setDeflate(0);
+            dataset = FileIO::output->createDataSet(dataset_name, *hdf_type, *hdf_space, props);
         }
+
 
         dataset.write(data, *hdf_type);
         datasets[dataset_name] = dataset;
