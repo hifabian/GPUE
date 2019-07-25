@@ -362,10 +362,6 @@ void evolve(Grid &par,
     begin = clock();
     double omega_0=omega*omegaX;
 
-    // ** ############################################################## ** //
-    // **         HERE BE DRAGONS OF THE MOST DANGEROUS KIND!            ** //
-    // ** ############################################################## ** //
-
     // 2D VORTEX TRACKING
 
     double mask_2d = par.dval("mask_2d");
@@ -379,6 +375,8 @@ void evolve(Grid &par,
     // Double buffering and will attempt to thread free and calloc operations to
     // hide time penalty. Or may not bother.
     int num_vortices[2] = {0,0};
+
+    std::vector<double *> edges(wfc_num);
 
     // binary matrix of size xDim*yDim,
     // 1 for vortex at specified index, 0 otherwise
@@ -465,20 +463,13 @@ void evolve(Grid &par,
                         //       problem into 2D elements and working from 
                         //       there, but let's look into it when we need
                         //       it in the future.
-                        std::cout << "commencing 3d vortex tracking"
-                                  << '\n';
+                        std::cout << "commencing 3d vortex tracking\n";
 
                         // Creating the necessary double* values
-                        std::vector<double*> edges(wfc_num);
                         edges[w] = (double*)malloc(sizeof(double)*gridSize);
 
                         find_edges(par, wfc_array[w], edges);
-
-                        // Now we need to output everything
-                        if (write_it){
-                            FileIO::writeOutEdges(par, edges, i);
-                        }
-                        free(edges[w]);
+                        // Output happens all at once, after the wfc loop
                     } else if (dimnum == 2 && mask_2d > 0){
                         vortexLocation = (int *) calloc(xDim*yDim,
                                                         sizeof(int));
@@ -728,12 +719,6 @@ void evolve(Grid &par,
                     }
                 }
     
-                //std::cout << "writing" << '\n';
-                if (write_it) {
-                    FileIO::writeOutWfc(par, wfc_array, i);
-                }
-                //std::cout << "written" << '\n';
-    
             // U_r(dt/2)*wfc
             if(nonlin == 1){
                 if (wfc_num > 1){
@@ -965,6 +950,24 @@ void evolve(Grid &par,
                     printf("Stopping early at step %d with energy %E\n",
                            i, energy);
                     break;
+                }
+            }
+        }
+
+        // Execute instructions that don't depend on the individual wfc
+        if (i % printSteps) {
+            if (write_it) {
+                FileIO::writeOutWfc(par, wfc_array, i);
+            }
+
+            if (ramp == 0 && !gstate){
+                if (dimnum == 3) {
+                    if (write_it) {
+                        FileIO::writeOutEdges(par, edges, i);
+                        for (int w = 0; w < wfc_num; w++) {
+                            free(edges[w]);
+                        }
+                    }
                 }
             }
         }
