@@ -1255,10 +1255,11 @@ void evolve_test(){
         }
 
         double omegaX = par.dval("omegaX");
-        set_variables(par, 0);
+        par.store("gstate", true);
+        set_variables(par);
 
         // Evolve and find the energy
-        evolve(par, gsteps, 0);
+        evolve(par, gsteps);
 
         // Check that the energy is correct
         double energy = par.dval("energy");
@@ -1272,8 +1273,9 @@ void evolve_test(){
         }
 
         // Run in real time to make sure that the energy is constant
-        set_variables(par, 1);
-        evolve(par, esteps, 1);
+        par.store("gstate", false);
+        set_variables(par);
+        evolve(par, esteps);
         double energy_ev = par.dval("energy");
 
         if (abs(energy - energy_ev) > thresh*energy_check){
@@ -1285,13 +1287,14 @@ void evolve_test(){
     
 }
 
-__global__ void make_complex_kernel(double *in, int *evolution_type, 
+__global__ void make_complex_kernel(double *in, int *type, 
                                     double2 *out){
-
-    //int id = threadIdx.x + blockIdx.x*blockDim.x;
-    //out[id] = make_complex(in[id], evolution_type[id]);
     for (int i = 0; i < 3; ++i){
-        out[i] = make_complex(in[i], evolution_type[i]);
+        if (type[i] == 0) {
+            out[i] = make_complex(in[i], false, true);
+        } else {
+            out[i] = make_complex(in[i], !(bool)(type[i] - 1), false);
+        }
     }
 }
 

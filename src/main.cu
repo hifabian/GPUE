@@ -34,11 +34,8 @@ int main(int argc, char **argv){
         std::vector<double2 *> wfc_array(wfc_num);
 
         std::string infile = par.sval("infile");
-        std::string infilei = par.sval("infilei");
-        printf("Loading wavefunction...");
-        wfc_array[0]=FileIO::readIn(infile,infilei,gSize);
+        // wfc_array[0]=FileIO::readIn(infile,infilei,gSize);
         par.store("wfc_array",wfc_array);
-        printf("Wavefunction loaded.\n");
     }
 
     init(par);
@@ -54,15 +51,17 @@ int main(int argc, char **argv){
 
     if(gsteps > 0){
         std::cout << "Imaginary-time evolution started..." << '\n';
-        set_variables(par, 0);
+        par.store("gstate", true);
+        set_variables(par);
 
-        evolve(par, gsteps, 0);
+        evolve(par, gsteps);
     }
 
     if(esteps > 0){
         std::cout << "real-time evolution started..." << '\n';
-        set_variables(par, 1);
-        evolve(par, esteps, 1);
+        par.store("gstate", false);
+        set_variables(par);
+        evolve(par, esteps);
     }
 
     // Close the output file

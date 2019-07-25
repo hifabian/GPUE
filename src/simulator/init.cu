@@ -320,7 +320,7 @@ int init(Grid &par){
     return 0;
 }
 
-void set_variables(Grid &par, bool ev_type){
+void set_variables(Grid &par){
     // Re-establishing variables from parsed Grid class
     // Note that 3d variables are set to nullptr's unless needed
     //      This might need to be fixed later
@@ -343,6 +343,7 @@ void set_variables(Grid &par, bool ev_type){
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
     int gsize = xDim;
+    int gstate = par.bval("gstate");
 
     // Special variables for the 3d case
     if (dimnum > 1){
@@ -382,7 +383,7 @@ void set_variables(Grid &par, bool ev_type){
         }
     }
 
-    if (ev_type == 0){
+    if (gstate){
         std::vector<double2 *> GK = par.d2svecval("GK");
         std::vector<double2 *> GV = par.d2svecval("GV");
         std::vector<double2 *> GpAx = par.d2svecval("GpAx");
@@ -446,7 +447,7 @@ void set_variables(Grid &par, bool ev_type){
             free(GpAx[i]); free(GpAz[i]);
         }
     }
-    else if (ev_type == 1){
+    else {
 
         std::vector<double2 *> EV = par.d2svecval("EV");
         std::vector<double2 *> EK = par.d2svecval("EK");

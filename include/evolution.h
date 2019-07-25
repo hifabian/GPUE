@@ -44,13 +44,10 @@
  * @ingroup     data
  * @param       Parameter set
  * @param       Total number of steps
- * @param       Real (1) or imaginary (1) time evolution
  * @param       String buffer for writing files
  * @return      0 for success. See CUDA failure codes in cuda.h for other values
  */
-void evolve(Grid &par,
-            int numSteps,
-            unsigned int gstate);
+void evolve(Grid &par, int numSteps);
 
 void apply_gauge(Grid &par, double2 *wfc, double2 *Ax, double2 *Ay,
                  double2 *Az, double renorm_factor_x,

@@ -572,10 +572,8 @@ Grid parseArgs(int argc, char** argv){
     }
 
     if (par.bval("read_wfc")) {
-        std::string infile = filecheck(data_dir + "wfc_load");
-        std::string infilei = filecheck(data_dir + "wfci_load");
+        std::string infile = filecheck(data_dir + "output.h5");
         par.store("infile", infile);
-        par.store("infilei", infilei);
     }
 
     // If the file gauge field is chosen, we need to make sure the files exist

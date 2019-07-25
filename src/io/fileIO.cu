@@ -222,8 +222,8 @@ namespace FileIO{
         }
     }
 
-    void writeOutWfc(Grid &par, std::vector<double2 *> wfc, int i, bool gstate) {
-        std::string dataset_name = (gstate ? "/WFC/EV/" : "/WFC/CONST/") + std::to_string(i);
+    void writeOutWfc(Grid &par, std::vector<double2 *> wfc, int i) {
+        std::string dataset_name = (par.bval("gstate") ? "/WFC/CONST/" : "/WFC/EV/") + std::to_string(i);
 
         FileIO::writeNd(par, dataset_name, FileIO::hdf_double2, FileIO::wfc_space, wfc.data());
     }
