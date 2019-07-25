@@ -955,8 +955,10 @@ void evolve(Grid &par,
         }
 
         // Execute instructions that don't depend on the individual wfc
-        if (i % printSteps) {
+        if (i % printSteps == 0) {
+            par.store("iteration", i);
             if (write_it) {
+              std::cout << "PS: " << printSteps << std::endl;
                 FileIO::writeOutWfc(par, wfc_array, i);
             }
 

@@ -71,6 +71,15 @@ namespace FileIO{
 
     std::unordered_map<std::string, DataSet> datasets = {};
 
+    void createTypes() {
+        FileIO::hdf_double2 = new CompType(2 * sizeof(double));
+        FileIO::hdf_double2->insertMember("re", HOFFSET(double2, x), PredType::NATIVE_DOUBLE);
+        FileIO::hdf_double2->insertMember("im", HOFFSET(double2, y), PredType::NATIVE_DOUBLE);
+
+        FileIO::hdf_double = new DataType(PredType::NATIVE_DOUBLE);
+        FileIO::hdf_int = new DataType(PredType::NATIVE_INT);
+    }
+
     void init(Grid &par) {
         int xDim = par.ival("xDim");
         int yDim = par.ival("yDim");
@@ -108,13 +117,8 @@ namespace FileIO{
         FileIO::y = new Group(FileIO::output->createGroup("/DOMAIN/Y"));
         FileIO::z = new Group(FileIO::output->createGroup("/DOMAIN/Z"));
 
-        // Initialize composite data type
-        FileIO::hdf_double2 = new CompType(2 * sizeof(double));
-        FileIO::hdf_double2->insertMember("re", HOFFSET(double2, x), PredType::NATIVE_DOUBLE);
-        FileIO::hdf_double2->insertMember("im", HOFFSET(double2, y), PredType::NATIVE_DOUBLE);
-
-        FileIO::hdf_double = new DataType(PredType::NATIVE_DOUBLE);
-        FileIO::hdf_int = new DataType(PredType::NATIVE_INT);
+        // Initialize types
+        FileIO::createTypes();
 
         // Create DataSpaces
         int rank = 1 + dimnum; // number of components x spatial dimensions
@@ -149,6 +153,56 @@ namespace FileIO{
         free(dims);
     }
 
+    void loadParams(Grid &par) {
+      std::cout << "LOADING PARAMS!" << std::endl;
+    }
+
+    void loadWfc(Grid &par) {
+
+    }
+
+    void loadA(Grid &par) {
+
+    }
+
+    void load(Grid &par) {
+        if (FileIO::output != NULL) {
+            std::cout << "Input file cannot be loaded while open!" << std::endl;
+            return;
+        }
+
+        // Open file
+        FileIO::output = new H5File(par.sval("infile"), H5F_ACC_RDWR);
+
+        // Load groups
+        FileIO::wfc = new Group(FileIO::output->openGroup("/WFC"));
+        FileIO::wfc_const = new Group(FileIO::output->openGroup("/WFC/CONST"));
+        FileIO::wfc_ev = new Group(FileIO::output->openGroup("/WFC/EV"));
+
+        FileIO::v = new Group(FileIO::output->openGroup("/V"));
+        FileIO::k = new Group(FileIO::output->openGroup("/K"));
+
+        FileIO::vortex = new Group(FileIO::output->openGroup("/VORTEX"));
+        FileIO::vortex_edges = new Group(FileIO::output->openGroup("/VORTEX/EDGES"));
+
+        FileIO::a = new Group(FileIO::output->openGroup("/A"));
+        FileIO::ax = new Group(FileIO::output->openGroup("/A/AX"));
+        FileIO::ay = new Group(FileIO::output->openGroup("/A/AY"));
+        FileIO::az = new Group(FileIO::output->openGroup("/A/AZ"));
+
+        FileIO::domain = new Group(FileIO::output->openGroup("/DOMAIN"));
+        FileIO::x = new Group(FileIO::output->openGroup("/DOMAIN/X"));
+        FileIO::y = new Group(FileIO::output->openGroup("/DOMAIN/Y"));
+        FileIO::z = new Group(FileIO::output->openGroup("/DOMAIN/Z"));
+
+        // Create types
+        FileIO::createTypes();
+
+        FileIO::loadParams(par);
+        FileIO::loadWfc(par);
+        FileIO::loadA(par);
+    }
+
     template<typename T>
     void writeAttribute(std::string attribute_name, DataType *hdf_type, T value, H5Object *target) {
         if (FileIO::output == NULL) {
@@ -176,7 +230,13 @@ namespace FileIO{
 
         if (FileIO::output->exists(dataset_name)) {
             std::cout << "Overwriting dataset " << dataset_name << std::endl;
-            dataset = FileIO::datasets[dataset_name];
+            auto item = FileIO::datasets.find(dataset_name);
+            // When loading from file, the dataset does not exist in the map
+            if (item == FileIO::datasets.end()) {
+                dataset = FileIO::output->openDataSet(dataset_name);
+            } else {
+                dataset = item->second;
+            }
         } else {
             std::cout << "Writing dataset " << dataset_name << std::endl;
             DSetCreatPropList props;
@@ -190,7 +250,6 @@ namespace FileIO{
             props.setDeflate(6);
             dataset = FileIO::output->createDataSet(dataset_name, *hdf_type, *hdf_space, props);
         }
-
 
         dataset.write(data, *hdf_type);
         datasets[dataset_name] = dataset;

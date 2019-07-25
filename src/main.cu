@@ -28,14 +28,8 @@ int main(int argc, char **argv){
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
     if(par.bval("read_wfc") == true){
-
-        // Initializing the wfc
-        int gSize = xDim * yDim * zDim;
-        std::vector<double2 *> wfc_array(wfc_num);
-
-        std::string infile = par.sval("infile");
-        // wfc_array[0]=FileIO::readIn(infile,infilei,gSize);
-        par.store("wfc_array",wfc_array);
+        // Init wfc
+        FileIO::load(par);
     }
 
     init(par);
@@ -55,6 +49,12 @@ int main(int argc, char **argv){
         set_variables(par);
 
         evolve(par, gsteps);
+
+        // Indicate that groundstate simulation is over
+        // And when continuing from file, we should only do realtime simulation
+        par.store("gsteps", 0);
+        // Resetting iteration counter for the same reason
+        par.store("i", 0);
     }
 
     if(esteps > 0){

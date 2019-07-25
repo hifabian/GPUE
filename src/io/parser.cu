@@ -116,6 +116,7 @@ Grid parseArgs(int argc, char** argv){
     par.store("charge", 0);
     par.store("flip", false);
     par.store("thresh_const", 1.0);
+    par.store("i", 0);
 
     optind = 1;
 
@@ -500,7 +501,6 @@ Grid parseArgs(int argc, char** argv){
                 par.store("dimnum",(int)dimnum);
                 break;
             }
-
             // this case is special and may require reading input from a file
             // or from cin
             case 'A':
@@ -570,7 +570,7 @@ Grid parseArgs(int argc, char** argv){
     }
 
     if (par.bval("read_wfc")) {
-        std::string infile = filecheck(data_dir + "output.h5");
+        std::string infile = filecheck(data_dir + "input.h5");
         par.store("infile", infile);
     }
 
