@@ -256,11 +256,5 @@ namespace Vtx {
         auto pairMin = std::min_element( r_uid.begin(), r_uid.end(), compMin);
         return {pairMin->first,(pairMin->first <= minRange && pairMin->second->getWinding() == vtx->getWinding()) ? pairMin->second : nullptr};
     }
-
-
-
-
-    /*void VtxList::increaseList(){
-    }*/
 }
 

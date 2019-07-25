@@ -313,8 +313,7 @@ void evolve(Grid &par,
     std::vector<double2 *> K_gpu = par.d2svecval("K_gpu");
     std::vector<double2 *> V_gpu = par.d2svecval("V_gpu");
 
-    double *interactions, *gpu_interactions;
-    interactions = (double *)malloc(sizeof(double)*wfc_num*wfc_num);
+    double *gpu_interactions;
     cudaHandleError(cudaMalloc((void **) &gpu_interactions,
                     sizeof(double)*wfc_num*wfc_num));
 
@@ -434,8 +433,7 @@ void evolve(Grid &par,
                     else{
                         omega_0 = (double)i / (double)(i+1);
                     }
-                }
-                else{
+                } else{
                     if (i == 0){
                         omega_0=(double)omega/(double)(numSteps);
                     }
@@ -459,8 +457,7 @@ void evolve(Grid &par,
                 end = clock();
                 time_spent = (double) (end - begin) / CLOCKS_PER_SEC;
                 printf("Time spent: %lf\n", time_spent);
-                if (ramp == 0 && !gstate) //Real-time evolution, constant Omega value.
-                {
+                if (ramp == 0 && !gstate){ // Real-time evolution, constant Omega value.
                     if (dimnum == 3){
                         // Note: In the case of 3d, we need to think about
                         //       vortex tracking in a new way.
@@ -476,17 +473,13 @@ void evolve(Grid &par,
                         edges[w] = (double*)malloc(sizeof(double)*gridSize);
 
                         find_edges(par, wfc_array[w], edges);
-                        std::vector<double*> edges_gpu 
-                            = par.dsvecval("edges_gpu");
 
                         // Now we need to output everything
                         if (write_it){
                             FileIO::writeOutEdges(par, edges, i);
                         }
                         free(edges[w]);
-
-                    }
-                    else if (dimnum == 2 && mask_2d > 0){
+                    } else if (dimnum == 2 && mask_2d > 0){
                         vortexLocation = (int *) calloc(xDim*yDim,
                                                         sizeof(int));
                         num_vortices[w] = Tracker::findVortex(
@@ -495,62 +488,59 @@ void evolve(Grid &par,
                         // to find exact centre, calculate lattice angle,
                         // generate optical lattice.
                         if (i == 0) {
-                              if(num_vortices[w] > 0){
-                              //Reserve enough space for the vortices
-                              //reserve(num_vortices[w]);
-                              vortCoords = std::make_shared<Vtx::VtxList>
-                                              (num_vortices[w]);
-                              vortCoordsP = std::make_shared<Vtx::VtxList>
+                            if(num_vortices[w] > 0){
+                                // Reserve enough space for the vortices
+                                // reserve(num_vortices[w]);
+                                vortCoords = std::make_shared<Vtx::VtxList>
                                                 (num_vortices[w]);
-    
-                              // Locate the vortex positions to the nearest 
-                              // grid then perform a least-squares fit to 
-                              // determine the location to sub-grid reolution
-                              Tracker::vortPos(vortexLocation,
-                                      vortCoords->getVortices(),
-                                      xDim,wfc_array[w]);
-                              Tracker::lsFit(vortCoords->getVortices(),
-                                            wfc_array[w],
-                                            xDim);
-    
-                              // Find the centre-most vortex in the lattice
-                              central_vortex = Tracker::vortCentre(
-                                      vortCoords->getVortices(), xDim);
-                              // Determine the Angle formed by the lattice
-                              // relative to the x-axis
-                              vort_angle = Tracker::vortAngle(vortCoords->
-                                      getVortices(), central_vortex);
-    
-                            //Store the vortex angle in the parameter file
-                              par.store("Vort_angle", vort_angle);
-                                  
-                            //Determine average lattice spacing.
-                              double sepAvg = Tracker::vortSepAvg(
-                                      vortCoords->getVortices(),
-                                      central_vortex);
-    
-                              par.store("Central_vort_x",
-                                  (double)central_vortex->getCoords().x);
-                              par.store("Central_vort_y",
-                                  (double)central_vortex->getCoords().y);
-                              par.store("Central_vort_winding",
-                                      (double)central_vortex->getWinding());
-                              par.store("Num_vort", (double) vortCoords->
-                                      getVortices().size());
-    
-                            //Setup the optical lattice to match the spacing
-                            // and angle+angle_sweep of the vortex lattice.
-                            // Amplitude matched by setting laser_power
-                            // parameter switch.
-                              optLatSetup(central_vortex, V[w], 
+                                vortCoordsP = std::make_shared<Vtx::VtxList>
+                                                  (num_vortices[w]);
+
+                                // Locate the vortex positions to the nearest 
+                                // grid then perform a least-squares fit to 
+                                // determine the location to sub-grid reolution
+                                Tracker::vortPos(vortexLocation,
+                                                vortCoords->getVortices(),
+                                                xDim,wfc_array[w]);
+                                Tracker::lsFit(vortCoords->getVortices(),
+                                                wfc_array[w],
+                                                xDim);
+
+                                // Find the centre-most vortex in the lattice
+                                central_vortex = Tracker::vortCentre(
+                                        vortCoords->getVortices(), xDim);
+                                // Determine the Angle formed by the lattice
+                                // relative to the x-axis
+                                vort_angle = Tracker::vortAngle(vortCoords->
+                                        getVortices(), central_vortex);
+        
+                                // Store the vortex angle in the parameter file
+                                par.store("Vort_angle", vort_angle);
+
+                                // Determine average lattice spacing.
+                                double sepAvg = Tracker::vortSepAvg(
                                         vortCoords->getVortices(),
-                                        vort_angle + PI * angle_sweep/180.0,
-                                        laser_power*HBAR*sqrt(omegaX 
-                                                              * omegaY),
-                                        V_opt[w], x, y, par);
-    
-    
-          }
+                                        central_vortex);
+        
+                                par.store("Central_vort_x",
+                                    (double)central_vortex->getCoords().x);
+                                par.store("Central_vort_y",
+                                    (double)central_vortex->getCoords().y);
+                                par.store("Central_vort_winding",
+                                        (double)central_vortex->getWinding());
+                                par.store("Num_vort", (double) vortCoords->
+                                        getVortices().size());
+        
+                                // Setup the optical lattice to match the spacing
+                                // and angle+angle_sweep of the vortex lattice.
+                                // Amplitude matched by setting laser_power
+                                // parameter switch.
+                                optLatSetup(central_vortex, V[w], 
+                                            vortCoords->getVortices(),
+                                            vort_angle + PI * angle_sweep/180.0,
+                                            laser_power*HBAR*sqrt(omegaX * omegaY),
+                                            V_opt[w], x, y, par);
+                            }
                             // If kick_it param is 2, perform a single kick
                             // of the optical lattice for the first timestep
                             // only. This is performed by loading the
@@ -567,30 +557,28 @@ void evolve(Grid &par,
                             if(write_it){
                                 FileIO::writeOutParams(par);
                             }
-                        }
-                        // If i!=0 and the number of vortices changes
-                        // if num_vortices[1] < num_vortices[w],
-                        // Fewer vortices
-                        else {
-                              if (num_vortices[w] > 0){
-                              Tracker::vortPos(vortexLocation, 
+                        } else {
+                            // If i!=0 and the number of vortices changes
+                            // if num_vortices[1] < num_vortices[w],
+                            // Fewer vortices
+                            if (num_vortices[w] > 0){
+                                Tracker::vortPos(vortexLocation, 
                                         vortCoords->getVortices(), xDim,
                                         wfc_array[w]);
-                              Tracker::lsFit(vortCoords->
+                                Tracker::lsFit(vortCoords->
                                                     getVortices(), 
                                                     wfc_array[w], xDim);
-                              Tracker::vortArrange(vortCoords->
+                                Tracker::vortArrange(vortCoords->
                                                               getVortices(),
                                                         vortCoordsP->
                                                             getVortices());
-                                    if(write_it){
-                                FileIO::writeOutInt(data_dir
-                                                            + "vLoc_",
-                                                            vortexLocation,
-                                                            xDim * yDim,
-                                                            i+step_offset);
-                                    }
-                              }
+                                if(write_it){
+                                    FileIO::writeOutInt(data_dir + "vLoc_",
+                                                        vortexLocation,
+                                                        xDim * yDim,
+                                                        i+step_offset);
+                                }
+                            }
                         }
     
                         // Used to also defined for vortex elimination using
@@ -724,7 +712,7 @@ void evolve(Grid &par,
                             FileIO::writeOutVortex(data_dir+"vort_arr",
                                 vortCoords->getVortices(),i+step_offset);
                         }
-                        printf("Located %d vortices\n", 
+                        printf("Located %lu vortices\n", 
                                 vortCoords->getVortices().size());
     
                         //Free memory block for now.
@@ -759,8 +747,7 @@ void evolve(Grid &par,
                             dx, dy, dz, time, e_num, 0.5*Dt,
                             gstate,interaction*gDenConst);
                         cudaCheckError();
-                    }
-                    else{
+                    } else{
                         cMultDensity_multicomp<<<grid,threads>>>(V_gpu[w],
                             gpuWfc_array[w],
                             gpuWfc_array[w],
@@ -769,28 +756,24 @@ void evolve(Grid &par,
                             0.5*Dt,gstate,gDenConst, wfc_num, w);
                         cudaCheckError();
                     }
-
-                }
-                else{
+                } else{
                     if(par.bval("V_time")){
                         EqnNode_gpu* V_eqn = par.astval("V");
                         int e_num = par.ival("V_num");
                         cMultDensity_ast<<<grid,threads>>>(V_eqn,
-                                                           gpuWfc_array[w],
+                                                          gpuWfc_array[w],
                             gpuWfc_array[w],
                             dx, dy, dz, time, e_num, 0.5*Dt,
                             gstate,interaction*gDenConst);
                         cudaCheckError();
-                    }
-                    else{
+                    } else{
                         cMultDensity<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
                             gpuWfc_array[w],
                             0.5*Dt,gstate,interaction*gDenConst);
                         cudaCheckError();
                     }
                 }
-            }
-            else {
+            } else {
                 if(par.bval("V_time")){ 
                     EqnNode_gpu* V_eqn = par.astval("V");
                     int e_num = par.ival("V_num");
@@ -798,18 +781,17 @@ void evolve(Grid &par,
                         gpuWfc_array[w],
                         V_eqn, dx, dy, dz, time, e_num, gstate, Dt);
                         cudaCheckError();
-                }
-                else{
+                } else{
                     cMult<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
                                             gpuWfc_array[w]);
                         cudaCheckError();
                 }
             }
-    
+
             // U_p(dt)*fft2(wfc)
             cufftHandleError(cufftExecZ2Z(plan_3d,gpuWfc_array[w],
                                   gpuWfc_array[w], CUFFT_FORWARD));
-    
+
             // Normalise
             scalarMult<<<grid,threads>>>(gpuWfc_array[w],renorm_factor_nd,
                                          gpuWfc_array[w]);
@@ -820,8 +802,7 @@ void evolve(Grid &par,
                 ast_op_mult<<<grid,threads>>>(gpuWfc_array[w],gpuWfc_array[w],
                     k_eqn, dx, dy, dz, time, e_num, gstate, Dt);
                 cudaCheckError();
-            }
-            else{
+            } else{
                 cMult<<<grid,threads>>>(K_gpu[w],gpuWfc_array[w],
                                         gpuWfc_array[w]);
                 cudaCheckError();
@@ -846,17 +827,14 @@ void evolve(Grid &par,
                             time, e_num, 0.5*Dt,
                             gstate,interaction*gDenConst);
                         cudaCheckError();
-                    }
-                    else{
+                    } else{
                         cMultDensity_multicomp<<<grid,threads>>>(V_gpu[w],
                             gpuWfc_array[w], gpuWfc_array[w],
                             device_wfc_array, gpu_interactions, 0.5*Dt, gstate,
                             interaction*gDenConst, wfc_num, w);
                         cudaCheckError();
                     }
-
-                }
-                else{
+                } else{
                     if(par.bval("V_time")){
                         EqnNode_gpu* V_eqn = par.astval("V");
                         int e_num = par.ival("V_num");
@@ -865,16 +843,14 @@ void evolve(Grid &par,
                             time, e_num, 0.5*Dt,
                             gstate,interaction*gDenConst);
                         cudaCheckError();
-                    }
-                    else{
+                    } else{
                         cMultDensity<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
                             gpuWfc_array[w], 0.5*Dt, gstate,
                             interaction*gDenConst);
                         cudaCheckError();
                     }
                 }
-            }
-            else {
+            } else {
                 if(par.bval("V_time")){  
                     EqnNode_gpu* V_eqn = par.astval("V");
                     int e_num = par.ival("V_num");
@@ -882,13 +858,11 @@ void evolve(Grid &par,
                         gpuWfc_array[w],
                         V_eqn, dx, dy, dz, time, e_num, gstate, Dt);
                         cudaCheckError();
-                }
-                else{
+                } else{
                     cMult<<<grid,threads>>>(V_gpu[w],gpuWfc_array[w],
                                             gpuWfc_array[w]);
                         cudaCheckError();
                 }
-    
             }
     
             // Angular momentum pAy-pAx (if engaged)  //
@@ -920,44 +894,42 @@ void evolve(Grid &par,
                                 renorm_factor_y, renorm_factor_z,
                                 i%2, plan_1d, plan_dim2, plan_dim3,
                                 dx, dy, dz, time, yDim, size);
-                }
-                else if (dimnum == 2){
+                } else if (dimnum == 2){
                     apply_gauge(par, gpuWfc_array[w], gpu1dpAx[w], gpu1dpAy[w],
                                 renorm_factor_x, renorm_factor_y, i%2, plan_1d,
                                 plan_other2d, dx, dy, dz, time);
-                }
-                else if (dimnum == 1){
+                } else if (dimnum == 1){
                     cufftHandleError(cufftExecZ2Z(plan_1d,gpuWfc_array[w],
                                      gpuWfc_array[w],CUFFT_FORWARD));
                     scalarMult<<<grid,threads>>>(gpuWfc_array[w],
                                                  renorm_factor_x,
                                                  gpuWfc_array[w]);
-                        cudaCheckError();
+                    cudaCheckError();
                     if(par.bval("Ax_time")){
                         EqnNode_gpu* Ax_eqn = par.astval("Ax");
                         int e_num = par.ival("Ax_num");
                         ast_cmult<<<grid,threads>>>(gpuWfc_array[w],
                             gpuWfc_array[w], Ax_eqn, dx, dy, dz, time, e_num);
                         cudaCheckError();
-                    }
-                    else{
+                    } else{
                         cMult<<<grid,threads>>>(gpuWfc_array[w],
                             (cufftDoubleComplex*) gpu1dpAx[w], gpuWfc_array[w]);
                         cudaCheckError();
                     }
-    
+
                     cufftHandleError(cufftExecZ2Z(plan_1d,gpuWfc_array[w],
                                      gpuWfc_array[w], CUFFT_INVERSE));
                     scalarMult<<<grid,threads>>>(gpuWfc_array[w],
                                                  renorm_factor_x,
                                                  gpuWfc_array[w]);
-                        cudaCheckError();
+                    cudaCheckError();
                 }
             }
-        
+
             if(gstate){
                 parSum(gpuWfc_array[w], par);
             }
+
             if (par.bval("energy_calc") &&
                (i % (energy_calc_steps == 0 ? printSteps : energy_calc_steps)
                     == 0)) {
@@ -994,7 +966,7 @@ void evolve(Grid &par,
                            i, energy);
                     break;
                 }
-        }
+            }
         }
     }
     par.store("wfc_array", wfc_array);

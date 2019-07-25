@@ -851,7 +851,6 @@ void parSum_test(){
 
     // For now, we will assume an 64x64 array for summing
     dim3 threads(16, 1, 1);
-    int total_threads = threads.x*threads.y*threads.z;
 
     double dx = 0.1;
     double dy = 0.1;
@@ -875,10 +874,8 @@ void parSum_test(){
     par.grid = grid;
 
     // now we need to initialize the wfc to all 1's;
-    double2 *wfc_array, *host_sum;
+    double2 *wfc_array;
     wfc_array = (cufftDoubleComplex *)malloc(sizeof(cufftDoubleComplex)*gsize);
-    host_sum = (cufftDoubleComplex *) 
-               malloc(sizeof(cufftDoubleComplex) * gsize / total_threads);
 
     // init wfc
     for (int i = 0; i < gsize; i++){

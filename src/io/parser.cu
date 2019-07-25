@@ -366,16 +366,14 @@ Grid parseArgs(int argc, char** argv){
             case 'h':
             {
                 std::string command = "src/utils/print_help.sh ";
-                system(command.c_str());
-                exit(0);
+                exit(system(command.c_str()));
                 break;
             }
             case 'H':
             {
                 std::string command = "src/utils/print_help.sh ";
                 command.append(optarg);
-                system(command.c_str());
-                exit(0);
+                exit(system(command.c_str()));
                 break;
             }
             case 'i':
