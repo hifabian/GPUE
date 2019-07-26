@@ -418,7 +418,7 @@ void evolve(Grid &par,
 
     //std::cout << "numSteps is: " << numSteps << '\n';
     // Iterating through all of the steps in either g or esteps.
-    for (int i=0; i < numSteps; ++i){
+    for (int i=par.ival("i"); i < numSteps; ++i){
         for (int w = 0; w < wfc_array.size(); ++w){
             double time = Dt*i;
             if (ramp){

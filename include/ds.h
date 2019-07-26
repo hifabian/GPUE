@@ -209,6 +209,12 @@ class Grid{
 
         // Getter for the integer map
         std::unordered_map<std::string, int> getIntMap();
+
+        // Getter for the boolean map
+        std::unordered_map<std::string, bool> getBoolMap();
+
+        // Getter for the string map
+        std::unordered_map<std::string, std::string> getStringMap();
 };
 typedef class Grid Grid;
 

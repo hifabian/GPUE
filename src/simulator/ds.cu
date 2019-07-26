@@ -307,6 +307,16 @@ std::unordered_map<std::string, int> Grid::getIntMap() {
     return param_int;
 }
 
+// Get the unordered map of string-typed parameters
+std::unordered_map<std::string, std::string> Grid::getStringMap() {
+  return param_string;
+}
+
+// Get the unordered map of boolean-typed parameters
+std::unordered_map<std::string, bool> Grid::getBoolMap() {
+  return param_bool;
+}
+
 // Function to print all available variables
 void Grid::print_map(){
     for (auto item : param_double){

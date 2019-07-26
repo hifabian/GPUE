@@ -1,5 +1,6 @@
 #include "operators.h"
 #include "split_op.h"
+#include "fileIO.h"
 #include "kernels.h"
 #include "dynamic.h"
 
@@ -460,7 +461,6 @@ __global__ void simple_K(double *xp, double *yp, double *zp, double mass,
 
 // Function to generate game fields
 void generate_gauge(Grid &par){
-
     int gSize = par.ival("gSize");
     int dimnum = par.ival("dimnum");
     int wfc_num = par.ival("wfc_num");
@@ -494,26 +494,6 @@ void generate_gauge(Grid &par){
         cudaHandleError(cudaMalloc((void**) &Ax_gpu[w], sizeof(double)*gSize));
         cudaHandleError(cudaMalloc((void**) &Ay_gpu[w], sizeof(double)*gSize));
         cudaHandleError(cudaMalloc((void**) &Az_gpu[w], sizeof(double)*gSize));
-
-        /*if (par.Afn == "file"){
-            file_A(par.Axfile, Ax[w], omega);
-            cudaHandleError(cudaMemcpy(Ax_gpu[w], Ax[w], sizeof(double)*gSize,
-                            cudaMemcpyHostToDevice));
-
-            if (dimnum > 1){
-                file_A(par.Ayfile, Ay[w], omega);
-                cudaHandleError(cudaMemcpy(Ay_gpu[w],Ay[w],sizeof(double)*gSize,
-                                cudaMemcpyHostToDevice));
-            }
-
-            if (dimnum == 3){
-                file_A(par.Azfile, Az[w], omega);
-                cudaHandleError(cudaMemcpy(Az_gpu[w],Az[w],sizeof(double)*gSize,
-                                cudaMemcpyHostToDevice));
-            }
-
-            std::cout << "finished reading Ax / Ay / Az from file" << '\n';
-        } else{*/
         if (par.is_ast_gpu("Ax")){
             double dx = par.dval("dx");
             double dy = par.dval("dy");
@@ -723,7 +703,9 @@ void generate_fields(Grid &par){
     generate_p_space(par);
     generate_K(par);
     std::cout << "generating gauge fields...\n";
-    if (!par.bval("read_wfc")) {
+    if (par.bval("read_wfc")) {
+        FileIO::loadA(par);
+    } else {
         generate_gauge(par);
     }
 
@@ -925,7 +907,7 @@ void generate_fields(Grid &par){
                                               EpAx_gpu[w], EpAy_gpu[w],
                                               EpAz_gpu[w]);
         cudaCheckError();
-    
+
         cudaHandleError(cudaMemcpy(GV[w], GV_gpu[w], sizeof(double2)*gSize,
                         cudaMemcpyDeviceToHost));
         cudaHandleError(cudaMemcpy(EV[w], EV_gpu[w], sizeof(double2)*gSize,

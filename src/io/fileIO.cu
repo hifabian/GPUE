@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "fileIO.h"
 #include "H5Cpp.h"
 using namespace H5;
 
@@ -58,6 +59,8 @@ namespace FileIO{
     CompType *hdf_double2;
     DataType *hdf_double;
     DataType *hdf_int;
+    DataType *hdf_bool;
+    StrType *hdf_str;
 
     DataSpace *wfc_space;
     DataSpace *v_space;
@@ -78,6 +81,41 @@ namespace FileIO{
 
         FileIO::hdf_double = new DataType(PredType::NATIVE_DOUBLE);
         FileIO::hdf_int = new DataType(PredType::NATIVE_INT);
+        FileIO::hdf_bool = new DataType(PredType::NATIVE_HBOOL);
+        FileIO::hdf_str = new StrType(PredType::C_S1, 256);
+    }
+
+    void createDataSpaces(int xDim, int yDim, int zDim, int dimnum, int wfc_num) {
+        int rank = 1 + dimnum; // number of components x spatial dimensions
+        hsize_t *dims = (hsize_t *)malloc(rank * sizeof(hsize_t));
+        dims[0] = wfc_num;
+        if (rank > 1) {
+          dims[1] = xDim;
+        }
+        if (rank > 2) {
+          dims[2] = yDim;
+        }
+        if (rank > 3) {
+          dims[3] = zDim;
+        }
+
+        FileIO::wfc_space = new DataSpace(rank, dims);
+        FileIO::v_space = new DataSpace(rank, dims);
+        FileIO::k_space = new DataSpace(rank, dims);
+        FileIO::edge_space = new DataSpace(rank, dims);
+        FileIO::a_space = new DataSpace(rank, dims);
+
+        hsize_t xSize[1] = { (hsize_t)xDim };
+        hsize_t ySize[1] = { (hsize_t)yDim };
+        hsize_t zSize[1] = { (hsize_t)zDim };
+        FileIO::x_space = new DataSpace(1, xSize);
+        FileIO::y_space = new DataSpace(1, ySize);
+        FileIO::z_space = new DataSpace(1, zSize);
+
+        hsize_t one[1] = { (hsize_t)1 };
+        FileIO::attr_space = new DataSpace(1, one);
+
+        free(dims);
     }
 
     void init(Grid &par) {
@@ -121,48 +159,132 @@ namespace FileIO{
         FileIO::createTypes();
 
         // Create DataSpaces
-        int rank = 1 + dimnum; // number of components x spatial dimensions
-        hsize_t *dims = (hsize_t *)malloc(rank * sizeof(hsize_t));
-        dims[0] = wfc_num;
-        if (rank > 1) {
-          dims[1] = xDim;
+        FileIO::createDataSpaces(xDim, yDim, zDim, dimnum, wfc_num);
+    }
+
+    void loadAttr(H5Object &obj, const std::string attr_name, void *op_data) {
+        Grid &par = *((Grid *)op_data);
+        Attribute attr = obj.openAttribute(attr_name);
+        auto type = attr.getDataType();
+        if (type == *FileIO::hdf_double) {
+            double output = 0.0;
+            attr.read(type, &output);
+            par.store(attr_name, output);
+        } else if (type == *FileIO::hdf_int) {
+            int output = 0;
+            attr.read(type, &output);
+            par.store(attr_name, output);
+        } else if (type == *FileIO::hdf_bool) {
+            bool output = false;
+            attr.read(type, &output);
+            par.store(attr_name, output);
+        } else if (type == *FileIO::hdf_str) {
+            std::string output("");
+            attr.read(type, output);
+            par.store(attr_name, output);
+        } else {
+            std::cout << "ERROR: Attribute " << attr_name << " has invalid DataType!\n";
         }
-        if (rank > 2) {
-          dims[2] = yDim;
-        }
-        if (rank > 3) {
-          dims[3] = zDim;
-        }
-
-        FileIO::wfc_space = new DataSpace(rank, dims);
-        FileIO::v_space = new DataSpace(rank, dims);
-        FileIO::k_space = new DataSpace(rank, dims);
-        FileIO::edge_space = new DataSpace(rank, dims);
-        FileIO::a_space = new DataSpace(rank, dims);
-
-        hsize_t xSize[1] = { (hsize_t)xDim };
-        hsize_t ySize[1] = { (hsize_t)yDim };
-        hsize_t zSize[1] = { (hsize_t)zDim };
-        FileIO::x_space = new DataSpace(1, xSize);
-        FileIO::y_space = new DataSpace(1, ySize);
-        FileIO::z_space = new DataSpace(1, zSize);
-
-        hsize_t one[1] = { (hsize_t)1 };
-        FileIO::attr_space = new DataSpace(1, one);
-
-        free(dims);
     }
 
     void loadParams(Grid &par) {
-      std::cout << "LOADING PARAMS!" << std::endl;
+        FileIO::output->iterateAttrs(FileIO::loadAttr, NULL, &par);
     }
 
     void loadWfc(Grid &par) {
+        int gsteps = par.ival("gsteps");
+        int i = par.ival("i");
+        int xDim = par.ival("xDim");
+        int yDim = par.ival("yDim");
+        int zDim = par.ival("zDim");
+        int gSize = xDim * yDim * zDim;
+        int wfc_num = par.ival("wfc_num");
 
+        // Since we don't store booleans in the output we don't have gstate,
+        // So we use gsteps, which is set to 0 when groundstate simulation is done
+        std::string dataset_name = (gsteps ? "/WFC/CONST/" : "/WFC/EV/") + std::to_string(i);
+
+        DataSet latest_wfc = FileIO::output->openDataSet(dataset_name);
+
+        // Load the buffer as contiguous memory and into std::vector<double2 *>
+        double2 *wfc_buffer = (double2 *)malloc(wfc_num * gSize * sizeof(double2));
+
+        latest_wfc.read(wfc_buffer, *FileIO::hdf_double2);
+
+        std::vector<double2 *> wfc_array(wfc_num);
+        for (int w = 0; w < wfc_num; w++) {
+            wfc_array[w] = wfc_buffer + (w * gSize);
+        }
+        par.store("wfc_array", wfc_array);
     }
 
     void loadA(Grid &par) {
+        std::cout << "LOADING A" << std::endl;
+        int i = par.ival("i");
+        int gSize = par.ival("gSize");
+        int wfc_num = par.ival("wfc_num");
+        int dimnum = par.ival("dimnum");
 
+        std::vector<double *> Ax(wfc_num), Ay(wfc_num), Az(wfc_num),
+                          Ax_gpu(wfc_num), Ay_gpu(wfc_num), Az_gpu(wfc_num);
+
+        std::string ax_name = "/A/AX/" + std::to_string(par.bval("Ax_time") ? i : 0);
+        std::string ay_name = "/A/AY/" + std::to_string(par.bval("Ay_time") ? i : 0);
+        std::string az_name = "/A/AZ/" + std::to_string(par.bval("Az_time") ? i : 0);
+
+        std::cout << "PAR IS FINE" << std::endl;
+
+        double *ax_buffer = (double *)malloc(wfc_num * gSize * sizeof(double));
+        double *ay_buffer = (double *)malloc(wfc_num * gSize * sizeof(double));
+        double *az_buffer = (double *)malloc(wfc_num * gSize * sizeof(double));
+
+        DataSet latest_ax = FileIO::output->openDataSet(ax_name);
+        latest_ax.read(ax_buffer, *FileIO::hdf_double);
+
+        if (dimnum > 1) {
+            DataSet latest_ay = FileIO::output->openDataSet(ay_name);
+            latest_ay.read(ay_buffer, *FileIO::hdf_double);
+        }
+
+        if (dimnum > 2) {
+            DataSet latest_az = FileIO::output->openDataSet(az_name);
+            latest_az.read(az_buffer, *FileIO::hdf_double);
+        }
+
+        std::cout << "BEGINNING LOOP" << std::endl;
+
+        for (int w = 0; w < wfc_num; w++) {
+            for (int j = 0; j < gSize; j++) {
+              ax_buffer[w * gSize + j] = 0;
+              ay_buffer[w * gSize + j] = 0;
+              az_buffer[w * gSize + j] = 0;
+            }
+
+            Ax[w] = ax_buffer + (w * gSize);
+            cudaHandleError(cudaMalloc((void**) &Ax_gpu[w], sizeof(double)*gSize));
+            cudaHandleError(cudaMemcpy(Ax_gpu[w], Ax[w], sizeof(double)*gSize,
+                            cudaMemcpyHostToDevice));
+
+            Ay[w] = ay_buffer + (w * gSize);
+            cudaHandleError(cudaMalloc((void**) &Ay_gpu[w], sizeof(double)*gSize));
+            cudaHandleError(cudaMemcpy(Ay_gpu[w],Ay[w],sizeof(double)*gSize,
+                            cudaMemcpyHostToDevice));
+
+            Az[w] = az_buffer + (w * gSize);
+            cudaHandleError(cudaMalloc((void**) &Az_gpu[w], sizeof(double)*gSize));
+            cudaHandleError(cudaMemcpy(Az_gpu[w],Az[w],sizeof(double)*gSize,
+                            cudaMemcpyHostToDevice));
+        }
+
+        std::cout << "LOOP END" << std::endl;
+
+        par.store("Ax", Ax);
+        par.store("Ay", Ay);
+        par.store("Az", Az);
+
+        par.store("Ax_gpu", Ax_gpu);
+        par.store("Ay_gpu", Ay_gpu);
+        par.store("Az_gpu", Az_gpu);
     }
 
     void load(Grid &par) {
@@ -200,7 +322,10 @@ namespace FileIO{
 
         FileIO::loadParams(par);
         FileIO::loadWfc(par);
-        FileIO::loadA(par);
+
+        FileIO::createDataSpaces(par.ival("xDim"), par.ival("yDim"), par.ival("zDim"), par.ival("dimnum"), par.ival("wfc_num"));
+
+        par.store("read_wfc", true);
     }
 
     template<typename T>
@@ -348,8 +473,16 @@ namespace FileIO{
         }
 
         for (auto item : par.getIntMap()) {
-          FileIO::writeAttribute(item.first, FileIO::hdf_int, item.second, FileIO::output);
-      }
+            FileIO::writeAttribute(item.first, FileIO::hdf_int, item.second, FileIO::output);
+        }
+
+        for (auto item : par.getBoolMap()) {
+            FileIO::writeAttribute(item.first, FileIO::hdf_bool, item.second, FileIO::output);
+        }
+
+        for (auto item : par.getStringMap()) {
+            FileIO::writeAttribute(item.first, FileIO::hdf_str, item.second, FileIO::output);
+        }
     }
 
     void destroy() {
