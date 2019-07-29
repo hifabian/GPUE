@@ -960,7 +960,9 @@ void evolve(Grid &par,
 
         if (par.bval("energy_calc") && (i % energy_calc_steps == 0)) {
             par.store("energy", energy);
-            FileIO::writeOutEnergy(par, energy, i);
+            if (write_it) {
+                FileIO::writeOutEnergy(par, energy, i);
+            }
         }
 
         if (energy_escape) {
