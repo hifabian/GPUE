@@ -187,23 +187,21 @@ namespace FileIO{
         if (type == *FileIO::hdf_double) {
             double output = 0.0;
             attr.read(type, &output);
-            par.store(attr_name, output);
+            par.store_new(attr_name, output);
         } else if (type == *FileIO::hdf_int) {
             // Make sure that if `*steps` was set, it doesn't get overwritten
-            if ((attr_name != "gsteps" && attr_name != "esteps") || par.ival(attr_name) < 1) {
-                int output = 0;
-                attr.read(type, &output);
-                std::cout << "Loading attribute " << attr_name << " with value " << output << std::endl;
-                par.store(attr_name, output);
-            }
+            int output = 0;
+            attr.read(type, &output);
+            std::cout << "Loading attribute " << attr_name << " with value " << output << std::endl;
+            par.store_new(attr_name, output);
         } else if (type == *FileIO::hdf_bool) {
             bool output = false;
             attr.read(type, &output);
-            par.store(attr_name, output);
+            par.store_new(attr_name, output);
         } else if (type == *FileIO::hdf_str) {
             std::string output("");
             attr.read(type, output);
-            par.store(attr_name, output);
+            par.store_new(attr_name, output);
         } else {
             std::cout << "ERROR: Attribute " << attr_name << " has invalid DataType!\n";
         }
