@@ -301,7 +301,6 @@ void evolve(Grid &par,
     int wfc_num = par.ival("wfc_num");
 
     std::vector<double> energy(wfc_num);
-    std::fill(energy.begin(), energy.end(), 0);
 
     bool energy_escape = false;
 
@@ -929,10 +928,10 @@ void evolve(Grid &par,
                 double oldEnergy = energy[w];
                 energy[w] = energy_calc(par, gpuWfc_array[w]);
 
-                printf("Energy[t@%d wfc@%d]=%E\n",i, w, energy);
+                printf("Energy[t@%d wfc@%d]=%E\n",i, w, energy[w]);
 
                 if (i == iterations 
-                    || fabs(oldEnergy - energy) >= energy_calc_threshold * oldEnergy
+                    || fabs(oldEnergy - energy[w]) >= energy_calc_threshold * oldEnergy
                     || !gstate) {
                     energy_escape = false;
                 }
@@ -961,11 +960,11 @@ void evolve(Grid &par,
 
         if (par.bval("energy_calc") && (i % energy_calc_steps == 0)) {
             par.store("energy", energy);
-            FileIO::writeOutEnergy(par);
+            FileIO::writeOutEnergy(par, energy, i);
         }
 
         if (energy_escape) {
-            printf("Stopping early at step %d\n", i, energy);
+            printf("Stopping early at step %d\n", i);
             break;
         }
     }

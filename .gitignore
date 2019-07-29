@@ -2,6 +2,7 @@
 gpue
 *.bvox
 *.png
+.vscode/
 bin/CMake*
 CMakeFiles/
 CMakeCache.txt

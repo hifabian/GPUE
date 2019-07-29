@@ -8,7 +8,7 @@ using namespace H5;
 
 /* HDF5 structure:
  * # data_dir/output.h5
- * /
+ * /ENERGY
  * /WFC
  * /WFC/CONST
  * /WFC/CONST/i
@@ -29,8 +29,9 @@ using namespace H5;
  * /DOMAIN/Z
  *
  * Where "/" is the root,
- * "i" is the dataset for the i-th iteration,
- * and all other "directories" are groups.
+ * Uppercase entries are groups,
+ * Lowercase entries are datasets,
+ * and "i" means the dataset at the i-th iteration
  *
 */
 
@@ -42,6 +43,9 @@ namespace FileIO{
     H5File *output;
 
     // Groups
+    Group *energy;
+    Group *energy_const;
+    Group *energy_ev;
     Group *wfc;
     Group *wfc_const;
     Group *wfc_ev;
@@ -75,6 +79,7 @@ namespace FileIO{
     DataSpace *y_space;
     DataSpace *z_space;
     DataSpace *attr_space;
+    DataSpace *energy_space;
 
     // DataSet map, for storing and accessing references to datasets without reopening
     std::unordered_map<std::string, DataSet> datasets = {};
@@ -126,6 +131,9 @@ namespace FileIO{
         hsize_t one[1] = { (hsize_t)1 };
         FileIO::attr_space = new DataSpace(1, one);
 
+        hsize_t many[1] = { (hsize_t)wfc_num };
+        FileIO::energy_space = new DataSpace(1, many);
+
         free(dims);
     }
 
@@ -147,6 +155,10 @@ namespace FileIO{
         FileIO::output = new H5File(par.sval("data_dir") + "output.h5", H5F_ACC_TRUNC);
 
         // Create groups
+        FileIO::energy = new Group(FileIO::output->createGroup("/ENERGY"));
+        FileIO::energy_const = new Group(FileIO::output->createGroup("/ENERGY/CONST"));
+        FileIO::energy_ev = new Group(FileIO::output->createGroup("/ENERGY/EV"));
+
         FileIO::wfc = new Group(FileIO::output->createGroup("/WFC"));
         FileIO::wfc_const = new Group(FileIO::output->createGroup("/WFC/CONST"));
         FileIO::wfc_ev = new Group(FileIO::output->createGroup("/WFC/EV"));
@@ -319,6 +331,10 @@ namespace FileIO{
         FileIO::output = new H5File(par.sval("infile"), H5F_ACC_RDWR);
 
         // Load groups
+        FileIO::energy = new Group(FileIO::output->openGroup("/ENERGY"));
+        FileIO::energy_const = new Group(FileIO::output->openGroup("/ENERGY/CONST"));
+        FileIO::energy_ev = new Group(FileIO::output->openGroup("/ENERGY/EV"));
+
         FileIO::wfc = new Group(FileIO::output->openGroup("/WFC"));
         FileIO::wfc_const = new Group(FileIO::output->openGroup("/WFC/CONST"));
         FileIO::wfc_ev = new Group(FileIO::output->openGroup("/WFC/EV"));
@@ -356,7 +372,7 @@ namespace FileIO{
 
     // Write an arbitrary attribute to file
     template<typename T>
-    void writeAttribute(std::string attribute_name, DataType *hdf_type, T value, H5Object *target) {
+    void writeAttribute(std::string attribute_name, DataType *hdf_type, T *value, H5Object *target, DataSpace *space=FileIO::attr_space) {
         if (FileIO::output == NULL) {
             std::cout << "Cannot write attribute " << attribute_name << " to closed file!" << std::endl;
             return;
@@ -366,9 +382,9 @@ namespace FileIO{
             target->removeAttr(attribute_name);
         }
 
-        Attribute attr = target->createAttribute(attribute_name, *hdf_type, *FileIO::attr_space);
+        Attribute attr = target->createAttribute(attribute_name, *hdf_type, *space);
 
-        attr.write(*hdf_type, &value);
+        attr.write(*hdf_type, value);
     }
 
     // Write a contiguous block of data into a dataset
@@ -447,6 +463,14 @@ namespace FileIO{
 
     // Outward-facing write wrappers for each piece of data
 
+    void writeOutEnergy(Grid &par, std::vector<double> energy, int i) {
+        bool gstate = par.bval("gstate");
+
+        std::string attr_name = (gstate ? "/ENERGY/CONST" : "/ENERGY/EV") + std::to_string(i);
+    
+        writeAttribute(attr_name, FileIO::hdf_double, energy.data(), gstate ? FileIO::energy_const : FileIO::energy_ev, FileIO::energy_space);
+    }
+
     void writeOutWfc(Grid &par, std::vector<double2 *> wfc, int i) {
         std::string dataset_name = (par.bval("gstate") ? "/WFC/CONST/" : "/WFC/EV/") + std::to_string(i);
 
@@ -511,19 +535,19 @@ namespace FileIO{
     void writeOutParams(Grid &par){
         std::cout << "Writing out params" << std::endl;
         for (auto item : par.getDoubleMap()) {
-            FileIO::writeAttribute(item.first, FileIO::hdf_double, item.second, FileIO::output);
+            FileIO::writeAttribute(item.first, FileIO::hdf_double, &item.second, FileIO::output);
         }
 
         for (auto item : par.getIntMap()) {
-            FileIO::writeAttribute(item.first, FileIO::hdf_int, item.second, FileIO::output);
+            FileIO::writeAttribute(item.first, FileIO::hdf_int, &item.second, FileIO::output);
         }
 
         for (auto item : par.getBoolMap()) {
-            FileIO::writeAttribute(item.first, FileIO::hdf_bool, item.second, FileIO::output);
+            FileIO::writeAttribute(item.first, FileIO::hdf_bool, &item.second, FileIO::output);
         }
 
         for (auto item : par.getStringMap()) {
-            FileIO::writeAttribute(item.first, FileIO::hdf_str, item.second, FileIO::output);
+            FileIO::writeAttribute(item.first, FileIO::hdf_str, &item.second, FileIO::output);
         }
     }
 

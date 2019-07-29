@@ -73,10 +73,8 @@ int init(Grid &par){
     double gammaY = par.dval("gammaY"); //Aspect ratio of trapping geometry.
     double winding = par.dval("winding");
     double box_size = par.dval("box_size");
-    double *Energy;
     double *r;
     std::vector<double *> V_opt(wfc_num);
-    double *Energy_gpu;
     std::vector<cufftDoubleComplex *> wfc_array(wfc_num);
     if (par.bval("read_wfc") == true){
         for (int i = 0; i < wfc_array.size(); ++i){
@@ -181,7 +179,6 @@ int init(Grid &par){
 
     /* Initialise wavefunction, momentum, position, angular momentum,
        imaginary and real-time evolution operators . */
-    Energy = (double*) malloc(sizeof(double) * gSize);
     r = (double *) malloc(sizeof(double) * gSize);
     for (int i = 0; i < wfc_array.size(); ++i){
         V_opt[i] = (double *) malloc(sizeof(double) * gSize);
@@ -293,9 +290,7 @@ int init(Grid &par){
     // Storing variables that have been initialized
     // Re-establishing variables from parsed Grid class
     // Initializes uninitialized variables to 0 values
-    par.store("Energy", Energy);
     par.store("r", r);
-    par.store("Energy_gpu", Energy_gpu);
     par.store("wfc_array", wfc_array);
     par.store("EV_opt", EV_opt);
     par.store("V_opt", V_opt);

@@ -51,6 +51,16 @@ namespace FileIO {
     void loadA(Grid &par);
 
     /**
+     * @brief Write current energy state to file as an attribute
+     * @ingroup helper
+     * 
+     * @param Grid class
+     * @param Data to write
+     * @param iteration number
+     */
+    void writeOutEnergy(Grid &par, std::vector<double> energy, int i);
+
+    /**
      * @brief Write the wfc to file
      * @ingroup helper
      * 
