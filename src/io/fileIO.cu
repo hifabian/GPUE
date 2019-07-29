@@ -465,10 +465,8 @@ namespace FileIO{
 
     void writeOutEnergy(Grid &par, std::vector<double> energy, int i) {
         bool gstate = par.bval("gstate");
-
-        std::string attr_name = (gstate ? "/ENERGY/CONST" : "/ENERGY/EV") + std::to_string(i);
     
-        writeAttribute(attr_name, FileIO::hdf_double, energy.data(), gstate ? FileIO::energy_const : FileIO::energy_ev, FileIO::energy_space);
+        writeAttribute(std::to_string(i), FileIO::hdf_double, energy.data(), gstate ? FileIO::energy_const : FileIO::energy_ev, FileIO::energy_space);
     }
 
     void writeOutWfc(Grid &par, std::vector<double2 *> wfc, int i) {
