@@ -293,7 +293,6 @@ void evolve(Grid &par,
     int energy_calc_steps = par.ival("energy_calc_steps") == 0 ? printSteps : par.ival("energy_calc_steps");
     double energy_calc_threshold = par.dval("energy_calc_threshold");
     int ramp_type = par.ival("ramp_type");
-    int step_offset = par.ival("step_offset");
     int xDim = par.ival("xDim");
     int yDim = 1;
     int zDim = 1;
@@ -577,7 +576,7 @@ void evolve(Grid &par,
                                     FileIO::writeOutInt(data_dir + "vLoc_",
                                                         vortexLocation,
                                                         xDim * yDim,
-                                                        i+step_offset);
+                                                        i);
                                 }
                             }
                         }
@@ -698,7 +697,7 @@ void evolve(Grid &par,
                                 FileIO::writeOutAdjMat(data_dir+"graph",
                                     adjMat, uids,
                                     lattice.getVortices().size(),
-                                    i+step_offset);
+                                    i);
                             }
     
                             //Free and clear all memory blocks
@@ -711,7 +710,7 @@ void evolve(Grid &par,
                         //Write out the vortex locations
                         if(write_it){
                             FileIO::writeOutVortex(data_dir+"vort_arr",
-                                vortCoords->getVortices(),i+step_offset);
+                                vortCoords->getVortices(),i);
                         }
                         printf("Located %lu vortices\n", 
                                 vortCoords->getVortices().size());
