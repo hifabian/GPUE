@@ -59,65 +59,11 @@ Grid parseArgs(int argc, char** argv){
     Grid par;
     int opt;
 
-    // Setting default values
-    par.store("xDim", 256);
-    par.store("yDim", 256);
-    par.store("zDim", 256);
-    par.store("omega", 0.0);
-    par.store("gammaY", 1.0);
-    par.store("gsteps", 0);
-    par.store("esteps", 0);
-    par.store("gdt", 1e-4);
-    par.store("dt", 1e-4);
-    par.store("device", 0);
-    par.store("atoms", 1);
-    par.store("read_wfc", false);
-    par.store("printSteps", 100);
-    par.store("winding", 0.0);
-    par.store("corotating", false);
-    par.store("gpe", false);
-    par.store("omegaZ", 6.283);
-    par.store("interaction",1.0);
-    par.store("laser_power",0.0);
-    par.store("angle_sweep",0.0);
-    par.store("kick_it", 0);
-    par.store("write_it", false);
-    par.store("x0_shift",0.0);
-    par.store("y0_shift",0.0);
-    par.store("z0_shift",0.0);
-    par.store("sepMinEpsilon",0.0);
-    par.store("graph", false);
-    par.store("unit_test",false);
-    par.store("omegaX", 6.283);
-    par.store("omegaY", 6.283);
-    par.store("data_dir", (std::string)"data/");
-    par.store("ramp", false);
-    par.store("ramp_type", 1);
-    par.store("dimnum", 2);
-    par.store("write_file", true);
-    par.store("fudge", 0.0);
-    par.store("kill_idx", -1);
-    par.store("mask_2d", 0.0);
-    par.store("box_size", -0.01);
-    par.store("found_sobel", false);
-    par.store("energy_calc", false);
-    par.store("energy_calc_steps", 0);
-    par.store("energy_calc_threshold", -1.0);
-    par.store("use_param_file", false);
-    par.store("param_file","param.cfg");
-    par.store("cyl_coord",false);
-    par.store("wfc_num",1);
-    par.store("step_offset",0);
+    // Set default fn types
     par.Afn = "rotation";
     par.Kfn = "rotation_K";
     par.Vfn = "2d";
     par.Wfcfn = "2d";
-    par.store("conv_type", (std::string)"FFT");
-    par.store("charge", 0);
-    par.store("flip", false);
-    par.store("thresh_const", 1.0);
-    par.store("g_i", 0);
-    par.store("e_i", 0);
 
     optind = 1;
 

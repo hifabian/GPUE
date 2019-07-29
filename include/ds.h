@@ -105,6 +105,70 @@ class Grid{
         std::unordered_map<std::string, EqnNode_gpu*> param_ast;
         std::unordered_map<std::string, EqnNode> param_ast_cpu;
 
+        // Default values, accessed when the getter for one of these values finds no result
+        std::unordered_map<std::string, bool> default_bool = {
+            {"read_wfc", false},
+            {"corotating", false},
+            {"gpe", false},
+            {"write_it", false},
+            {"graph", false},
+            {"unit_test", false},
+            {"ramp", false},
+            {"write_file", true},
+            {"found_sobel", false},
+            {"energy_calc", false},
+            {"use_param_file", false},
+            {"cyl_coord", false},
+            {"flip", false}
+        };
+        std::unordered_map<std::string, int> default_int = {
+            {"xDim", 256},
+            {"yDim", 256},
+            {"zDim", 256},
+            {"gsteps", 0},
+            {"esteps", 0},
+            {"device", 0},
+            {"atoms", 1},
+            {"printSteps", 100},
+            {"kick_it", 0},
+            {"ramp_type", 1},
+            {"dimnum", 2},
+            {"kill_idx", -1},
+            {"energy_calc_steps", 0},
+            {"wfc_num", 1},
+            {"step_offset", 0},
+            {"charge", 0},
+            {"g_i", 0},
+            {"e_i", 0}
+        };
+        std::unordered_map<std::string, double> default_double = {
+            {"gammaY", 1.0},
+            {"gdt", 1e-4},
+            {"dt", 1e-4},
+            {"winding", 0.0},
+            {"interaction", 1.0},
+            {"laser_power", 0.0},
+            {"angle_sweep", 0.0},
+            {"x0_shift", 0.0},
+            {"y0_shift", 0.0},
+            {"z0_shift", 0.0},
+            {"sepMinEpsilon", 0.0},
+            {"omega", 0.0},
+            {"omegaX", 6.283},
+            {"omegaY", 6.283},
+            {"omegaZ", 6.283},
+            {"fudge", 0.0},
+            {"mask_2d", 0.0},
+            {"box_size", -0.01},
+            {"energy_calc_threshold", -1.0},
+            {"thresh_const", 1.0}
+        };
+        std::unordered_map<std::string, std::string> default_string = {
+            {"data_dir", "data/"},
+            {"param_file", "param.cfg"},
+            {"conv_type", "FFT"}
+        };
+
         // List of all strings for parsing into the appropriate param map
         // 1 -> int, 2 -> double, 3 -> double*
         std::unordered_map<std::string, int> id_list;
@@ -151,6 +215,30 @@ class Grid{
         // Function to store std::vector<double2 *> values
         void store(std::string id, std::vector<double2 *> d2vec);
 
+        // Function to store int into param_int iff it isn't already there
+        void store_new(std::string id, int iparam);
+
+        // Function to store double into param_double iff it isn't already there
+        void store_new(std::string id, double dparam);
+
+        // Function to store bool into param_bool iff it isn't already there
+        void store_new(std::string id, bool bparam);
+
+        // Function to store string into param_string iff it isn't already there
+        void store_new(std::string id, std::string sparam);
+
+        // Function to retrieve default integer value from default_int
+        int ival_default(std::string id);
+
+        // Function to retrieve default double value from default_double
+        double dval_default(std::string id);
+
+        // Function to retrieve default bool value from default_bool
+        bool bval_default(std::string id);
+
+        // Fucntion to retrieve default string value from default_string
+        std::string sval_default(std::string id);
+
         // Function to retrieve integer value from param_int
         int ival(std::string id);
 
@@ -166,7 +254,7 @@ class Grid{
         // Function to retrieve bool from param_bool
         bool bval(std::string id);
 
-        // Fucntion to retrieve string from data_dir
+        // Function to retrieve string from param_string
         std::string sval(std::string id);
 
         // Function to call back the sobel operators

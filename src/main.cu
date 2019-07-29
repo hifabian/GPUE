@@ -49,8 +49,6 @@ int main(int argc, char **argv){
         set_variables(par);
 
         evolve(par, gsteps);
-
-        par.store("i", 0);
     }
 
     if(esteps > 0){

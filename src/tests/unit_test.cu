@@ -1253,6 +1253,7 @@ void evolve_test(){
 
         double omegaX = par.dval("omegaX");
         par.store("gstate", true);
+        par.store("g_i", 0);
         set_variables(par);
 
         // Evolve and find the energy
@@ -1271,6 +1272,7 @@ void evolve_test(){
 
         // Run in real time to make sure that the energy is constant
         par.store("gstate", false);
+        par.store("e_i", 0);
         set_variables(par);
         evolve(par, esteps);
         double energy_ev = par.dval("energy");

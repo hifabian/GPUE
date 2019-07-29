@@ -125,17 +125,17 @@ void Grid::store(std::string id, bool bparam){
     param_bool[id] = bparam;
 }
 
-// Function to store string into data_dir
+// Function to store string into param_string
 void Grid::store(std::string id, std::string sparam){
     param_string[id] = sparam;
 }
 
-// Function to store asts into data_dir
+// Function to store asts into param_ast
 void Grid::store(std::string id, EqnNode_gpu *ensparam){
     param_ast[id] = ensparam;
 }
 
-// Function to store asts into data_dir
+// Function to store asts into param_ast_cpu
 void Grid::store(std::string id, EqnNode astparam){
     param_ast_cpu[id] = astparam;
 }
@@ -150,17 +150,47 @@ void Grid::store(std::string id, std::vector<double2 *> d2svecparam){
     param_d2svec[id] = d2svecparam;
 }
 
+// Function to store int into param_int iff it isn't already there
+void Grid::store_new(std::string id, int iparam) {
+    if (param_int.find(id) == param_int.end()) {
+        Grid::store(id, iparam);
+    }
+}
 
-// Two boolean functions to check whether a string exists in 
-// param_double or param_dstar
+// Function to store double into param_double iff it isn't already there
+void Grid::store_new(std::string id, double dparam) {
+    if (param_double.find(id) == param_double.end()) {
+        Grid::store(id, dparam);
+    }
+}
+
+// Function to store bool into param_bool iff it isn't already there
+void Grid::store_new(std::string id, bool bparam) {
+    if (param_bool.find(id) == param_bool.end()) {
+        Grid::store(id, bparam);
+    }
+}
+
+// Function to store string into param_string iff it isn't already there
+void Grid::store_new(std::string id, std::string sparam) {
+    if (param_string.find(id) == param_string.end()) {
+        Grid::store(id, sparam);
+    }
+}
+
+// Boolean functions to check whether a string exists in a map
 bool Grid::is_double(std::string id){
     auto it = param_double.find(id);
     if (it != param_double.end()){
         return true;
     }
-    else {
-        return false;
+    
+    auto it2 = default_double.find(id);
+    if (it2 != default_double.end()) {
+        return true;
     }
+
+    return false;
 }
 
 bool Grid::is_dstar(std::string id){
@@ -193,18 +223,64 @@ bool Grid::is_ast_cpu(std::string id){
     }
 }
 
+// Function to retrieve default integer value from Grid->default_bool
+bool Grid::bval_default(std::string id) {
+    auto it = default_bool.find(id);
+    if (it == default_bool.end()) {
+        std::cout << "ERROR: could not find string " << id
+                  << " in Grid::param_bool.\n";
+        assert(it != default_bool.end());
+    }
+    return it->second;
+}
+
+// Function to retrieve default integer value from Grid->default_int
+int Grid::ival_default(std::string id) {
+  auto it = default_int.find(id);
+  if (it == default_int.end()) {
+      std::cout << "ERROR: could not find string " << id
+                << " in Grid::param_int.\n";
+      assert(it != default_int.end());
+  }
+  return it->second;
+}
+
+// Function to retrieve default integer value from Grid->default_double
+double Grid::dval_default(std::string id) {
+  auto it = default_double.find(id);
+  if (it == default_double.end()) {
+      std::cout << "ERROR: could not find string " << id
+                << " in Grid::param_double.\n";
+      assert(it != default_double.end());
+  }
+  return it->second;
+}
+
+// Function to retrieve default integer value from Grid->default_string
+std::string Grid::sval_default(std::string id) {
+  auto it = default_string.find(id);
+  if (it == default_string.end()) {
+      std::cout << "ERROR: could not find string " << id
+                << " in Grid::param_string.\n";
+      assert(it != default_string.end());
+  }
+  return it->second;
+}
+
 // Function to retrieve integer from Grid->param_int
 int Grid::ival(std::string id){
-    return param_int[id];
+    auto it = param_int.find(id);
+    if (it == param_int.end()) {
+        return Grid::ival_default(id);
+    }
+    return it->second;
 }
 
 // Function to retrieve double from Grid->param_double
 double Grid::dval(std::string id){
     auto it = param_double.find(id);
     if (it == param_double.end()){
-        std::cout << "ERROR: could not find string " << id 
-                  << " in Grid::param_double." << '\n';
-        assert(it != param_double.end());
+        return Grid::dval_default(id);
     }
     return it->second;
 }
@@ -246,9 +322,7 @@ std::vector<double2 *> Grid::d2svecval(std::string id){
 bool Grid::bval(std::string id){
     auto it = param_bool.find(id);
     if (it == param_bool.end()){
-        std::cout << "ERROR: could not find string " << id 
-                  << " in Grid::param_bool." << '\n';
-        assert(it != param_bool.end());
+        return Grid::bval_default(id);
     }
     return it->second;
 }
@@ -257,9 +331,7 @@ bool Grid::bval(std::string id){
 std::string Grid::sval(std::string id){
     auto it = param_string.find(id);
     if (it == param_string.end()){
-        std::cout << "ERROR: could not find string " << id 
-                  << " in Grid::param_string." << '\n';
-        assert(it != param_string.end());
+        return Grid::sval_default(id);
     }
     return it->second;
 }
