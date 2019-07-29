@@ -957,7 +957,6 @@ void evolve(Grid &par,
         // Execute instructions that don't depend on the individual wfc
         if (i % printSteps == 0) {
             par.store(gstate ? "g_i" : "e_i", i);
-            std::cout << "STORING " << (gstate ? "g_i" : "e_i") << " AS " << i << std::endl;
             if (write_it) {
                 FileIO::writeOutParams(par);
                 FileIO::writeOutWfc(par, wfc_array, i);

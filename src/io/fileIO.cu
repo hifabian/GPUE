@@ -38,8 +38,10 @@ using namespace H5;
 
 namespace FileIO{
 
+    // Output file
     H5File *output;
 
+    // Groups
     Group *wfc;
     Group *wfc_const;
     Group *wfc_ev;
@@ -56,12 +58,14 @@ namespace FileIO{
     Group *y;
     Group *z;
 
+    // Data types, stored here for easy reference
     CompType *hdf_double2;
     DataType *hdf_double;
     DataType *hdf_int;
     DataType *hdf_bool;
     StrType *hdf_str;
 
+    // DataSpaces, formats for storage
     DataSpace *wfc_space;
     DataSpace *v_space;
     DataSpace *k_space;
@@ -72,8 +76,10 @@ namespace FileIO{
     DataSpace *z_space;
     DataSpace *attr_space;
 
+    // DataSet map, for storing and accessing references to datasets without reopening
     std::unordered_map<std::string, DataSet> datasets = {};
 
+    // Initialize the types
     void createTypes() {
         FileIO::hdf_double2 = new CompType(2 * sizeof(double));
         FileIO::hdf_double2->insertMember("re", HOFFSET(double2, x), PredType::NATIVE_DOUBLE);
@@ -85,8 +91,10 @@ namespace FileIO{
         FileIO::hdf_str = new StrType(PredType::C_S1, 256);
     }
 
+    // Initialize the data spaces needed for IO
     void createDataSpaces(int xDim, int yDim, int zDim, int dimnum, int wfc_num) {
         int rank = 1 + dimnum; // number of components x spatial dimensions
+        // Create an array of length `rank`, contaniing the dimensionality of the wfc
         hsize_t *dims = (hsize_t *)malloc(rank * sizeof(hsize_t));
         dims[0] = wfc_num;
         if (rank > 1) {
@@ -99,12 +107,14 @@ namespace FileIO{
           dims[3] = zDim;
         }
 
+        // Build DataSpaces for each storage object
         FileIO::wfc_space = new DataSpace(rank, dims);
         FileIO::v_space = new DataSpace(rank, dims);
         FileIO::k_space = new DataSpace(rank, dims);
         FileIO::edge_space = new DataSpace(rank, dims);
         FileIO::a_space = new DataSpace(rank, dims);
 
+        // Dimension range shapes are 1 x *Dim
         hsize_t xSize[1] = { (hsize_t)xDim };
         hsize_t ySize[1] = { (hsize_t)yDim };
         hsize_t zSize[1] = { (hsize_t)zDim };
@@ -112,12 +122,14 @@ namespace FileIO{
         FileIO::y_space = new DataSpace(1, ySize);
         FileIO::z_space = new DataSpace(1, zSize);
 
+        // Attributes need only a single value
         hsize_t one[1] = { (hsize_t)1 };
         FileIO::attr_space = new DataSpace(1, one);
 
         free(dims);
     }
 
+    // Initialize the file output
     void init(Grid &par) {
         int xDim = par.ival("xDim");
         int yDim = par.ival("yDim");
@@ -162,15 +174,22 @@ namespace FileIO{
         FileIO::createDataSpaces(xDim, yDim, zDim, dimnum, wfc_num);
     }
 
+    // Iterator for loading a single attribute from the file
     void loadAttr(H5Object &obj, const std::string attr_name, void *op_data) {
+        // Unpack the grid from the optional data pass through the attribute iterator
         Grid &par = *((Grid *)op_data);
+
+        // Create the attribute
         Attribute attr = obj.openAttribute(attr_name);
         auto type = attr.getDataType();
+
+        // Unpack and store the value based on its data type
         if (type == *FileIO::hdf_double) {
             double output = 0.0;
             attr.read(type, &output);
             par.store(attr_name, output);
         } else if (type == *FileIO::hdf_int) {
+            // Make sure that if `*steps` was set, it doesn't get overwritten
             if ((attr_name != "gsteps" && attr_name != "esteps") || par.ival(attr_name) < 1) {
                 int output = 0;
                 attr.read(type, &output);
@@ -190,10 +209,12 @@ namespace FileIO{
         }
     }
 
+    // Iterate over the attributes and load them into `par`
     void loadParams(Grid &par) {
         FileIO::output->iterateAttrs(FileIO::loadAttr, NULL, &par);
     }
 
+    // Load the most recent wfc
     void loadWfc(Grid &par) {
         bool gstate = par.bval("gstate");
         int i = par.ival(gstate ? "g_i" : "e_i");
@@ -209,7 +230,7 @@ namespace FileIO{
 
         DataSet latest_wfc = FileIO::output->openDataSet(dataset_name);
 
-        // Load the buffer as contiguous memory and into std::vector<double2 *>
+        // Load the buffer as contiguous memory and reshape into std::vector<double2 *>
         double2 *wfc_buffer = (double2 *)malloc(wfc_num * gSize * sizeof(double2));
 
         latest_wfc.read(wfc_buffer, *FileIO::hdf_double2);
@@ -221,6 +242,7 @@ namespace FileIO{
         par.store("wfc_array", wfc_array);
     }
 
+    // Load Ax, Ay, and Az from file
     void loadA(Grid &par) {
         bool gstate = par.bval("gstate");
         int i = par.ival(gstate ? "g_i" : "e_i");;
@@ -235,10 +257,19 @@ namespace FileIO{
         std::string ay_name = "/A/AY/" + std::to_string(par.bval("Ay_time") ? i : 0);
         std::string az_name = "/A/AZ/" + std::to_string(par.bval("Az_time") ? i : 0);
 
+        // Allocate memory for three buffers, regardless of if they are used
         double *ax_buffer = (double *)malloc(wfc_num * gSize * sizeof(double));
         double *ay_buffer = (double *)malloc(wfc_num * gSize * sizeof(double));
         double *az_buffer = (double *)malloc(wfc_num * gSize * sizeof(double));
 
+        // Clear the buffers in case they are not read in
+        for (int j = 0; j < wfc_num * gSize; j++) {
+          ax_buffer[j] = 0;
+          ay_buffer[j] = 0;
+          az_buffer[j] = 0;
+        }
+
+        // Read the datasets
         DataSet latest_ax = FileIO::output->openDataSet(ax_name);
         latest_ax.read(ax_buffer, *FileIO::hdf_double);
 
@@ -253,12 +284,7 @@ namespace FileIO{
         }
 
         for (int w = 0; w < wfc_num; w++) {
-            for (int j = 0; j < gSize; j++) {
-              ax_buffer[w * gSize + j] = 0;
-              ay_buffer[w * gSize + j] = 0;
-              az_buffer[w * gSize + j] = 0;
-            }
-
+            // Allocate gpu memory for and copy over the data
             Ax[w] = ax_buffer + (w * gSize);
             cudaHandleError(cudaMalloc((void**) &Ax_gpu[w], sizeof(double)*gSize));
             cudaHandleError(cudaMemcpy(Ax_gpu[w], Ax[w], sizeof(double)*gSize,
@@ -284,6 +310,7 @@ namespace FileIO{
         par.store("Az_gpu", Az_gpu);
     }
 
+    // Open the file and load any immediately-required data
     void load(Grid &par) {
         if (FileIO::output != NULL) {
             std::cout << "Input file cannot be loaded while open!" << std::endl;
@@ -317,14 +344,19 @@ namespace FileIO{
         // Create types
         FileIO::createTypes();
 
+        // Load the params
         FileIO::loadParams(par);
+
+        // Load the latest wfc
         FileIO::loadWfc(par);
 
         FileIO::createDataSpaces(par.ival("xDim"), par.ival("yDim"), par.ival("zDim"), par.ival("dimnum"), par.ival("wfc_num"));
 
+        // Overwrite the read_wfc check so it doesn't get incorrectly loaded from file
         par.store("read_wfc", true);
     }
 
+    // Write an arbitrary attribute to file
     template<typename T>
     void writeAttribute(std::string attribute_name, DataType *hdf_type, T value, H5Object *target) {
         if (FileIO::output == NULL) {
@@ -341,6 +373,7 @@ namespace FileIO{
         attr.write(*hdf_type, &value);
     }
 
+    // Write a contiguous block of data into a dataset
     template<typename T>
     void write1d(std::string dataset_name, DataType *hdf_type, DataSpace *hdf_space, T *data) {
         if (FileIO::output == NULL) {
@@ -350,8 +383,10 @@ namespace FileIO{
 
         DataSet dataset;
 
+        // Check if dataset already exists
         if (FileIO::output->exists(dataset_name)) {
             std::cout << "Overwriting dataset " << dataset_name << std::endl;
+
             auto item = FileIO::datasets.find(dataset_name);
             // When loading from file, the dataset does not exist in the map
             if (item == FileIO::datasets.end()) {
@@ -361,15 +396,21 @@ namespace FileIO{
             }
         } else {
             std::cout << "Writing dataset " << dataset_name << std::endl;
+            // Create a new dataset
             DSetCreatPropList props;
             int rank = hdf_space->getSimpleExtentNdims();
             auto dims = new hsize_t[rank];
             hdf_space->getSimpleExtentDims(dims, NULL);
+
+            // Automatically chunk the dataset into ~sqrt(N) chunks
             for (int i = 0; i < rank; i++) {
                 dims[i] = (hsize_t)floor(sqrt((double)dims[i]));
             }
             props.setChunk(rank, dims);
+
+            // Compression factor on the interval [0,9]
             props.setDeflate(6);
+
             dataset = FileIO::output->createDataSet(dataset_name, *hdf_type, *hdf_space, props);
         }
 
@@ -377,6 +418,8 @@ namespace FileIO{
         datasets[dataset_name] = dataset;
     }
 
+    // Wrapper for writing higher-dimensional data, represented as T**
+    // where the first array has wfc_num elements, and the second is contiguous with gSize elements
     template<typename T>
     void writeNd(Grid &par, std::string dataset_name, DataType *hdf_type, DataSpace *hdf_space, T **data) {
         int n = par.ival("wfc_num");
@@ -399,9 +442,12 @@ namespace FileIO{
 
             free(tmp);
         } else {
+            // Escape the extra allocation when wfc_num is 1
             FileIO::write1d(dataset_name, hdf_type, hdf_space, data[0]);
         }
     }
+
+    // Outward-facing write wrappers for each piece of data
 
     void writeOutWfc(Grid &par, std::vector<double2 *> wfc, int i) {
         std::string dataset_name = (par.bval("gstate") ? "/WFC/CONST/" : "/WFC/EV/") + std::to_string(i);
@@ -463,6 +509,7 @@ namespace FileIO{
         FileIO::write1d(dataset_name, FileIO::hdf_double, FileIO::z_space, z);
     }
 
+    // Write the double, int, bool, and string params to file
     void writeOutParams(Grid &par){
         std::cout << "Writing out params" << std::endl;
         for (auto item : par.getDoubleMap()) {
@@ -482,6 +529,7 @@ namespace FileIO{
         }
     }
 
+    // Clean up allocated memory and open files
     void destroy() {
         delete FileIO::output;
 

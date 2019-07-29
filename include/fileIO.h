@@ -26,20 +26,139 @@
 /** Check source file for further information on functions **/
 namespace FileIO {
 
+    /**
+     * @brief Initialize the file output
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     */
     void init(Grid &par);
+
+    /**
+     * @brief Load data from file and continue simulation
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     */
     void load(Grid &par);
+
+    /**
+     * @brief Load Ax, Ay, and Az from file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     */
     void loadA(Grid &par);
+
+    /**
+     * @brief Write the wfc to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
     void writeOutWfc(Grid &par, std::vector<double2 *> wfc, int i);
+
+    /**
+     * @brief Write V to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
     void writeOutV(Grid &par, std::vector<double *> v, int i);
+
+    /**
+     * @brief Write K to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
     void writeOutK(Grid &par, std::vector<double *> k, int i);
+
+    /**
+     * @brief Write the Edges found to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
     void writeOutEdges(Grid &par, std::vector<double *> edges, int i);
+
+    /**
+     * @brief Write Ax to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
     void writeOutAx(Grid &par, std::vector<double *> ax, int i);
+
+    /**
+     * @brief Write Ay to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
     void writeOutAy(Grid &par, std::vector<double *> ay, int i);
+
+    /**
+     * @brief Write Az to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
     void writeOutAz(Grid &par, std::vector<double *> az, int i);
+
+    /**
+     * @brief Write the scale in the x dimension to file
+     * @ingroup helper
+     * 
+     * @param Data to write
+     * @param iteration number
+     */
     void writeOutX(double *x, int i);
+
+    /**
+     * @brief Write the scale in the y dimension to file 
+     * @ingroup helper
+     * 
+     * @param	Data to write
+     * @param iteration number
+     */
     void writeOutY(double *y, int i);
+
+    /**
+     * @brief Write the scale in the z dimension to file
+     * @ingroup helper
+     * 
+     * @param Data to write
+     * @param iteration number
+     */
     void writeOutZ(double *z, int i);
+
+    /**
+     * @brief Write the double, int, bool, and string params to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     */
     void writeOutParams(Grid &par);
+
+    /**
+     * @brief Delete created objects, deallocate memory, and close open files
+     * @ingroup helper
+     */
     void destroy();
 
 	/**
