@@ -65,8 +65,8 @@ Grid parseArgs(int argc, char** argv){
     par.store("zDim", 256);
     par.store("omega", 0.0);
     par.store("gammaY", 1.0);
-    par.store("gsteps", 1);
-    par.store("esteps", 1);
+    par.store("gsteps", 0);
+    par.store("esteps", 0);
     par.store("gdt", 1e-4);
     par.store("dt", 1e-4);
     par.store("device", 0);
@@ -116,7 +116,8 @@ Grid parseArgs(int argc, char** argv){
     par.store("charge", 0);
     par.store("flip", false);
     par.store("thresh_const", 1.0);
-    par.store("i", 0);
+    par.store("g_i", 0);
+    par.store("e_i", 0);
 
     optind = 1;
 
@@ -570,7 +571,7 @@ Grid parseArgs(int argc, char** argv){
     }
 
     if (par.bval("read_wfc")) {
-        std::string infile = filecheck(data_dir + "input.h5");
+        std::string infile = filecheck(data_dir + "output.h5");
         par.store("infile", infile);
     }
 

@@ -171,9 +171,12 @@ namespace FileIO{
             attr.read(type, &output);
             par.store(attr_name, output);
         } else if (type == *FileIO::hdf_int) {
-            int output = 0;
-            attr.read(type, &output);
-            par.store(attr_name, output);
+            if ((attr_name != "gsteps" && attr_name != "esteps") || par.ival(attr_name) < 1) {
+                int output = 0;
+                attr.read(type, &output);
+                std::cout << "Loading attribute " << attr_name << " with value " << output << std::endl;
+                par.store(attr_name, output);
+            }
         } else if (type == *FileIO::hdf_bool) {
             bool output = false;
             attr.read(type, &output);
@@ -192,8 +195,8 @@ namespace FileIO{
     }
 
     void loadWfc(Grid &par) {
-        int gsteps = par.ival("gsteps");
-        int i = par.ival("i");
+        bool gstate = par.bval("gstate");
+        int i = par.ival(gstate ? "g_i" : "e_i");
         int xDim = par.ival("xDim");
         int yDim = par.ival("yDim");
         int zDim = par.ival("zDim");
@@ -202,7 +205,7 @@ namespace FileIO{
 
         // Since we don't store booleans in the output we don't have gstate,
         // So we use gsteps, which is set to 0 when groundstate simulation is done
-        std::string dataset_name = (gsteps ? "/WFC/CONST/" : "/WFC/EV/") + std::to_string(i);
+        std::string dataset_name = (gstate ? "/WFC/CONST/" : "/WFC/EV/") + std::to_string(i);
 
         DataSet latest_wfc = FileIO::output->openDataSet(dataset_name);
 
@@ -219,8 +222,8 @@ namespace FileIO{
     }
 
     void loadA(Grid &par) {
-        std::cout << "LOADING A" << std::endl;
-        int i = par.ival("i");
+        bool gstate = par.bval("gstate");
+        int i = par.ival(gstate ? "g_i" : "e_i");;
         int gSize = par.ival("gSize");
         int wfc_num = par.ival("wfc_num");
         int dimnum = par.ival("dimnum");
@@ -231,8 +234,6 @@ namespace FileIO{
         std::string ax_name = "/A/AX/" + std::to_string(par.bval("Ax_time") ? i : 0);
         std::string ay_name = "/A/AY/" + std::to_string(par.bval("Ay_time") ? i : 0);
         std::string az_name = "/A/AZ/" + std::to_string(par.bval("Az_time") ? i : 0);
-
-        std::cout << "PAR IS FINE" << std::endl;
 
         double *ax_buffer = (double *)malloc(wfc_num * gSize * sizeof(double));
         double *ay_buffer = (double *)malloc(wfc_num * gSize * sizeof(double));
@@ -250,8 +251,6 @@ namespace FileIO{
             DataSet latest_az = FileIO::output->openDataSet(az_name);
             latest_az.read(az_buffer, *FileIO::hdf_double);
         }
-
-        std::cout << "BEGINNING LOOP" << std::endl;
 
         for (int w = 0; w < wfc_num; w++) {
             for (int j = 0; j < gSize; j++) {
@@ -275,8 +274,6 @@ namespace FileIO{
             cudaHandleError(cudaMemcpy(Az_gpu[w],Az[w],sizeof(double)*gSize,
                             cudaMemcpyHostToDevice));
         }
-
-        std::cout << "LOOP END" << std::endl;
 
         par.store("Ax", Ax);
         par.store("Ay", Ay);

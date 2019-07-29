@@ -351,11 +351,14 @@ void evolve(Grid &par,
     clock_t begin, end;
     double time_spent;
     double Dt;
+    int iterations;
     if(gstate){
+        iterations = par.ival("g_i");
         Dt = gdt;
         printf("Timestep for groundstate solver set as: %E\n",Dt);
     }
     else{
+        iterations = par.ival("e_i");
         Dt = dt;
         printf("Timestep for evolution set as: %E\n",Dt);
     }
@@ -418,7 +421,7 @@ void evolve(Grid &par,
 
     //std::cout << "numSteps is: " << numSteps << '\n';
     // Iterating through all of the steps in either g or esteps.
-    for (int i=par.ival("i"); i < numSteps; ++i){
+    for (int i=iterations; i < numSteps+iterations; ++i){
         for (int w = 0; w < wfc_array.size(); ++w){
             double time = Dt*i;
             if (ramp){
@@ -544,9 +547,6 @@ void evolve(Grid &par,
                                                 sizeof(double2)
                                                     *xDim*yDim*wfc_num,
                                                 cudaMemcpyHostToDevice));
-                            }
-                            if(write_it){
-                                FileIO::writeOutParams(par);
                             }
                         } else {
                             // If i!=0 and the number of vortices changes
@@ -956,9 +956,10 @@ void evolve(Grid &par,
 
         // Execute instructions that don't depend on the individual wfc
         if (i % printSteps == 0) {
-            par.store("iteration", i);
+            par.store(gstate ? "g_i" : "e_i", i);
+            std::cout << "STORING " << (gstate ? "g_i" : "e_i") << " AS " << i << std::endl;
             if (write_it) {
-              std::cout << "PS: " << printSteps << std::endl;
+                FileIO::writeOutParams(par);
                 FileIO::writeOutWfc(par, wfc_array, i);
             }
 

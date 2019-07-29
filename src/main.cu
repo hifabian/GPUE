@@ -50,10 +50,6 @@ int main(int argc, char **argv){
 
         evolve(par, gsteps);
 
-        // Indicate that groundstate simulation is over
-        // And when continuing from file, we should only do realtime simulation
-        par.store("gsteps", 0);
-        // Resetting iteration counter for the same reason
         par.store("i", 0);
     }
 
@@ -61,6 +57,7 @@ int main(int argc, char **argv){
         std::cout << "real-time evolution started..." << '\n';
         par.store("gstate", false);
         set_variables(par);
+
         evolve(par, esteps);
     }
 
