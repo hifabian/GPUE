@@ -290,7 +290,7 @@ void evolve(Grid &par,
     bool nonlin = par.bval("gpe");
     bool lz = par.bval("corotating");
     bool ramp = par.bval("ramp");
-    int energy_calc_steps = par.ival("energy_calc_steps");
+    int energy_calc_steps = par.ival("energy_calc_steps") == 0 ? printSteps : par.ival("energy_calc_steps");
     double energy_calc_threshold = par.dval("energy_calc_threshold");
     int ramp_type = par.ival("ramp_type");
     int step_offset = par.ival("step_offset");
@@ -300,6 +300,11 @@ void evolve(Grid &par,
     bool gstate = par.bval("gstate");
 
     int wfc_num = par.ival("wfc_num");
+
+    std::vector<double> energy(wfc_num);
+    std::fill(energy.begin(), energy.end(), 0);
+
+    bool energy_escape = false;
 
     std::vector<double2 *> wfc_array = par.d2svecval("wfc_array");
     std::vector<double2 *> gpuWfc_array = par.d2svecval("wfc_gpu_array");
@@ -422,6 +427,11 @@ void evolve(Grid &par,
     //std::cout << "numSteps is: " << numSteps << '\n';
     // Iterating through all of the steps in either g or esteps.
     for (int i=iterations; i < numSteps+iterations; ++i){
+
+        if (par.bval("energy_calc") && (i % energy_calc_steps == 0)) {
+            energy_escape = true;
+        }
+
         for (int w = 0; w < wfc_array.size(); ++w){
             double time = Dt*i;
             if (ramp){
@@ -915,41 +925,17 @@ void evolve(Grid &par,
                 parSum(gpuWfc_array[w], par);
             }
 
-            if (par.bval("energy_calc") &&
-               (i % (energy_calc_steps == 0 ? printSteps : energy_calc_steps)
-                    == 0)) {
-                double energy = energy_calc(par, gpuWfc_array[w]);
+            if (par.bval("energy_calc") && (i % energy_calc_steps == 0)) {
 
-                printf("Energy[t@%d]=%E\n",i,energy);
-                std::ofstream energy_out;
-                std::string mode = "energyi.dat";
-                if (!gstate){
-                    mode = "energy.dat";
-                }
-                if (i == 0){
-                    energy_out.open(data_dir + mode);
-                }
-                else{
-                    energy_out.open(data_dir + mode, std::ios::out |
-                                                     std::ios::app);
-                }
-                energy_out << energy << '\n';
-                energy_out.close();
+                double oldEnergy = energy[w];
+                energy[w] = energy_calc(par, gpuWfc_array[w]);
 
-                double oldEnergy;
-                if (i != 0) {
-                    oldEnergy = par.dval("energy");
-                } else {
-                    oldEnergy = 0;
-                }
-                par.store("energy", energy);
+                printf("Energy[t@%d wfc@%d]=%E\n",i, w, energy);
 
-                if (i != 0 &&
-                    fabs(oldEnergy - energy)
-                       < energy_calc_threshold * oldEnergy && gstate) {
-                    printf("Stopping early at step %d with energy %E\n",
-                           i, energy);
-                    break;
+                if (i == iterations 
+                    || fabs(oldEnergy - energy) >= energy_calc_threshold * oldEnergy
+                    || !gstate) {
+                    energy_escape = false;
                 }
             }
         }
@@ -972,6 +958,16 @@ void evolve(Grid &par,
                     }
                 }
             }
+        }
+
+        if (par.bval("energy_calc") && (i % energy_calc_steps == 0)) {
+            par.store("energy", energy);
+            FileIO::writeOutEnergy(par);
+        }
+
+        if (energy_escape) {
+            printf("Stopping early at step %d\n", i, energy);
+            break;
         }
     }
     par.store("wfc_array", wfc_array);
