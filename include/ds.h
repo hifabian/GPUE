@@ -97,6 +97,7 @@ class Grid{
         std::unordered_map<std::string, int> param_int;
         std::unordered_map<std::string, double> param_double;
         std::unordered_map<std::string, double*> param_dstar;
+        std::unordered_map<std::string, std::vector<double>> param_dvec;
         std::unordered_map<std::string, std::vector<double*>> param_dsvec;
         std::unordered_map<std::string, bool> param_bool;
         std::unordered_map<std::string, cufftDoubleComplex*> sobel;
@@ -209,11 +210,14 @@ class Grid{
         // Function to store asts into data_dir
         void store(std::string id, EqnNode astparam);
 
+        // Function to store std::vector<double> values
+        void store(std::string id, std::vector<double> dvec);
+
         // Function to store std::vector<double *> values
-        void store(std::string id, std::vector<double *> dvec);
+        void store(std::string id, std::vector<double *> dsvecparam);
 
         // Function to store std::vector<double2 *> values
-        void store(std::string id, std::vector<double2 *> d2vec);
+        void store(std::string id, std::vector<double2 *> d2svecparam);
 
         // Function to store int into param_int iff it isn't already there
         void store_new(std::string id, int iparam);
@@ -248,6 +252,9 @@ class Grid{
         // Function to retrieve double star values from param_dstar
         double *dsval(std::string id);
 
+        // Function to retrieve std::vector<double> values from param_
+        std::vector<double> dvecval(std::string id);
+
         // Function to retrieve double star values from param_dstar
         std::vector<double *> dsvecval(std::string id);
 
@@ -260,7 +267,7 @@ class Grid{
         // Function to call back the sobel operators
         cufftDoubleComplex *cufftDoubleComplexval(std::string id);
 
-        // Function to retrieve double star values from param_dstar
+        // Function to retrieve std::vector<double2 *> values from param_d2svec
         std::vector<double2 *> d2svecval(std::string id);
 
         // Function to call back ast
