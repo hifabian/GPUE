@@ -53,7 +53,6 @@ int init(Grid &par){
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
     int wfc_num = par.ival("wfc_num");
-    int step_offset = par.ival("step_offset");
     bool write_file = par.bval("write_file");
     bool cyl_coord = par.bval("cyl_coord");
     bool corotating = par.bval("corotating");
