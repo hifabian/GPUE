@@ -553,22 +553,41 @@ namespace FileIO{
     void destroy() {
         delete FileIO::output;
 
+        delete FileIO::energy;
+        delete FileIO::energy_const;
+        delete FileIO::energy_ev;
         delete FileIO::wfc;
         delete FileIO::wfc_const;
         delete FileIO::wfc_ev;
-
         delete FileIO::v;
         delete FileIO::k;
-
         delete FileIO::vortex;
         delete FileIO::vortex_edges;
-
+        delete FileIO::a;
+        delete FileIO::ax;
+        delete FileIO::ay;
+        delete FileIO::az;
+        delete FileIO::domain;
+        delete FileIO::x;
+        delete FileIO::y;
+        delete FileIO::z;
+    
         delete FileIO::hdf_double2;
-
+        delete FileIO::hdf_double;
+        delete FileIO::hdf_int;
+        delete FileIO::hdf_bool;
+        delete FileIO::hdf_str;
+    
         delete FileIO::wfc_space;
         delete FileIO::v_space;
         delete FileIO::k_space;
         delete FileIO::edge_space;
+        delete FileIO::a_space;
+        delete FileIO::x_space;
+        delete FileIO::y_space;
+        delete FileIO::z_space;
+        delete FileIO::attr_space;
+        delete FileIO::energy_space;
     }
 
     /*
