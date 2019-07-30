@@ -57,13 +57,6 @@ set(CMAKE_CUDA_FLAGS "-rdc=true -std=c++11")
 find_package(CUDA REQUIRED)
 add_subdirectory(src)
 
-# message("HDF5_LIBRARY_DIRS: ${HDF5_LIBRARY_DIRS}")
-# message("HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
-# message("HDF5_CXX_LIBRARIES: ${HDF5_CXX_LIBRARIES}")
-# message("CUDA_LIBRARIES: ${CUDA_LIBRARIES}")
-# message("CUDA_CUFFT_LIBRARIES: ${CUDA_CUFFT_LIBRARIES}")
-# message("CUDA_cudadevrt_LIBRARY: ${CUDA_cudadevrt_LIBRARY}")
-
 ################################################################################
 
 set(LIBS
