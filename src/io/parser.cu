@@ -6,6 +6,7 @@ struct stat st = {0};
 
 std::vector<std::string> split_string(std::string input_string,
                                       char split_char){
+
     // Finding element number to reserve 
     std::vector<int> char_indices = {0};
     for (size_t i = 0; i < input_string.size(); ++i){
@@ -24,33 +25,58 @@ std::vector<std::string> split_string(std::string input_string,
 
 void set_interactions(Grid &par, std::string input, int wfc_num,
                       double* interactions, double* gpu_interactions){
-     input = input.substr(1, input.size()-2);
 
-     // splitting along ";"
-     std::vector<std::string> rows;
-     rows = split_string(input, ';');
+    // Setting string to be consistent with rest of function
+    if (input[0] == '{'){
+        input = input.substr(1, input.size()-2);
+    }
 
-     for (size_t i = 0; i < rows.size(); ++i){
-         // count when skipping blank columns after splitting
-         int count = 0;
-         std::vector<std::string> cols = split_string(rows[i], ' ');
-         for (size_t j = 0; j < cols.size(); ++j){
-             if (cols[j].size() > 0){
-                 int index = wfc_num*i + count;
-                 interactions[index] = std::stod(cols[j].c_str());
-             }
-             else{
-                 count--;
-             }
-             count++;
-         }
-     }
+    // Stripping unnecessary spaces
+    // TODO: does not skip all spaces if multiple spaces are next to each other
+    int last_space = -1;
+    int i = 0;
+    while (i < input.size()){
+        if (i == last_space + 1 && input[i] == ' '){
+            input.erase(input.begin() + i);
+            last_space = i;
+            i--;
+        }
+        if (input[i] == ';' || input[i] == ' '){
+            last_space = i;
+        }
+        i++;
+    }
 
-     cudaMemcpy(gpu_interactions, interactions, sizeof(double)*wfc_num*wfc_num,
-                cudaMemcpyHostToDevice);
+    // splitting along ";"
+    std::vector<std::string> rows;
+    rows = split_string(input, ';');
 
-     par.store("interactions", interactions);
-     par.store("gpu_interactions", gpu_interactions);
+    for (size_t i = 0; i < rows.size(); ++i){
+        // count when skipping blank columns after splitting
+        int count = 0;
+        std::vector<std::string> cols = split_string(rows[i], ' ');
+        if (cols.size() != wfc_num){
+            std::cout << "Improper interaction terms set!\n";
+            std::cout << "Number of columns should equal number of wfcs";
+            assert(cols.size() == wfc_num);
+        }
+        for (size_t j = 0; j < cols.size(); ++j){
+            if (cols[j].size() > 0){
+                int index = wfc_num*i + count;
+                interactions[index] = std::stod(cols[j].c_str());
+            }
+            else{
+                count--;
+            }
+            count++;
+        }
+    }
+
+    cudaMemcpy(gpu_interactions, interactions, sizeof(double)*wfc_num*wfc_num,
+               cudaMemcpyHostToDevice);
+
+    par.store("interactions", interactions);
+    par.store("gpu_interactions", gpu_interactions);
 }
 
 Grid parseArgs(int argc, char** argv){
