@@ -190,13 +190,6 @@ Grid parseArgs(int argc, char** argv){
                 par.store("dt",(double)dt);
                 break;
             }
-            case 'o':
-            {
-                int step_offset = atoi(optarg);
-                printf("Argument for step offset is given as %d\n",step_offset);
-                par.store("step_offset",(int)step_offset);
-                break;
-            }
             case 'C':
             {
                 int device = atoi(optarg);

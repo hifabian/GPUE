@@ -34,7 +34,6 @@ Options:
 -m              Set 2d_mask for vortex tracking
 -N 1            Set N, number of wavefunctions to simulate
 -n 1            Set n, number of particles in simulation
--o 0            Set offset step to be added to each output file
 -O 0            Set angle_sweep, kicking potential rotation angle
 -P 0            Set laser_power, strength of kicking [hbar * omega_perp]
 -p 100          Set printSteps, frequency of printing
