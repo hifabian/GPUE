@@ -7,6 +7,8 @@
 import numpy as np
 import math
 
+from load_data import getWfc
+
 # Function to create plot with vtk
 def to_vtk(item, xDim, yDim, zDim, output_file):
     outfile = open(output_file, "w")
