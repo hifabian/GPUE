@@ -29,7 +29,7 @@ def plot(gstate, f):
         print(i)
 
         # Get wfc and apply given transformation
-        wfc = getWfc(gstate, args.c, i)
+        wfc = getWfc(gstate, args.c, i, filename=args.f)
         wfc = f(wfc)
 
         # Plot
