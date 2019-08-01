@@ -7,23 +7,30 @@ import copy as cp
 import ConfigParser
 import sys
 
+from load_data import getParams
+
 ###############################################################################
 if (len(sys.argv) == 2):
     data_dir = "../" + sys.argv[1] + "/"
 else:
-    data_dir = ""
+    data_dir = "../data/"
 c = ConfigParser.ConfigParser()
-c.readfp(open(data_dir + 'Params.dat', "r"))
 
-xDim = int(c.getfloat('Params','xDim'))
-yDim = int(c.getfloat('Params','yDim'))
-gndMaxVal = int(c.getfloat('Params','gsteps'))
-evMaxVal = int(c.getfloat('Params','esteps'))
-incr = int(c.getfloat('Params','printSteps'))
-dx = (c.getfloat('Params','dx'))
-dt = (c.getfloat('Params','dt'))
-xMax = (c.getfloat('Params','xMax'))
-yMax = (c.getfloat('Params','yMax'))
+params = getParams(data_dir + "output.h5")
+
+xDim = params.get("xDim", 256)
+yDim = params.get("yDim", 256)
+
+gndMaxVal = params.get("gsteps", 0)
+evMaxVal = params.get("esteps", 0)
+
+incr = params.get("printSteps", 100)
+
+dx = params.get("dx")
+dt = params.get("dt", 1e-4)
+
+xMax = params.get("xMax")
+yMax = params.get("yMax")
 
 # quick check to make sure evMax Steps is right. This is simply because of the 
 # way GPUE outputs data.
