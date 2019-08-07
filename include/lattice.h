@@ -20,11 +20,9 @@
 
 #include <cstdlib>
 #include <cmath>
-//#include <algorithm>
 #include <vector>
 #include "node.h"
 #include "edge.h"
-//#include "tracker.h"
 
 namespace LatticeGraph {
 
