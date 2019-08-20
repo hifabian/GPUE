@@ -703,7 +703,7 @@ void generate_fields(Grid &par){
     generate_p_space(par);
     generate_K(par);
     std::cout << "generating gauge fields...\n";
-    if (par.bval("read_wfc")) {
+    if (par.bval("read_a")) {
         FileIO::loadA(par);
     } else {
         generate_gauge(par);
