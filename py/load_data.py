@@ -3,7 +3,7 @@ import numpy as np
 
 
 # Get an numpy array for the wfc_idx-th wave function at iteration i
-def getWfc(gstate, wfc_idx, i filename="../data/output.h5"):
+def getWfc(gstate, wfc_idx, i, filename="../data/output.h5"):
     f = h5py.File(filename, "r")
     # Access the dataset "/WFC/CONST/i" or "/WFC/EV/i"
     dset = f["/WFC/{}/{}".format("CONST" if gstate else "EV", i)]
