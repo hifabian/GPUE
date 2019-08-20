@@ -1,6 +1,8 @@
 #-------------gen_data.py------------------------------------------------------##
 # Purpose: This file will take the data from GPUE and turn it into a bvox file
-#          for visualization with blender
+#          for visualization with blender or a vtk file for visualization with
+#          paraview, example usage can be found in the documentation at:
+#          https://gpue-group.github.io/data_analysis/python/
 #
 #------------------------------------------------------------------------------#
 
