@@ -27,8 +27,7 @@ int main(int argc, char **argv){
     int xDim = par.ival("xDim");
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
-    if(par.bval("read_wfc") == true){
-        // Init wfc
+    if(par.bval("read_file") == true){
         FileIO::load(par);
     }
 
