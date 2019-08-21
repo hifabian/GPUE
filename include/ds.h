@@ -108,7 +108,9 @@ class Grid{
 
         // Default values, accessed when the getter for one of these values finds no result
         std::unordered_map<std::string, bool> default_bool = {
+            {"read_file", false},
             {"read_wfc", false},
+            {"read_a", false},
             {"corotating", false},
             {"gpe", false},
             {"write_it", false},
@@ -120,7 +122,8 @@ class Grid{
             {"energy_calc", false},
             {"use_param_file", false},
             {"cyl_coord", false},
-            {"flip", false}
+            {"flip", false},
+            {"gstate": false}
         };
         std::unordered_map<std::string, int> default_int = {
             {"xDim", 256},
