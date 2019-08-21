@@ -255,8 +255,8 @@ Grid parseArgs(int argc, char** argv){
             }
             case 'r':
             {
-                printf("Reading wavefunction from file.\n");
-                par.store("read_wfc",true);
+                printf("Reading data from file.\n");
+                par.store("read_file",true);
                 break;
             }
             case 'p':
@@ -535,7 +535,7 @@ Grid parseArgs(int argc, char** argv){
         par.store("param_file", (std::string)param_file);
     }
 
-    if (par.bval("read_wfc")) {
+    if (par.bval("read_file")) {
         std::string infile = filecheck(data_dir + "output.h5");
         par.store("infile", infile);
     }

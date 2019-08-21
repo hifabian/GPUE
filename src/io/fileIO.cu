@@ -238,6 +238,12 @@ namespace FileIO{
         // So we use gsteps, which is set to 0 when groundstate simulation is done
         std::string dataset_name = (gstate ? "/WFC/CONST/" : "/WFC/EV/") + std::to_string(i);
 
+        if (FileIO::output->exists(dataset_name)) {
+            par.store("read_wfc", true);
+        } else {
+            return;
+        }
+
         DataSet latest_wfc = FileIO::output->openDataSet(dataset_name);
 
         // Load the buffer as contiguous memory and reshape into std::vector<double2 *>
@@ -266,6 +272,12 @@ namespace FileIO{
         std::string ax_name = "/A/AX/" + std::to_string(par.bval("Ax_time") ? i : 0);
         std::string ay_name = "/A/AY/" + std::to_string(par.bval("Ay_time") ? i : 0);
         std::string az_name = "/A/AZ/" + std::to_string(par.bval("Az_time") ? i : 0);
+
+        if (FileIO::output->exists(ax_name)) {
+            par.store("read_a", true);
+        } else {
+            return;
+        }
 
         // Allocate memory for three buffers, regardless of if they are used
         double *ax_buffer = (double *)malloc(wfc_num * gSize * sizeof(double));
@@ -366,8 +378,6 @@ namespace FileIO{
 
         FileIO::createDataSpaces(par.ival("xDim"), par.ival("yDim"), par.ival("zDim"), par.ival("dimnum"), par.ival("wfc_num"));
 
-        // Overwrite the read_wfc check so it doesn't get incorrectly loaded from file
-        par.store("read_wfc", true);
     }
 
     // Write an arbitrary attribute to file
