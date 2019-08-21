@@ -123,7 +123,7 @@ class Grid{
             {"use_param_file", false},
             {"cyl_coord", false},
             {"flip", false},
-            {"gstate": false}
+            {"gstate", false}
         };
         std::unordered_map<std::string, int> default_int = {
             {"xDim", 256},
