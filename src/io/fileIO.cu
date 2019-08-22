@@ -332,6 +332,15 @@ namespace FileIO{
         par.store("Az_gpu", Az_gpu);
     }
 
+    // Helper to open a group if it exists in the file, and create it otherwise
+    Group loadGroup(std::string name) {
+        if (FileIO::output->exists(name)) {
+            return FileIO::loadGroup(name);
+        } else {
+            return FileIO::output->createGroup(name);
+        }
+    }
+
     // Open the file and load any immediately-required data
     void load(Grid &par) {
         if (FileIO::output != NULL) {
@@ -343,29 +352,29 @@ namespace FileIO{
         FileIO::output = new H5File(par.sval("infile"), H5F_ACC_RDWR);
 
         // Load groups
-        FileIO::energy = new Group(FileIO::output->openGroup("/ENERGY"));
-        FileIO::energy_const = new Group(FileIO::output->openGroup("/ENERGY/CONST"));
-        FileIO::energy_ev = new Group(FileIO::output->openGroup("/ENERGY/EV"));
+        FileIO::energy = new Group(FileIO::loadGroup("/ENERGY"));
+        FileIO::energy_const = new Group(FileIO::loadGroup("/ENERGY/CONST"));
+        FileIO::energy_ev = new Group(FileIO::loadGroup("/ENERGY/EV"));
 
-        FileIO::wfc = new Group(FileIO::output->openGroup("/WFC"));
-        FileIO::wfc_const = new Group(FileIO::output->openGroup("/WFC/CONST"));
-        FileIO::wfc_ev = new Group(FileIO::output->openGroup("/WFC/EV"));
+        FileIO::wfc = new Group(FileIO::loadGroup("/WFC"));
+        FileIO::wfc_const = new Group(FileIO::loadGroup("/WFC/CONST"));
+        FileIO::wfc_ev = new Group(FileIO::loadGroup("/WFC/EV"));
 
-        FileIO::v = new Group(FileIO::output->openGroup("/V"));
-        FileIO::k = new Group(FileIO::output->openGroup("/K"));
+        FileIO::v = new Group(FileIO::loadGroup("/V"));
+        FileIO::k = new Group(FileIO::loadGroup("/K"));
 
-        FileIO::vortex = new Group(FileIO::output->openGroup("/VORTEX"));
-        FileIO::vortex_edges = new Group(FileIO::output->openGroup("/VORTEX/EDGES"));
+        FileIO::vortex = new Group(FileIO::loadGroup("/VORTEX"));
+        FileIO::vortex_edges = new Group(FileIO::loadGroup("/VORTEX/EDGES"));
 
-        FileIO::a = new Group(FileIO::output->openGroup("/A"));
-        FileIO::ax = new Group(FileIO::output->openGroup("/A/AX"));
-        FileIO::ay = new Group(FileIO::output->openGroup("/A/AY"));
-        FileIO::az = new Group(FileIO::output->openGroup("/A/AZ"));
+        FileIO::a = new Group(FileIO::loadGroup("/A"));
+        FileIO::ax = new Group(FileIO::loadGroup("/A/AX"));
+        FileIO::ay = new Group(FileIO::loadGroup("/A/AY"));
+        FileIO::az = new Group(FileIO::loadGroup("/A/AZ"));
 
-        FileIO::domain = new Group(FileIO::output->openGroup("/DOMAIN"));
-        FileIO::x = new Group(FileIO::output->openGroup("/DOMAIN/X"));
-        FileIO::y = new Group(FileIO::output->openGroup("/DOMAIN/Y"));
-        FileIO::z = new Group(FileIO::output->openGroup("/DOMAIN/Z"));
+        FileIO::domain = new Group(FileIO::loadGroup("/DOMAIN"));
+        FileIO::x = new Group(FileIO::loadGroup("/DOMAIN/X"));
+        FileIO::y = new Group(FileIO::loadGroup("/DOMAIN/Y"));
+        FileIO::z = new Group(FileIO::loadGroup("/DOMAIN/Z"));
 
         // Create types
         FileIO::createTypes();
