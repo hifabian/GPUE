@@ -335,7 +335,7 @@ namespace FileIO{
     // Helper to open a group if it exists in the file, and create it otherwise
     Group loadGroup(std::string name) {
         if (FileIO::output->exists(name)) {
-            return FileIO::loadGroup(name);
+            return FileIO::output->openGroup(name);
         } else {
             return FileIO::output->createGroup(name);
         }
