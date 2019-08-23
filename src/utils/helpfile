@@ -42,7 +42,7 @@ Options:
                     during real-time. The value is the charge of the new vortex
 -R 1            Set ramping flag for imaginary time evolution
                     1 for ramping up, 0 for ramping down
--r              Set read_file to continue simulation from file (data/output.h5)
+-r              Set read_file to continue simulation from file (data/data.h5)
                     All flags will be the same, and parser args supersede those from file
 -S 0            Set sepMinEpsilon, kicking potential lattice spacing scaling
 -s              Set gpe, flag for using Gross-Pitaevskii Equation
