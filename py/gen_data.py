@@ -9,7 +9,7 @@
 import numpy as np
 import math
 
-from load_data import getWfc
+from load_data import getVar, getWfc
 
 # Function to create plot with vtk
 def to_vtk(item, xDim, yDim, zDim, output_file):
@@ -29,10 +29,11 @@ def to_vtk(item, xDim, yDim, zDim, output_file):
             for k in range(zDim):
                 outfile.write(str(item[i][j][k]) + " ")
             outfile.write('\n')
-        outfile.write('\n') 
+        outfile.write('\n')
+    outfile.close()
 
 # Function to plot wfc with gstate as a variable to modify the type of plot
-def wfc_density(xDim, yDim, zDim, filename="../data/output.h5", gstate=True, i=0, comp=0):
+def wfc_density(filename="../data/data.h5", gstate=True, i=0, comp=0):
     print(i)
     wfc = getWfc(gstate, comp, i, filename)
     wfc = abs(wfc)
@@ -40,7 +41,7 @@ def wfc_density(xDim, yDim, zDim, filename="../data/output.h5", gstate=True, i=0
     wfc /= np.max(wfc)
     return wfc
 
-def wfc_phase(xDim, yDim, zDim, filename="../data/output.h5", gstate=True, i=0, comp=0):
+def wfc_phase(filename="../data/data.h5", gstate=True, i=0, comp=0):
     print(i)
     wfc = getWfc(gstate, comp, i, filename)
     wfc = np.angle(wfc)
@@ -49,7 +50,7 @@ def wfc_phase(xDim, yDim, zDim, filename="../data/output.h5", gstate=True, i=0, 
     wfc = (wfc - minimum) / (maximum - minimum)
     return wfc
 
-def proj_phase_2d(xDim, yDim, zDim, filename="../data/output.h5", gstate=True, i=0, comp=0):
+def proj_phase_2d(filename="../data/data.h5", gstate=True, i=0, comp=0):
     print(i)
     wfc = getWfc(gstate, comp, i, filename)
     wfc = np.angle(wfc)
@@ -59,7 +60,7 @@ def proj_phase_2d(xDim, yDim, zDim, filename="../data/output.h5", gstate=True, i
             file.write(str(wfc[j][k][wfc.shape[2]//2]) + '\n')
     file.close()
 
-def proj_2d(xDim, yDim, zDim, filename="../data/output.h5", gstate=True, i=0, comp=0):
+def proj_2d(filename="../data/data.h5", gstate=True, i=0, comp=0):
     print(i)
     wfc = getWfc(gstate, comp, i, filename)
     wfc = abs(wfc)
@@ -70,7 +71,7 @@ def proj_2d(xDim, yDim, zDim, filename="../data/output.h5", gstate=True, i=0, co
             file.write(str(wfc[k][j][wfc.shape[2]//2]) + '\n')
     file.close()
 
-def proj_k2d(xDim, yDim, zDim, filename="../data/output.h5", gstate=True, i=0, comp=0):
+def proj_k2d(filename="../data/data.h5", gstate=True, i=0, comp=0):
     filename = data_dir + "/wfc_1"
     print(i)
     wfc = getWfc(gstate, comp, i, filename)
@@ -83,6 +84,42 @@ def proj_k2d(xDim, yDim, zDim, filename="../data/output.h5", gstate=True, i=0, c
             file.write(str(wfc[j][k][wfc.shape[2]//2]) + '\n')
     file.close()
 
+def var(path, filename="../data/data.h5"):
+    data = getVar(path, filename)
+
+    maximum = np.max(data)
+    minimum = np.min(data)
+
+    return (data - minimum) / (maximum - minimum)
+
+def var_r2(path1, path2, filename="../data/data.h5"):
+    ax = getVar(path1, filename)
+    ay = getVar(path2, filename)
+
+    out = np.sqrt(ax**2 + ay**2)
+
+    maximum = np.max(out)
+    minimum = np.min(out)
+
+    return (out - minimum) / (maximum - minimum)
+    
+def proj_var2d(path, outfilename="../data/var", filename="../data/data.h5"):
+    data = getVar(path, filename)
+
+    file = open(outfilename, "w")
+    for k in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            file.write(str(data[k][j])+'\n')
+    file.close()
+
+def proj_var1d(path, outfilename="../data/var", filename="../data/data.h5"):
+    data = getVar(path, filename)
+
+    file = open(outfilename, "w")
+    for k in range(data.shape[0]):
+            file.write(str(data[k])+'\n')
+    file.close()
+
 # function to output the bvox bin data of a matrix
 def to_bvox(item, xDim, yDim, zDim, nframes, filename):
     header = np.array([xDim, yDim, zDim, nframes])
@@ -92,7 +129,7 @@ def to_bvox(item, xDim, yDim, zDim, nframes, filename):
     binfile.close()
 
 # find Center of Mass of toroidal condensate
-def wfc_com(xDim, yDim, zDim, filename="../data/output.h5", gstate=True, i=0, comp=0):
+def wfc_com(filename="../data/data.h5", gstate=True, i=0, comp=0):
     print(i)
     wfc = getWfc(gstate, comp, i, filename)
     wfc = abs(wfc)
@@ -113,7 +150,7 @@ def wfc_com(xDim, yDim, zDim, filename="../data/output.h5", gstate=True, i=0, co
 
     return comx, comy
 
-def wfc_com_2d(filename="../data/output.h5", gstate=True, i=0, comp=0):
+def wfc_com_2d(filename="../data/data.h5", gstate=True, i=0, comp=0):
     print(i)
 
     wfc = getWfc(gstate, comp, i, filename)
@@ -135,7 +172,7 @@ def wfc_com_2d(filename="../data/output.h5", gstate=True, i=0, comp=0):
     return (com_x, com_y)
 
 
-def find_angle_2d(filename="../data/output.h5", gstate=True, i=0, comp=0):
+def find_angle_2d(filename="../data/data.h5", gstate=True, i=0, comp=0):
     print(i)
 
     wfc = getWfc(gstate, comp, i, filename)
@@ -160,3 +197,4 @@ def find_angle_2d(filename="../data/output.h5", gstate=True, i=0, comp=0):
 
     angle /= count
     return angle
+

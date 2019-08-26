@@ -22,6 +22,17 @@ parser.add_argument("-i", default="wfc",
 
 args = parser.parse_args()
 
+# Plot an arbitrary variable, only once.
+def plot_var(path):
+    print(0)
+    
+    data = getVar(path, filename=argc.f)
+    data = np.abs(data)
+
+    plt.imshow(data, cmap=cm.jet)
+    plt.colorbar()
+    plt.show()
+
 
 # Plot an arbitrary transformation of the wave function
 def plot(gstate, f):
@@ -69,4 +80,5 @@ opts = {
 try:
     plot(*opts[args.i])
 except KeyError:
-    print("Invalid item. Try again")
+    
+
