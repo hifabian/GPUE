@@ -536,7 +536,7 @@ Grid parseArgs(int argc, char** argv){
     }
 
     if (par.bval("read_file")) {
-        std::string infile = filecheck(data_dir + "output.h5");
+        std::string infile = filecheck(data_dir + "data.h5");
         par.store("infile", infile);
     }
 

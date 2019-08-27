@@ -7,7 +7,7 @@
 using namespace H5;
 
 /* HDF5 structure:
- * # data_dir/output.h5
+ * # data_dir/data.h5
  * /ENERGY
  * /WFC
  * /WFC/CONST
@@ -152,7 +152,7 @@ namespace FileIO{
         }
 
         // Open file
-        FileIO::output = new H5File(par.sval("data_dir") + "output.h5", H5F_ACC_TRUNC);
+        FileIO::output = new H5File(par.sval("data_dir") + "data.h5", H5F_ACC_TRUNC);
 
         // Create groups
         FileIO::energy = new Group(FileIO::output->createGroup("/ENERGY"));

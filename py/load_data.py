@@ -1,9 +1,19 @@
 import h5py
 import numpy as np
 
+# Get a numpy array for an arbitrary dataset in the h5file
+def getVar(path, filename="../data/data.h5"):
+    f = h5py.File(filename, "r")
+    dset = f[path]
 
-# Get an numpy array for the wfc_idx-th wave function at iteration i
-def getWfc(gstate, wfc_idx, i, filename="../data/output.h5"):
+    if (dset.dtype.name == "void128"):
+        return dset["re"] + (dset["im"] * 1j)
+    else:
+        return dset.value
+
+
+# Get a numpy array for the wfc_idx-th wave function at iteration i
+def getWfc(gstate, wfc_idx, i, filename="../data/data.h5"):
     f = h5py.File(filename, "r")
     # Access the dataset "/WFC/CONST/i" or "/WFC/EV/i"
     dset = f["/WFC/{}/{}".format("CONST" if gstate else "EV", i)]
@@ -14,7 +24,7 @@ def getWfc(gstate, wfc_idx, i, filename="../data/output.h5"):
 
 
 # Get the collection of attributes
-def getParams(filename="../data/output.h5"):
+def getParams(filename="../data/data.h5"):
     f = h5py.File(filename, "r")
     return f.attrs
 
