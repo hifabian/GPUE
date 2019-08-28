@@ -90,7 +90,8 @@ def var(path, filename="../data/data.h5"):
     maximum = np.max(data)
     minimum = np.min(data)
 
-    return (data - minimum) / (maximum - minimum)
+    #return (data - minimum) / (maximum - minimum)
+    return data
 
 def var_r2(path1, path2, filename="../data/data.h5"):
     ax = getVar(path1, filename)
@@ -104,7 +105,7 @@ def var_r2(path1, path2, filename="../data/data.h5"):
     return (out - minimum) / (maximum - minimum)
     
 def proj_var2d(path, outfilename="../data/var", filename="../data/data.h5"):
-    data = getVar(path, filename)
+    data = getVar(path, 0, filename)
 
     file = open(outfilename, "w")
     for k in range(data.shape[0]):

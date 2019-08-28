@@ -2,14 +2,14 @@ import h5py
 import numpy as np
 
 # Get a numpy array for an arbitrary dataset in the h5file
-def getVar(path, filename="../data/data.h5"):
+def getVar(path, filename="../data/data.h5", idx=0):
     f = h5py.File(filename, "r")
     dset = f[path]
 
     if (dset.dtype.name == "void128"):
-        return dset["re"] + (dset["im"] * 1j)
+        return (dset["re"] + (dset["im"] * 1j))[idx]
     else:
-        return dset.value
+        return dset.value[idx]
 
 
 # Get a numpy array for the wfc_idx-th wave function at iteration i

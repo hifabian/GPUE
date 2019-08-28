@@ -31,9 +31,9 @@ def write_gauge(input_ax, input_ay, input_az, xDim, yDim, zDim, gstate,
 #write_wfc("../data_2D_example/wfc_evi_0", "../data_2D_example/wfc_ev_0",
 #          512, 512, 1, False, 0, 0,
 #          output_filename="../data_2D_example/input.h5")
-write_gauge("/media/james/ExtraDrive1/GPUE/data/Axgauge",
-            "/media/james/ExtraDrive1/GPUE/data/Aygauge",
-            "/media/james/ExtraDrive1/GPUE/data/Azgauge",
-            512, 512, 1, False, 0, 0,
-            output_filename="../data_2D_example/input.h5")
+write_gauge("/media/james/ExtraDrive1/GPUE/data_5/Ax_0",
+            "/media/james/ExtraDrive1/GPUE/data_5/Ay_0",
+            "/media/james/ExtraDrive1/GPUE/data_5/Az_0",
+            256, 256, 256, False, 0, 0,
+            output_filename="../data_5/output.h5")
 
