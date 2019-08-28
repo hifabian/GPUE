@@ -1,6 +1,6 @@
-#include "../include/constants.h"
-#include "../include/dynamic.h"
-#include "../include/ds.h"
+#include "constants.h"
+#include "dynamic.h"
+#include "ds.h"
 #include <stdio.h>
 
 __device__ double2 subtract(double2 a, double2 b){
@@ -162,25 +162,18 @@ __device__ unsigned int getTid3d3d(){
     return blockDim.x * ( blockDim.y * ( blockDim.z + ( threadIdx.z * blockDim.y ) )  + threadIdx.y )  + threadIdx.x;
 }
 
-__device__ double2 make_complex(double in, int evolution_type){
+__device__ double2 make_complex(double in, bool gstate, bool noop){
     double2 result;
 
-    switch(evolution_type){
-        // No change
-        case 0:
-            result.x = in;
-            result.y = 0;
-            break;
-        // Im. Time evolution
-        case 1:
-            result.x = exp(-in);
-            result.y = 0;
-            break;
-        // Real Time evolution
-        case 2:
-            result.x = cos(-in);
-            result.y = sin(-in);
-            break;
+    if (noop) {
+        result.x = in;
+        result.y = 0;
+    } else if (gstate) {
+        result.x = exp(-in);
+        result.y = 0;
+    } else {
+        result.x = cos(-in);
+        result.y = sin(-in);
     }
 
     return result;
@@ -363,7 +356,7 @@ __global__ void l2_norm(double2 *in1, double2 *in2, double *out){
  * Performs the non-linear evolution term of Gross--Pitaevskii equation.
  */
 __global__ void cMultDensity(double2* V, double2* wfc_in,
-                             double2* wfc_out, double dt, int gstate,
+                             double2* wfc_out, double dt, bool gstate,
                              double gDenConst){
     double2 result;
     double gDensity;
@@ -371,7 +364,7 @@ __global__ void cMultDensity(double2* V, double2* wfc_in,
     int gid = getGid3d3d();
     gDensity = gDenConst*complexMagnitudeSquared(wfc_in[gid])*(dt/HBAR);
 
-    if(gstate == 0){
+    if(gstate){
         double tmp = V[gid].x*exp(-gDensity);
         result.x = (tmp)*wfc_in[gid].x - (V[gid].y)*wfc_in[gid].y;
         result.y = (tmp)*wfc_in[gid].y + (V[gid].y)*wfc_in[gid].x;
@@ -394,7 +387,7 @@ __global__ void cMultDensity_multicomp(double2* V, double2* wfc_in,
                                        double2* wfc_out,
                                        double2** wfc_array,
                                        double* interactions,
-                                       double dt, int gstate,
+                                       double dt, bool gstate,
                                        double gDenConst, int wfc_num, int w){
     double2 result;
     double gDensity;
@@ -409,7 +402,7 @@ __global__ void cMultDensity_multicomp(double2* V, double2* wfc_in,
     gDensity *= gDenConst*(dt/HBAR);
 
 
-    if(gstate == 0){
+    if(gstate){
         double tmp = V[gid].x*exp(-gDensity);
         result.x = (tmp)*wfc_in[gid].x - (V[gid].y)*wfc_in[gid].y;
         result.y = (tmp)*wfc_in[gid].y + (V[gid].y)*wfc_in[gid].x;
@@ -429,7 +422,7 @@ __global__ void cMultDensity_multicomp(double2* V, double2* wfc_in,
 //cMultDensity for ast V
 __global__ void cMultDensity_ast(EqnNode_gpu *eqn, double2* in, double2* out, 
                                  double dx, double dy, double dz, double time,
-                                 int e_num, double dt, int gstate, 
+                                 int e_num, double dt, bool gstate, 
                                  double gDenConst){
     double2 result;
     double gDensity;
@@ -442,9 +435,9 @@ __global__ void cMultDensity_ast(EqnNode_gpu *eqn, double2* in, double2* out,
     double2 tin = in[gid];
     gDensity = gDenConst*complexMagnitudeSquared(in[gid])*(dt/HBAR);
     double2 val = make_complex(evaluate_eqn_gpu(eqn, xid*dx, yid*dy, zid*dz,
-                                                time, e_num), gstate+1);
+                                                time, e_num), gstate, false);
 
-    if(gstate == 0){
+    if(gstate){
         double tmp = val.x*exp(-gDensity);
         result.x = (tmp)*tin.x - (val.y)*tin.y;
         result.y = (tmp)*tin.y + (val.y)*tin.x;
@@ -687,7 +680,7 @@ __global__ void ast_cmult(double2 *array, double2 *array_out, EqnNode_gpu *eqn,
 __global__ void ast_op_mult(double2 *array, double2 *array_out, 
                             EqnNode_gpu *eqn,
                             double dx, double dy, double dz, double time,
-                            int element_num, int evolution_type, double dt){
+                            int element_num, bool gstate, double dt){
     int gid = getGid3d3d();
     int xid = blockIdx.x*blockDim.x + threadIdx.x;
     int yid = blockIdx.y*blockDim.y + threadIdx.y;
@@ -695,7 +688,7 @@ __global__ void ast_op_mult(double2 *array, double2 *array_out,
 
     double val = evaluate_eqn_gpu(eqn, xid*dx, yid*dy, zid*dz, 
                                   time, element_num);
-    double2 complex_val = make_complex(val*dt, evolution_type);
+    double2 complex_val = make_complex(val*dt, gstate, false);
 
     array_out[gid].x = array[gid].x * complex_val.x 
                        - array[gid].y * complex_val.y;

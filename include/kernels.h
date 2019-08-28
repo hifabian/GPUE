@@ -141,10 +141,11 @@ __host__ __device__ double2 complexMultiply(double2 in1, double2 in2);
 * @brief        Transforms field value into operator
 * @ingroup      gpu
 * @param        Input value
-* @param        Evolution type (0 for imaginary, 1 for real)
+* @param        Groundstate boolean: true for imaginary time, false for real
+* @param        Escape to always return a complex value equal to the input 
 * @return       complex output
 */
-__device__ double2 make_complex(double in, int evolution_type);
+__device__ double2 make_complex(double in, bool gstate, bool noop);
 
 /**
 * @brief        copies a double2 value
@@ -276,11 +277,11 @@ __global__ void cMultPhi(double2* in1, double* in2, double2* out);
 * @param	wfc_in Wavefunction array input
 * @param	wfc_out Pass by reference output for multiplication result
 * @param	dt Timestep for evolution
-* @param	gState If performing real (1) or imaginary (0) time evolution
+* @param	gState If performing real (false) or imaginary (true) time evolution
 * @param	gDenConst a constant for evolution
 */
 __global__ void cMultDensity(double2* V, double2* wfc_in,
-                             double2* wfc_out, double dt, int gstate,
+                             double2* wfc_out, double dt, bool gstate,
                              double gDenConst);
 
 /**
@@ -292,14 +293,14 @@ __global__ void cMultDensity(double2* V, double2* wfc_in,
 * @param        wfc_array pointers to all other wavefunctions in the system
 * @param        interactions interaction terms between components in system
 * @param        dt Timestep for evolution
-* @param        gState If performing real (1) or imaginary (0) time evolution
+* @param        gState If performing real (false) or imaginary (true) time evolution
 * @param        gDenConst a constant for evolution
 */
 __global__ void cMultDensity_multicomp(double2* V, double2* wfc_in,
                                        double2* wfc_out,
                                        double2** wfc_array,
                                        double* interactions,
-                                       double dt, int gstate,
+                                       double dt, bool gstate,
                                        double gDenConst, int wfc_num, int w);
 
 /**
@@ -314,13 +315,13 @@ __global__ void cMultDensity_multicomp(double2* V, double2* wfc_in,
 * @param        time
 * @param        element number in AST
 * @param        dt Timestep for evolution
-* @param        gState If performing real (1) or imaginary (0) time evolution
+* @param        gState If performing real (false) or imaginary (true) time evolution
 * @param        gDenConst a constant for evolution
 */
 
 __global__ void cMultDensity_ast(EqnNode_gpu *eqn, double2* in, double2* out,
                                  double dx, double dy, double dz, double time,
-                                 int e_num, double dt, int gstate,
+                                 int e_num, double dt, bool gstate,
                                  double gDenConst);
 
 
@@ -548,7 +549,7 @@ __global__ void ast_cmult(double2 *array, double2 *array_out, EqnNode_gpu *eqn,
 __global__ void ast_op_mult(double2 *array, double2 *array_out,
                             EqnNode_gpu *eqn,
                             double dx, double dy, double dz, double time,
-                            int element_num, int evolution_type, double dt);
+                            int element_num, bool gstate, double dt);
 
 /**
 * @brief        Function to find AST operator in real-time

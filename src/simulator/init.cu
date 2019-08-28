@@ -1,6 +1,6 @@
-#include "../include/init.h"
-#include "../include/dynamic.h"
-#include "../include/split_op.h"
+#include "init.h"
+#include "dynamic.h"
+#include "split_op.h"
 
 void check_memory(Grid &par){
     int xDim = par.ival("xDim");
@@ -53,7 +53,6 @@ int init(Grid &par){
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
     int wfc_num = par.ival("wfc_num");
-    int step_offset = par.ival("step_offset");
     bool write_file = par.bval("write_file");
     bool cyl_coord = par.bval("cyl_coord");
     bool corotating = par.bval("corotating");
@@ -73,15 +72,11 @@ int init(Grid &par){
     double gammaY = par.dval("gammaY"); //Aspect ratio of trapping geometry.
     double winding = par.dval("winding");
     double box_size = par.dval("box_size");
-    double *Energy;
     double *r;
     std::vector<double *> V_opt(wfc_num);
-    double *Energy_gpu;
     std::vector<cufftDoubleComplex *> wfc_array(wfc_num);
     if (par.bval("read_wfc") == true){
-        for (int i = 0; i < wfc_array.size(); ++i){
             wfc_array = par.d2svecval("wfc_array");
-        }
     }
     std::vector<cufftDoubleComplex *> EV_opt(wfc_num);
     cufftDoubleComplex *wfc_backup;
@@ -181,7 +176,6 @@ int init(Grid &par){
 
     /* Initialise wavefunction, momentum, position, angular momentum,
        imaginary and real-time evolution operators . */
-    Energy = (double*) malloc(sizeof(double) * gSize);
     r = (double *) malloc(sizeof(double) * gSize);
     for (int i = 0; i < wfc_array.size(); ++i){
         V_opt[i] = (double *) malloc(sizeof(double) * gSize);
@@ -250,106 +244,20 @@ int init(Grid &par){
     }
 
     if (write_file){
-        std::vector<double *> Bz(wfc_num);
-        std::vector<double *> Bx(wfc_num);
-        std::vector<double *> By(wfc_num);
-        if (dimnum == 2){
-            for (int i = 0; i < wfc_array.size(); ++i){
-                Bz[i] = curl2d(par, Ax[i], Ay[i]);
-            }
-        }
-        if (dimnum == 3){
-            std::cout << "Calculating the 3d curl..." << '\n';
-            for (int i = 0; i < wfc_array.size(); ++i){
-                Bx[i] = curl3d_x(par, Ax[i], Ay[i], Az[i]);
-                By[i] = curl3d_y(par, Ax[i], Ay[i], Az[i]);
-                Bz[i] = curl3d_z(par, Ax[i], Ay[i], Az[i]);
-            }
-            std::cout << "Finished calculating Curl" << '\n';
-        }
+        FileIO::init(par);
+
         std::cout << "writing initial variables to file..." << '\n';
-        //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
-        //hdfWriteDouble(xDim, V, 0, "V_0"); //HDF COMING SOON!
-        //hdfWriteComplex(xDim, wfc, 0, "wfc_0");
-        if (cyl_coord && dimnum > 2){
-            std::vector<double *> Br(wfc_num);
-            std::vector<double *> Bphi(wfc_num);
 
-            for (int i = 0; i < wfc_array.size(); ++i){
-                Br[i] = curl3d_r(par, Bx[i], By[i]);
-                Bphi[i] = curl3d_phi(par, Bx[i], By[i]);
+        FileIO::writeOutV(par, V, 0);
+        FileIO::writeOutK(par, K, 0);
 
-                FileIO::writeOutDouble(data_dir + "Br_" + std::to_string(i),
-                                       Br[i],gSize,step_offset);
-                FileIO::writeOutDouble(data_dir + "Bphi_" + std::to_string(i),
-                                       Bphi[i],gSize,step_offset);
-                FileIO::writeOutDouble(data_dir + "Bz_" + std::to_string(i),
-                                       Bz[i],gSize,step_offset);
+        FileIO::writeOutAx(par, Ax, 0);
+        FileIO::writeOutAy(par, Ay, 0);
+        FileIO::writeOutAz(par, Az, 0);
 
-                free(Br[i]);
-                free(Bx[i]);
-                free(By[i]);
-                free(Bz[i]);
-                free(Bphi[i]);
-            }
-        }
-        else{
-            if (dimnum > 1){
-                for (int i = 0; i < wfc_array.size(); ++i){
-                    FileIO::writeOutDouble(data_dir + "Bz_" + std::to_string(i),
-                                           Bz[i],gSize,step_offset);
-                    free(Bz[i]);
-                }
-            }
-            if (dimnum > 2){
-                for (int i = 0; i < wfc_array.size(); ++i){
-                    FileIO::writeOutDouble(data_dir + "Bx_"+std::to_string(i),
-                                           Bx[i],gSize,step_offset);
-                    FileIO::writeOutDouble(data_dir + "By_"+std::to_string(i),
-                                           By[i],gSize,step_offset);
-                    free(Bx[i]);
-                    free(By[i]);
-                }
-            }
-        }
-
-        for (int i = 0; i < wfc_array.size(); ++i){
-            FileIO::writeOutDouble(data_dir + "V_"+std::to_string(i),
-                                   V[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir + "K_"+std::to_string(i),
-                                   K[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir+"pAy_"+std::to_string(i),
-                                   pAy[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir+"pAx_"+std::to_string(i),
-                                   pAx[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir + "Ax_"+std::to_string(i),
-                                   Ax[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir + "Ay_"+std::to_string(i),
-                                   Ay[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir + "Az_"+std::to_string(i),
-                                   Az[i],gSize,step_offset);
-            FileIO::writeOutDouble(data_dir + "x",x,xDim,step_offset);
-            FileIO::writeOutDouble(data_dir + "y",y,yDim,step_offset);
-            FileIO::writeOutDouble(data_dir + "z",z,zDim,step_offset);
-            FileIO::writeOut(data_dir+"WFC_"+std::to_string(i),
-                             wfc_array[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "EpAz_"+std::to_string(i),
-                             EpAz[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "EpAy_"+std::to_string(i),
-                             EpAy[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "EpAx_"+std::to_string(i),
-                             EpAx[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "GK_"+std::to_string(i),
-                             GK[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "GV_"+std::to_string(i),
-                             GV[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "GpAx_"+std::to_string(i),
-                             GpAx[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "GpAy_"+std::to_string(i),
-                             GpAy[i],gSize,step_offset);
-            FileIO::writeOut(data_dir + "GpAz_"+std::to_string(i),
-                             GpAz[i],gSize,step_offset);
-        }
+        FileIO::writeOutX(x, 0);
+        FileIO::writeOutY(y, 0);
+        FileIO::writeOutZ(z, 0);
     }
 
     if (par.bval("read_wfc") == false){
@@ -374,19 +282,12 @@ int init(Grid &par){
     }
     cufftHandleError( cufftPlan3d(&plan_3d, xDim, yDim, zDim, CUFFT_Z2Z) );
 
-    //%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%//
-
-    //std::cout << GV[0].x << '\t' << GK[0].x << '\t'
-    //          << pAy[0] << '\t' << pAx[0] << '\n';
-
     //std::cout << "storing variables..." << '\n';
 
     // Storing variables that have been initialized
     // Re-establishing variables from parsed Grid class
     // Initializes uninitialized variables to 0 values
-    par.store("Energy", Energy);
     par.store("r", r);
-    par.store("Energy_gpu", Energy_gpu);
     par.store("wfc_array", wfc_array);
     par.store("EV_opt", EV_opt);
     par.store("V_opt", V_opt);
@@ -406,13 +307,12 @@ int init(Grid &par){
     par.store("Ay_time", false);
     par.store("Az_time", false);
 
-
     std::cout << "variables stored" << '\n';
 
     return 0;
 }
 
-void set_variables(Grid &par, bool ev_type){
+void set_variables(Grid &par){
     // Re-establishing variables from parsed Grid class
     // Note that 3d variables are set to nullptr's unless needed
     //      This might need to be fixed later
@@ -435,6 +335,7 @@ void set_variables(Grid &par, bool ev_type){
     int yDim = par.ival("yDim");
     int zDim = par.ival("zDim");
     int gsize = xDim;
+    int gstate = par.bval("gstate");
 
     // Special variables for the 3d case
     if (dimnum > 1){
@@ -474,7 +375,7 @@ void set_variables(Grid &par, bool ev_type){
         }
     }
 
-    if (ev_type == 0){
+    if (gstate){
         std::vector<double2 *> GK = par.d2svecval("GK");
         std::vector<double2 *> GV = par.d2svecval("GV");
         std::vector<double2 *> GpAx = par.d2svecval("GpAx");
@@ -538,7 +439,7 @@ void set_variables(Grid &par, bool ev_type){
             free(GpAx[i]); free(GpAz[i]);
         }
     }
-    else if (ev_type == 1){
+    else {
 
         std::vector<double2 *> EV = par.d2svecval("EV");
         std::vector<double2 *> EK = par.d2svecval("EK");
@@ -609,77 +510,3 @@ void set_variables(Grid &par, bool ev_type){
     }
 
 }
-
-int main(int argc, char **argv){
-
-    Grid par = parseArgs(argc,argv);
-
-    int device = par.ival("device");
-    int dimnum = par.ival("dimnum");
-    int wfc_num = par.ival("wfc_num");
-    cudaHandleError(cudaSetDevice(device));
-
-    time_t start,fin;
-    time(&start);
-    printf("Start: %s\n", ctime(&start));
-
-    //************************************************************//
-    /*
-    * Initialise the Params data structure to track params and variables
-    */
-    //************************************************************//
-
-    // If we want to read in a wfc, we may also need to imprint a phase. This
-    // will be done in the init_2d and init_3d functions
-    // We need a number of parameters for now
-    int xDim = par.ival("xDim");
-    int yDim = par.ival("yDim");
-    int zDim = par.ival("zDim");
-    if(par.bval("read_wfc") == true){
-
-        // Initializing the wfc
-        int gSize = xDim * yDim * zDim;
-        std::vector<double2 *> wfc_array(wfc_num);
-
-        std::string infile = par.sval("infile");
-        std::string infilei = par.sval("infilei");
-        printf("Loading wavefunction...");
-        wfc_array[0]=FileIO::readIn(infile,infilei,gSize);
-        par.store("wfc_array",wfc_array);
-        printf("Wavefunction loaded.\n");
-        //std::string data_dir = par.sval("data_dir");
-        //FileIO::writeOut(data_dir + "WFC_CHECK",wfc_array,gSize,step_offset);
-    }
-
-    init(par);
-
-    int gsteps = par.ival("gsteps");
-    int esteps = par.ival("esteps");
-    std::string data_dir = par.sval("data_dir");
-    std::cout << "variables re-established" << '\n';
-
-    if (par.bval("write_file")){
-        FileIO::writeOutParam(par, data_dir + "Params.dat");
-    }
-
-    if(gsteps > 0){
-        std::cout << "Imaginary-time evolution started..." << '\n';
-        set_variables(par, 0);
-
-        evolve(par, gsteps, 0);
-    }
-
-    if(esteps > 0){
-        std::cout << "real-time evolution started..." << '\n';
-        set_variables(par, 1);
-        evolve(par, esteps, 1);
-    }
-
-    std::cout << "done evolving" << '\n';
-    time(&fin);
-    printf("Finish: %s\n", ctime(&fin));
-    printf("Total time: %ld seconds\n ",(long)fin-start);
-    std::cout << '\n';
-    return 0;
-}
-

@@ -1,6 +1,6 @@
-#include "../include/parser.h"
-#include "../include/unit_test.h"
-#include "../include/operators.h"
+#include "parser.h"
+#include "unit_test.h"
+#include "operators.h"
 
 struct stat st = {0};
 
@@ -85,63 +85,11 @@ Grid parseArgs(int argc, char** argv){
     Grid par;
     int opt;
 
-    // Setting default values
-    par.store("xDim", 256);
-    par.store("yDim", 256);
-    par.store("zDim", 256);
-    par.store("omega", 0.0);
-    par.store("gammaY", 1.0);
-    par.store("gsteps", 1);
-    par.store("esteps", 1);
-    par.store("gdt", 1e-4);
-    par.store("dt", 1e-4);
-    par.store("device", 0);
-    par.store("atoms", 1);
-    par.store("read_wfc", false);
-    par.store("printSteps", 100);
-    par.store("winding", 0.0);
-    par.store("corotating", false);
-    par.store("gpe", false);
-    par.store("omegaZ", 6.283);
-    par.store("interaction",1.0);
-    par.store("laser_power",0.0);
-    par.store("angle_sweep",0.0);
-    par.store("kick_it", 0);
-    par.store("write_it", false);
-    par.store("x0_shift",0.0);
-    par.store("y0_shift",0.0);
-    par.store("z0_shift",0.0);
-    par.store("sepMinEpsilon",0.0);
-    par.store("graph", false);
-    par.store("unit_test",false);
-    par.store("omegaX", 6.283);
-    par.store("omegaY", 6.283);
-    par.store("data_dir", (std::string)"data/");
-    par.store("ramp", false);
-    par.store("ramp_type", 1);
-    par.store("dimnum", 2);
-    par.store("write_file", true);
-    par.store("fudge", 0.0);
-    par.store("kill_idx", -1);
-    par.store("mask_2d", 0.0);
-    par.store("box_size", -0.01);
-    par.store("found_sobel", false);
-    par.store("energy_calc", false);
-    par.store("energy_calc_steps", 0);
-    par.store("energy_calc_threshold", -1.0);
-    par.store("use_param_file", false);
-    par.store("param_file","param.cfg");
-    par.store("cyl_coord",false);
-    par.store("wfc_num",1);
-    par.store("step_offset",0);
+    // Set default fn types
     par.Afn = "rotation";
     par.Kfn = "rotation_K";
     par.Vfn = "2d";
     par.Wfcfn = "2d";
-    par.store("conv_type", (std::string)"FFT");
-    par.store("charge", 0);
-    par.store("flip", false);
-    par.store("thresh_const", 1.0);
 
     optind = 1;
 
@@ -242,13 +190,6 @@ Grid parseArgs(int argc, char** argv){
                 par.store("dt",(double)dt);
                 break;
             }
-            case 'o':
-            {
-                int step_offset = atoi(optarg);
-                printf("Argument for step offset is given as %d\n",step_offset);
-                par.store("step_offset",(int)step_offset);
-                break;
-            }
             case 'C':
             {
                 int device = atoi(optarg);
@@ -314,8 +255,8 @@ Grid parseArgs(int argc, char** argv){
             }
             case 'r':
             {
-                printf("Reading wavefunction from file.\n");
-                par.store("read_wfc",true);
+                printf("Reading data from file.\n");
+                par.store("read_file",true);
                 break;
             }
             case 'p':
@@ -391,17 +332,15 @@ Grid parseArgs(int argc, char** argv){
             }
             case 'h':
             {
-                std::string command = "src/print_help.sh ";
-                system(command.c_str());
-                exit(0);
+                std::string command = "src/utils/print_help.sh ";
+                exit(system(command.c_str()));
                 break;
             }
             case 'H':
             {
-                std::string command = "src/print_help.sh ";
+                std::string command = "src/utils/print_help.sh ";
                 command.append(optarg);
-                system(command.c_str());
-                exit(0);
+                exit(system(command.c_str()));
                 break;
             }
             case 'i':
@@ -528,7 +467,6 @@ Grid parseArgs(int argc, char** argv){
                 par.store("dimnum",(int)dimnum);
                 break;
             }
-
             // this case is special and may require reading input from a file
             // or from cin
             case 'A':
@@ -597,23 +535,9 @@ Grid parseArgs(int argc, char** argv){
         par.store("param_file", (std::string)param_file);
     }
 
-    if (par.bval("read_wfc")) {
-        std::string infile = filecheck(data_dir + "wfc_load");
-        std::string infilei = filecheck(data_dir + "wfci_load");
+    if (par.bval("read_file")) {
+        std::string infile = filecheck(data_dir + "data.h5");
         par.store("infile", infile);
-        par.store("infilei", infilei);
-    }
-
-    // If the file gauge field is chosen, we need to make sure the files exist
-    if (par.Afn.compare("file") == 0){
-        std::cout << "Finding file for Ax..." << '\n';
-        par.Axfile = filecheck(data_dir + "Axgauge");
-        std::cout << "Finding file for Ay..." << '\n';
-        par.Ayfile = filecheck(data_dir + "Aygauge");
-        if (dimnum == 3){
-            std::cout << "Finding file for Az..." << '\n';
-            par.Azfile = filecheck(data_dir + "Azgauge");
-        }
     }
 
     return par;

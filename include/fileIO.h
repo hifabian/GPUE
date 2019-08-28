@@ -19,6 +19,7 @@
 #define FILEIO_H
 #include "../include/ds.h"
 #include "../include/tracker.h"
+#include "../include/split_op.h"
 #include <vector>
 #include <string>
 
@@ -26,50 +27,149 @@
 namespace FileIO {
 
     /**
-    * @brief	Reads in the real and imaginary components from text files
-    * @ingroup	helper
-    *
-    * @param	*fileR Name of data file of real components
-    * @param	*fileI Name of data file of imaginary components
-    * @param	xDim Size of x-grid
-    * @param	yDim Size of y-grid
-    * @return	*double2 Memory address of read-in data. Complex only
-    */
-    double2 *readIn(std::string fileR, std::string fileI, int gSize);
+     * @brief Initialize the file output
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     */
+    void init(Grid &par);
 
     /**
-    * @brief	Writes the specified double2 array to a text file
-    * @ingroup	helper
-    *
-    * @param	*buffer Char buffer for use by function internals. char[100] usually
-    * @param	*file Name of data file name for saving to
-    * @param	*data double2 array to be written out
-    * @param	length Overall length of the file to write out
-    * @param	step Index for the filename. file_step,filei_step
-    */
-    void writeOut(std::string file, double2 *data, int length, int step);
+     * @brief Load data from file and continue simulation
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     */
+    void load(Grid &par);
 
-	/**
-    * @brief	Writes the specified double array to a text file
-    * @ingroup	helper
-    *
-    * @param	*file Name of data file name for saving to
-    * @param	*data double array to be written out
-    * @param	length Overall length of the file to write out
-    * @param	step Index for the filename. file_step
-    */
-    void writeOutDouble(std::string file, double *data, int length, int step);
+    /**
+     * @brief Load Ax, Ay, and Az from file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     */
+    void loadA(Grid &par);
 
-        /**
-    * @brief    Writes the specified double array to a text file
-    * @ingroup  helper
-    *
-    * @param    *file Name of data file name for saving to
-    * @param    *data bool array to be written out
-    * @param    length Overall length of the file to write out
-    * @param    step Index for the filename. file_step
-    */
-    void writeOutBool(std::string file, bool *data, int length, int step);
+    /**
+     * @brief Write current energy state to file as an attribute
+     * @ingroup helper
+     * 
+     * @param Grid class
+     * @param Data to write
+     * @param iteration number
+     */
+    void writeOutEnergy(Grid &par, std::vector<double> energy, int i);
+
+    /**
+     * @brief Write the wfc to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
+    void writeOutWfc(Grid &par, std::vector<double2 *> wfc, int i);
+
+    /**
+     * @brief Write V to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
+    void writeOutV(Grid &par, std::vector<double *> v, int i);
+
+    /**
+     * @brief Write K to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
+    void writeOutK(Grid &par, std::vector<double *> k, int i);
+
+    /**
+     * @brief Write the Edges found to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
+    void writeOutEdges(Grid &par, std::vector<double *> edges, int i);
+
+    /**
+     * @brief Write Ax to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
+    void writeOutAx(Grid &par, std::vector<double *> ax, int i);
+
+    /**
+     * @brief Write Ay to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
+    void writeOutAy(Grid &par, std::vector<double *> ay, int i);
+
+    /**
+     * @brief Write Az to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     * @param Data to write
+     * @param iteration number
+     */
+    void writeOutAz(Grid &par, std::vector<double *> az, int i);
+
+    /**
+     * @brief Write the scale in the x dimension to file
+     * @ingroup helper
+     * 
+     * @param Data to write
+     * @param iteration number
+     */
+    void writeOutX(double *x, int i);
+
+    /**
+     * @brief Write the scale in the y dimension to file 
+     * @ingroup helper
+     * 
+     * @param	Data to write
+     * @param iteration number
+     */
+    void writeOutY(double *y, int i);
+
+    /**
+     * @brief Write the scale in the z dimension to file
+     * @ingroup helper
+     * 
+     * @param Data to write
+     * @param iteration number
+     */
+    void writeOutZ(double *z, int i);
+
+    /**
+     * @brief Write the double, int, bool, and string params to file
+     * @ingroup helper
+     * 
+     * @param	Grid class
+     */
+    void writeOutParams(Grid &par);
+
+    /**
+     * @brief Delete created objects, deallocate memory, and close open files
+     * @ingroup helper
+     */
+    void destroy();
 
 	/**
     * @brief	Writes the specified int array to a text file
@@ -81,17 +181,6 @@ namespace FileIO {
     * @param	step Index for the filename. file_step
     */
     void writeOutInt(std::string file, int *data, int length, int step);
-
-	/**
-    * @brief	Writes the specified int2 array to a text file
-    * @ingroup	helper
-    *
-    * @param	*file Name of data file name for saving to
-    * @param	*data int2 array to be written out
-    * @param	length Overall length of the file to write out
-    * @param	step Index for the filename. file_step
-    */
-    void writeOutInt2(std::string file, int2 *data, int length, int step);
 
 	/**
     * @brief	Writes the specified Vtx::Vortex array to a text file
@@ -106,23 +195,7 @@ namespace FileIO {
                         int step);
 
 	/**
-    * @brief	Writes the parameter file
-    * @ingroup	helper
-    *
-    * @param	arr struct Array holding the parameter values to be written out
-    * @param	*file Name of data file name for saving to
-    */
-    void writeOutParam(Grid &par, std::string file);
-
-	/*
-	 * @brief	Opens and closes file. Nothing more. Nothing less.
-	 * @param	file Name of file to open
-	 * @return	int 0. That's all.
-	 */
-    int readState(std::string name);
-
-	/**
-    * @brief	Write adjacency matrix of ints to a file in Mathematica readable format
+    * @brief	Write adjacency matrix to a file in Mathematica readable format
     * @ingroup	graph
     *
     * @param	*file Name of data file name for saving to

@@ -1,9 +1,9 @@
 
-#include "../include/tracker.h"
-#include "../include/fileIO.h"
-#include "../include/minions.h"
-#include "../include/constants.h"
-#include "../include/vort.h"
+#include "tracker.h"
+#include "fileIO.h"
+#include "minions.h"
+#include "constants.h"
+#include "vort.h"
 
 /**
  *  Contains all the glorious info you need to track vortices and see what they are up to.

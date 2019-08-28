@@ -20,7 +20,6 @@
 #include <memory>
 #include <vector>
 #include <cuda.h>
-#include <cuda_runtime.h>
 #include <limits>
 #include <cmath>
 

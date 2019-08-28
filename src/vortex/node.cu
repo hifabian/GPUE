@@ -1,7 +1,7 @@
 
 //##############################################################################
 
-#include "../include/node.h"
+#include "node.h"
 #include <memory>
 #include <iostream>
 

@@ -1,17 +1,17 @@
-#include "../include/split_op.h"
-#include "../include/kernels.h"
-#include "../include/constants.h"
-#include "../include/fileIO.h"
-#include "../include/tracker.h"
-#include "../include/minions.h"
-#include "../include/parser.h"
+#include "split_op.h"
+#include "kernels.h"
+#include "constants.h"
+#include "fileIO.h"
+#include "tracker.h"
+#include "minions.h"
+#include "parser.h"
 
-#include "../include/lattice.h"
-#include "../include/node.h"
-#include "../include/edge.h"
-#include "../include/manip.h"
-#include "../include/vort.h"
-#include "../include/evolution.h"
+#include "lattice.h"
+#include "node.h"
+#include "edge.h"
+#include "manip.h"
+#include "vort.h"
+#include "evolution.h"
 #include <string>
 #include <iostream>
 
@@ -313,8 +313,6 @@ double energy_calc(Grid &par, double2* wfc){
 
         double2 *energy_l, *dwfc;
         std::vector<double *> A;
-        double *check;
-        check = (double *)malloc(sizeof(double)*10);
 
         cudaHandleError( cudaMalloc((void **) &energy_l, sizeof(double2)*gsize) );
         cudaHandleError( cudaMalloc((void **) &dwfc, sizeof(double2)*gsize) );

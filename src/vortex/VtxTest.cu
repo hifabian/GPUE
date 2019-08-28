@@ -4,7 +4,7 @@
 
 #define NUM_VORT 3
 
-#include "../include/vort.h"
+#include "vort.h"
 #include <iostream>
 #include <vector>
 #include <algorithm>

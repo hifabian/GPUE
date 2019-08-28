@@ -1,7 +1,8 @@
-#include "../include/operators.h"
-#include "../include/split_op.h"
-#include "../include/kernels.h"
-#include "../include/dynamic.h"
+#include "operators.h"
+#include "split_op.h"
+#include "fileIO.h"
+#include "kernels.h"
+#include "dynamic.h"
 
 void laplacian(Grid &par, double2 *data, double2* out, int xDim, int yDim,
                int zDim, double dx, double dy, double dz){
@@ -256,19 +257,6 @@ std::string filecheck(std::string filename){
     return filename;
 }
 
-// Function to read Ax from file.
-// Note that this comes with a special method in init...
-void file_A(std::string filename, double *A, double omega){
-    std::fstream infile(filename, std::ios_base::in);
-
-    double inval;
-    int count = 0;
-    while (infile >> inval){
-        A[count] = omega*inval;
-        count++;
-    }
-}
-
 /*----------------------------------------------------------------------------//
 * GPU KERNELS
 *-----------------------------------------------------------------------------*/
@@ -473,7 +461,6 @@ __global__ void simple_K(double *xp, double *yp, double *zp, double mass,
 
 // Function to generate game fields
 void generate_gauge(Grid &par){
-
     int gSize = par.ival("gSize");
     int dimnum = par.ival("dimnum");
     int wfc_num = par.ival("wfc_num");
@@ -507,55 +494,60 @@ void generate_gauge(Grid &par){
         cudaHandleError(cudaMalloc((void**) &Ax_gpu[w], sizeof(double)*gSize));
         cudaHandleError(cudaMalloc((void**) &Ay_gpu[w], sizeof(double)*gSize));
         cudaHandleError(cudaMalloc((void**) &Az_gpu[w], sizeof(double)*gSize));
-
-        if (par.Afn == "file"){
-            file_A(par.Axfile, Ax[w], omega);
-            cudaHandleError(cudaMemcpy(Ax_gpu[w], Ax[w], sizeof(double)*gSize,
-                            cudaMemcpyHostToDevice));
-
-            if (dimnum > 1){
-                file_A(par.Ayfile, Ay[w], omega);
-                cudaHandleError(cudaMemcpy(Ay_gpu[w],Ay[w],sizeof(double)*gSize,
-                                cudaMemcpyHostToDevice));
+        if (par.is_ast_gpu("Ax")){
+            double dx = par.dval("dx");
+            double dy = par.dval("dy");
+            double dz = par.dval("dz");
+            double xMax = par.dval("xMax");
+            double yMax = par.dval("yMax");
+            double zMax = 0;
+            if (dimnum == 3){ 
+                zMax = par.dval("zMax");
             }
 
-            if (dimnum == 3){
-                file_A(par.Azfile, Az[w], omega);
-                cudaHandleError(cudaMemcpy(Az_gpu[w],Az[w],sizeof(double)*gSize,
-                                cudaMemcpyHostToDevice));
-            }
+            EqnNode_gpu *eqn = par.astval("Ax");
 
-            std::cout << "finished reading Ax / Ay / Az from file" << '\n';
+            find_field<<<par.grid, par.threads>>>(Ax_gpu[w], dx, dy, dz, 
+                                                  xMax, yMax, zMax, 0, eqn);
+            cudaCheckError();
         }
         else{
-            if (par.is_ast_gpu("Ax")){
+            par.Ax_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
+                                                  xMax, yMax, zMax, 
+                                                  omegaX, omegaY, omegaZ, 
+                                                  omega, fudge, Ax_gpu[w]);
+            cudaCheckError();
+        }
+        if (par.is_ast_gpu("Ay")){
+            double dx = par.dval("dx");
+            double dy = par.dval("dy");
+            double dz = par.dval("dz");
+            double xMax = par.dval("xMax");
+            double yMax = par.dval("yMax");
+            double zMax = 0;
+            if (dimnum == 3){
+                zMax = par.dval("zMax");
+            }
+
+            EqnNode_gpu *eqn = par.astval("Ay");
+
+            find_field<<<par.grid, par.threads>>>(Ay_gpu[w], dx, dy, dz,
+                                                  xMax, yMax, zMax, 0, eqn);
+            cudaCheckError();
+        }
+        else{
+            par.Ay_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
+                                                  xMax, yMax, zMax, 
+                                                  omegaX, omegaY, omegaZ, 
+                                                  omega, fudge, Ay_gpu[w]);
+            cudaCheckError();
+        }
+        if (dimnum == 3){
+            if (par.is_ast_gpu("Az")){
                 double dx = par.dval("dx");
                 double dy = par.dval("dy");
                 double dz = par.dval("dz");
-                double xMax = par.dval("xMax");
-                double yMax = par.dval("yMax");
-                double zMax = 0;
-                if (dimnum == 3){ 
-                    zMax = par.dval("zMax");
-                }
 
-                EqnNode_gpu *eqn = par.astval("Ax");
-
-                find_field<<<par.grid, par.threads>>>(Ax_gpu[w], dx, dy, dz, 
-                                                      xMax, yMax, zMax, 0, eqn);
-                cudaCheckError();
-            }
-            else{
-                par.Ax_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
-                                                     xMax, yMax, zMax, 
-                                                     omegaX, omegaY, omegaZ, 
-                                                     omega, fudge, Ax_gpu[w]);
-                cudaCheckError();
-            }
-            if (par.is_ast_gpu("Ay")){
-                double dx = par.dval("dx");
-                double dy = par.dval("dy");
-                double dz = par.dval("dz");
                 double xMax = par.dval("xMax");
                 double yMax = par.dval("yMax");
                 double zMax = 0;
@@ -563,55 +555,28 @@ void generate_gauge(Grid &par){
                     zMax = par.dval("zMax");
                 }
 
-                EqnNode_gpu *eqn = par.astval("Ay");
+                EqnNode_gpu *eqn = par.astval("Az");
 
-                find_field<<<par.grid, par.threads>>>(Ay_gpu[w], dx, dy, dz,
-                                                      xMax, yMax, zMax, 0, eqn);
+                find_field<<<par.grid, par.threads>>>(Az_gpu[w], dx, dy, dz,
+                                                      xMax, yMax, zMax,  
+                                                      0, eqn);
                 cudaCheckError();
             }
             else{
-                par.Ay_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
-                                                     xMax, yMax, zMax, 
-                                                     omegaX, omegaY, omegaZ, 
-                                                     omega, fudge, Ay_gpu[w]);
+                par.Az_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
+                                                      xMax, yMax, zMax, 
+                                                      omegaX, omegaY,
+                                                      omegaZ, omega, fudge,
+                                                      Az_gpu[w]);
                 cudaCheckError();
             }
-            if (dimnum == 3){
-                if (par.is_ast_gpu("Az")){
-                    double dx = par.dval("dx");
-                    double dy = par.dval("dy");
-                    double dz = par.dval("dz");
-
-                    double xMax = par.dval("xMax");
-                    double yMax = par.dval("yMax");
-                    double zMax = 0;
-                    if (dimnum == 3){
-                        zMax = par.dval("zMax");
-                    }
-
-                    EqnNode_gpu *eqn = par.astval("Az");
-
-                    find_field<<<par.grid, par.threads>>>(Az_gpu[w], dx, dy, dz,
-                                                          xMax, yMax, zMax,  
-                                                          0, eqn);
-                    cudaCheckError();
-                }
-                else{
-                    par.Az_fn<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
-                                                         xMax, yMax, zMax, 
-                                                         omegaX, omegaY,
-                                                         omegaZ, omega, fudge,
-                                                         Az_gpu[w]);
-                    cudaCheckError();
-                }
-            }
-            else{
-                kconstant_A<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
-                                                       xMax, yMax, zMax, 
-                                                       omegaX, omegaY, omegaZ, 
-                                                       omega, fudge, Az_gpu[w]);
-                cudaCheckError();
-            }
+        }
+        else{
+            kconstant_A<<<par.grid, par.threads>>>(x_gpu, y_gpu, z_gpu, 
+                                                    xMax, yMax, zMax, 
+                                                    omegaX, omegaY, omegaZ, 
+                                                    omega, fudge, Az_gpu[w]);
+            cudaCheckError();
         }
         cudaHandleError(cudaMemcpy(Ax[w], Ax_gpu[w],
                    sizeof(double)*gSize,cudaMemcpyDeviceToHost));
@@ -738,8 +703,11 @@ void generate_fields(Grid &par){
     generate_p_space(par);
     generate_K(par);
     std::cout << "generating gauge fields...\n";
-    generate_gauge(par);
-
+    if (par.bval("read_a")) {
+        FileIO::loadA(par);
+    } else {
+        generate_gauge(par);
+    }
 
     int gSize = par.ival("gSize");
     int dimnum = par.ival("dimnum");
@@ -939,7 +907,7 @@ void generate_fields(Grid &par){
                                               EpAx_gpu[w], EpAy_gpu[w],
                                               EpAz_gpu[w]);
         cudaCheckError();
-    
+
         cudaHandleError(cudaMemcpy(GV[w], GV_gpu[w], sizeof(double2)*gSize,
                         cudaMemcpyDeviceToHost));
         cudaHandleError(cudaMemcpy(EV[w], EV_gpu[w], sizeof(double2)*gSize,

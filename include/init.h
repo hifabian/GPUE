@@ -57,9 +57,8 @@ int init(Grid &par);
  * @brief	Sets variables for either real or imaginary time evolution
  * @ingroup	data
  * @param	Grid class
- * @param	ev_type boolean (0 for imaginary-time, 1 for real-time)
  */
-void set_variables(Grid &par, bool ev_type);
+void set_variables(Grid &par);
 
 
 #endif

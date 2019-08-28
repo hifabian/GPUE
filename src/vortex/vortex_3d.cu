@@ -10,10 +10,10 @@
 *-----------------------------------------------------------------------------*/
 
 #include <algorithm>
-#include "../include/ds.h"
-#include "../include/vortex_3d.h"
-#include "../include/split_op.h"
-#include "../include/kernels.h"
+#include "ds.h"
+#include "vortex_3d.h"
+#include "split_op.h"
+#include "kernels.h"
 
 //We will need a few functions to deal with vortex skeletons
 pos **find_skeletons(double* edges);

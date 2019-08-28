@@ -4,14 +4,15 @@
 
 #define NUM_VORT 3
 
-#include "../include/lattice.h"
-#include "../include/node.h"
-#include "../include/edge.h"
+#include "lattice.h"
+#include "node.h"
+#include "edge.h"
 #include <iostream>
 #include <vector>
 #include <algorithm>
 #include <iterator>
 #include <algorithm>
+#include "tracker.h"
 
 using namespace LatticeGraph;
 unsigned int Edge::suid = 0;

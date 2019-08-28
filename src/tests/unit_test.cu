@@ -1,10 +1,10 @@
-#include "../include/ds.h"
-#include "../include/unit_test.h"
-#include "../include/parser.h"
-#include "../include/evolution.h"
-#include "../include/init.h"
-#include "../include/dynamic.h"
-#include "../include/vortex_3d.h"
+#include "ds.h"
+#include "unit_test.h"
+#include "parser.h"
+#include "evolution.h"
+#include "init.h"
+#include "dynamic.h"
+#include "vortex_3d.h"
 #include <string.h>
 #include <assert.h>
 #include <cufft.h>
@@ -114,6 +114,8 @@ void test_all(){
     evolve_test();
 
     check_memory_test();
+
+    FileIO::destroy(); // Close file in case we were writing data
 
     std::cout << "All tests completed. GPUE passed." << '\n';
 }
@@ -849,7 +851,6 @@ void parSum_test(){
 
     // For now, we will assume an 64x64 array for summing
     dim3 threads(16, 1, 1);
-    int total_threads = threads.x*threads.y*threads.z;
 
     double dx = 0.1;
     double dy = 0.1;
@@ -873,10 +874,8 @@ void parSum_test(){
     par.grid = grid;
 
     // now we need to initialize the wfc to all 1's;
-    double2 *wfc_array, *host_sum;
+    double2 *wfc_array;
     wfc_array = (cufftDoubleComplex *)malloc(sizeof(cufftDoubleComplex)*gsize);
-    host_sum = (cufftDoubleComplex *) 
-               malloc(sizeof(cufftDoubleComplex) * gsize / total_threads);
 
     // init wfc
     for (int i = 0; i < gsize; i++){
@@ -1249,17 +1248,19 @@ void evolve_test(){
         init(par);
 
         if (par.bval("write_file")){
-            FileIO::writeOutParam(par, "data/Params.dat");
+            FileIO::writeOutParams(par);
         }
 
         double omegaX = par.dval("omegaX");
-        set_variables(par, 0);
+        par.store("gstate", true);
+        par.store("g_i", 0);
+        set_variables(par);
 
         // Evolve and find the energy
-        evolve(par, gsteps, 0);
+        evolve(par, gsteps);
 
         // Check that the energy is correct
-        double energy = par.dval("energy");
+        double energy = par.dvecval("energy").back();
         double energy_check = 0;
         energy_check = (double)i * 0.5 * HBAR * omegaX;
 
@@ -1270,9 +1271,11 @@ void evolve_test(){
         }
 
         // Run in real time to make sure that the energy is constant
-        set_variables(par, 1);
-        evolve(par, esteps, 1);
-        double energy_ev = par.dval("energy");
+        par.store("gstate", false);
+        par.store("e_i", 0);
+        set_variables(par);
+        evolve(par, esteps);
+        double energy_ev = par.dvecval("energy").back();
 
         if (abs(energy - energy_ev) > thresh*energy_check){
             std::cout << "Energy is not constant in real-time for " 
@@ -1283,13 +1286,14 @@ void evolve_test(){
     
 }
 
-__global__ void make_complex_kernel(double *in, int *evolution_type, 
+__global__ void make_complex_kernel(double *in, int *type, 
                                     double2 *out){
-
-    //int id = threadIdx.x + blockIdx.x*blockDim.x;
-    //out[id] = make_complex(in[id], evolution_type[id]);
     for (int i = 0; i < 3; ++i){
-        out[i] = make_complex(in[i], evolution_type[i]);
+        if (type[i] == 0) {
+            out[i] = make_complex(in[i], false, true);
+        } else {
+            out[i] = make_complex(in[i], !(bool)(type[i] - 1), false);
+        }
     }
 }
 
