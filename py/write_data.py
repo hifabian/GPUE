@@ -1,39 +1,28 @@
 import h5py
 import numpy as np
 
-def write_wfc(data_im, data_real, xDim, yDim, zDim, gstate,
-              wfc_idx, i, output_filename="../data/input.h5"):
-    f = h5py.File(output_filename, "w")
-    lines_real = np.loadtxt(data_real)
-    lines_im = np.loadtxt(data_im)
-    print(len(lines_real))
-    wfc_real = np.reshape(lines_real, (xDim,yDim,zDim));
-    wfc_im = np.reshape(lines_im, (xDim,yDim, zDim));
-    wfc = wfc_real + 1j * wfc_im
+def write_var(shape, h5path, filename_real, filename_imag=None, filename_output="../data/input.h5"):
+    var = np.loadtxt(filename_real)
+    var = np.reshape(var, shape)
+    if (filename_imag is not None):
+        var_im = np.loadtxt(filename_imag)
+        var_im = np.reshape(var_im, shape)
+        var += var_im * 1j
 
-    f["/WFC/{}/{}".format("CONST" if gstate else "EV", i)] = wfc
+    f = h5py.File(filename_output, "w")
+    f[h5path] = var
+    f.close()
 
-def write_gauge(input_ax, input_ay, input_az, xDim, yDim, zDim, gstate,
-                wfc_idx, i, output_filename="../data/input.h5"):
-    f = h5py.File(output_filename, "w")
-    lines_ax = np.loadtxt(input_ax)
-    lines_ay = np.loadtxt(input_ay)
-    lines_az = np.loadtxt(input_az)
-    gauge_ax = np.reshape(lines_ax, (xDim,yDim,zDim));
-    gauge_ay = np.reshape(lines_ay, (xDim,yDim,zDim));
-    gauge_az = np.reshape(lines_az, (xDim,yDim,zDim));
+def write_wfc(shape, gstate, i, data_real, data_im, filename_output="../data/input.h5"):
+    dset_name = "/WFC/{}/{}".format("CONST" if gstate else "EV", i)
+    write_var(shape, dset_name, data_real, data_im, filename_output)
 
-    f["/A/AX/0"] = gauge_ax
-    f["/A/AY/0"] = gauge_ay
-    f["/A/AZ/0"] = gauge_az
+def write_gauge(shape, data_ax, data_ay, data_ay, filename_output="../data/input.h5"):
+    write_var(shape, "/A/AX/0", data_ax, None, filename_output)
+    write_var(shape, "/A/AY/0", data_ay, None, filename_output)
+    write_var(shape, "/A/AZ/0", data_az, None, filename_output)
 
-
-#write_wfc("../data_2D_example/wfc_evi_0", "../data_2D_example/wfc_ev_0",
-#          512, 512, 1, False, 0, 0,
-#          output_filename="../data_2D_example/input.h5")
-write_gauge("/media/james/ExtraDrive1/GPUE/data_5/Ax_0",
-            "/media/james/ExtraDrive1/GPUE/data_5/Ay_0",
-            "/media/james/ExtraDrive1/GPUE/data_5/Az_0",
-            256, 256, 256, False, 0, 0,
-            output_filename="../data_5/output.h5")
+# write_wfc((512, 512, 1), False, 0
+#           "../data_2D_example/wfc_ev_0", "../data_2D_example/wfc_evi_0",
+#           "../data_2D_example/input.h5")
 
