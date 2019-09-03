@@ -1116,17 +1116,17 @@ __global__ void aux_fields(double *V, double *K, double gdt, double dt,
     GpAz[gid].x = exp(-pAz[gid]*gdt);
     GpAz[gid].y = 0;
 
-    EV[gid].x=cos(V[gid]*(dt/(2*HBAR)));
-    EV[gid].y=sin(V[gid]*(dt/(2*HBAR)));
-    EK[gid].x=cos(K[gid]*(dt/HBAR));
-    EK[gid].y=sin(K[gid]*(dt/HBAR));
+    EV[gid].x=cos(-V[gid]*(dt/(2*HBAR)));
+    EV[gid].y=sin(-V[gid]*(dt/(2*HBAR)));
+    EK[gid].x=cos(-K[gid]*(dt/HBAR));
+    EK[gid].y=sin(-K[gid]*(dt/HBAR));
 
-    EpAz[gid].x=cos(pAz[gid]*dt);
-    EpAz[gid].y=sin(pAz[gid]*dt);
-    EpAy[gid].x=cos(pAy[gid]*dt);
-    EpAy[gid].y=sin(pAy[gid]*dt);
-    EpAx[gid].x=cos(pAx[gid]*dt);
-    EpAx[gid].y=sin(pAx[gid]*dt);
+    EpAz[gid].x=cos(-pAz[gid]*dt);
+    EpAz[gid].y=sin(-pAz[gid]*dt);
+    EpAy[gid].x=cos(-pAy[gid]*dt);
+    EpAy[gid].y=sin(-pAy[gid]*dt);
+    EpAx[gid].x=cos(-pAx[gid]*dt);
+    EpAx[gid].y=sin(-pAx[gid]*dt);
 }
 
 // Function to generate grids and treads for 2d and 3d cases
