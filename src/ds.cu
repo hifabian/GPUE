@@ -45,11 +45,11 @@ void generate_plan_other3d(cufftHandle *plan_fft1d, Grid &par, int axis){
     else if (axis == 1){
         int batch = yDim;
         int rank = 1;
-        int n[] = {xDim, yDim};
+        int n[] = {yDim};
         int idist = 1;
         int odist = 1;
-        int inembed[] = {xDim, yDim};
-        int onembed[] = {xDim, yDim};
+        int inembed[] = {0};
+        int onembed[] = {0};
         int istride = yDim;
         int ostride = yDim;
     
@@ -64,11 +64,11 @@ void generate_plan_other3d(cufftHandle *plan_fft1d, Grid &par, int axis){
 
         int batch = xDim*yDim;
         int rank = 1;
-        int n[] = {xDim, yDim, zDim};
+        int n[] = {zDim};
         int idist = 1;
         int odist = 1;
-        int inembed[] = {xDim, yDim, zDim};
-        int onembed[] = {xDim, yDim, zDim};
+        int inembed[] = {0};
+        int onembed[] = {0};
         int istride = xDim*yDim;
         int ostride = xDim*yDim;
     
