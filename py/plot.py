@@ -7,7 +7,7 @@ from load_data import getWfc
 
 parser = ArgumentParser(description="Plot GPUE output data")
 
-parser.add_argument("-f", default="../data/output.h5",
+parser.add_argument("-f", default="../data/data.h5",
                     help="Location of the data file, relative to the py/ folder")
 
 parser.add_argument("-r", nargs=3, type=int, default=[
@@ -77,8 +77,4 @@ opts = {
     "wfc_phase_ev": (False, phase)
 }
 
-try:
-    plot(*opts[args.i])
-except KeyError:
-    
-
+plot(*opts[args.i])

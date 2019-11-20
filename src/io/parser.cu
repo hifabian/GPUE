@@ -94,7 +94,7 @@ Grid parseArgs(int argc, char** argv){
     optind = 1;
 
     while ((opt = getopt (argc, argv, 
-           "b:d:D:C:x:y:w:m:G:g:e:T:t:n:p:rQ:L:E::lsi:P:X:Y:O:k:WU:V:S:ahz:H:uA:v:Z:fc:F:K:R:q:I:j:JN:;")) !=-1)
+           "b:d:D:C:x:y:w:m:G:g:e:T:t:n:p:rQ:L:E::l::si:P:X:Y:O:k:WU:V:S:ahz:H:uA:v:Z:fc:F:K:R:q:I:j:JN:;")) !=-1)
     {
         switch (opt)
         {
@@ -275,8 +275,24 @@ Grid parseArgs(int argc, char** argv){
             }
             case 'l':
             {
-                printf("Angular momentum mode engaged\n");
-                par.store("corotating",true);
+                if (optind >= argc || argv[optind][0] == '-') {
+                    printf("Angular momentum mode engaged\n");
+                    par.store("corotating_override",false);
+                    par.store("corotating",true);
+                }
+                else{
+                    std::string rot_flag = argv[optind];
+                    if (rot_flag == "false"){
+                        printf("Angular momentum mode dis-engaged\n");
+                        par.store("corotating_override",true);
+                        par.store("corotating",false);
+                    }
+                    else{
+                        printf("Angular momentum mode engaged\n");
+                        par.store("corotating_override",false);
+                        par.store("corotating",true);
+                    }
+                }
                 break;
             }
             case 'E':

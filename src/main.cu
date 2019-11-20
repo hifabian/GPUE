@@ -31,6 +31,11 @@ int main(int argc, char **argv){
         FileIO::load(par);
     }
 
+    if(par.bval("corotating_override")){
+        std::cout << "Overriding rotational flag set by file\n";
+        par.store("corotating", false);
+    }
+
     init(par);
 
     int gsteps = par.ival("gsteps");
