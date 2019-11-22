@@ -9,7 +9,7 @@ def getVar(path, filename="../data/data.h5"):
     if (dset.dtype.name == "void128"):
         return dset["re"] + (dset["im"] * 1j)
     else:
-        return dset.value
+        return dset[()]
 
 
 # Get a numpy array for the wfc_idx-th wave function at iteration i
@@ -20,7 +20,7 @@ def getWfc(gstate, wfc_idx, i, filename="../data/data.h5"):
 
     # Convert to complex by indexing on real and imaginary partitions
     # And access [wfc_idx] to get the correct shape
-    return (dset["re"] + (dset["im"]) * 1j)[wfc_idx]
+    return (dset[("re")] + (dset[("im")]) * 1j)[wfc_idx]
 
 
 # Get the collection of attributes

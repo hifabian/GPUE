@@ -488,6 +488,9 @@ Grid parseArgs(int argc, char** argv){
             case 'A':
             {
                 std::string field = optarg;
+                if (field == "file"){
+                    par.store("read_a", true);
+                }
                 std::cout << "Chosen gauge field is: " << field << '\n';
                 par.Afn = field;
                 break;

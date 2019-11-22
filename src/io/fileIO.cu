@@ -276,6 +276,7 @@ namespace FileIO{
         if (FileIO::output->exists(ax_name)) {
             par.store("read_a", true);
         } else {
+            std::cout << "No gauge field found in file!\n";
             return;
         }
 

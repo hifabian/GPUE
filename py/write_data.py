@@ -1,7 +1,7 @@
 import h5py
 import numpy as np
 
-h5py.get_config().complex_names = ("re", "im")
+#h5py.get_config().complex_names = ("re", "im")
 
 def write_var(shape, h5path, filename_real, filename_imag=None, filename_output="../data/input.h5"):
     var = np.loadtxt(filename_real)
@@ -23,8 +23,4 @@ def write_gauge(shape, data_ax, data_ay, data_az, filename_output="../data/input
     write_var(shape, "/A/AX/0", data_ax, None, filename_output)
     write_var(shape, "/A/AY/0", data_ay, None, filename_output)
     write_var(shape, "/A/AZ/0", data_az, None, filename_output)
-
-if __name__ == "__main__":
-    # write_gauge((2,2,2), "../data/ax_re.txt", "../data/ay_re.txt", "../data/az_re.txt")
-    write_wfc((4,4), True, 1234, "../data/wfc_re.txt", "../data/wfc_im.txt")
 
