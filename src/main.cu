@@ -63,6 +63,9 @@ int main(int argc, char **argv){
         evolve(par, esteps);
     }
 
+    par.store("found_sobel",false);
+    FileIO::writeOutParams(par);
+
     // Close the output file
     FileIO::destroy();
 
