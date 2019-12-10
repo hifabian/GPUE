@@ -1041,10 +1041,7 @@ __global__ void ktorus_V(double *x, double *y, double *z, double* items,
     double omegaR = (items[3]*items[3] + items[4]*items[4]);
     double V_tot = (2*items[5]*items[5]*(z[zid] - items[8])*(z[zid] - items[8])
                     + omegaR*(rad*rad + items[12]*rad*z[zid]));
-    V[gid] = 0.5*items[9]*(V_tot
-                           + Ax[gid]*Ax[gid]
-                           + Ay[gid]*Ay[gid]
-                           + Az[gid]*Az[gid]);
+    V[gid] = 0.5*items[9]*(V_tot);
 }
 
 __global__ void kstd_wfc(double *x, double *y, double *z, double *items,
