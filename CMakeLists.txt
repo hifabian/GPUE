@@ -1,6 +1,6 @@
 ################################################################################
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.17)
 set(GPUE_TEXT "
     ▄▄▄▄   ▄▄▄▄▄▄    ▄▄    ▄▄  ▄▄▄▄▄▄▄▄ 
   ██▀▀▀▀█  ██▀▀▀▀█▄  ██    ██  ██▀▀▀▀▀▀ 
@@ -33,13 +33,13 @@ if (POLICY CMP0074)
 endif ()
 
 # Install and find HDF5
-execute_process(WORKING_DIRECTORY ./bin/
+execute_process(WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/bin/
                 COMMAND bash install_hdf5.sh
                 COMMAND tee /dev/tty
                 COMMAND tail -n 1
                 OUTPUT_VARIABLE _HDF5_ROOT)
 
-set(ENV{HDF5_ROOT} "./bin/CMake-hdf5-1.10.5/hdf5-1.10.5/")
+set(ENV{HDF5_ROOT} "${PROJECT_SOURCE_DIR}/bin/CMake-hdf5-1.10.5/hdf5-1.10.5/")
 message("HDF5_ROOT: $ENV{HDF5_ROOT}")
 
 find_package(HDF5 COMPONENTS CXX REQUIRED)
@@ -52,9 +52,10 @@ include_directories( ${HDF5_INCLUDE_DIRS}
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # Enable RDC and passing build flags to underlying compiler
-set(CMAKE_CUDA_FLAGS "-rdc=true -std=c++11")
+set(CMAKE_CUDA_FLAGS "-rdc=true -std=c++11 --compiler-options -fPIC") 
 
-find_package(CUDA REQUIRED)
+find_package(CUDAToolkit)
+
 add_subdirectory(src)
 
 ################################################################################
@@ -65,23 +66,28 @@ set(LIBS
     $<TARGET_OBJECTS:gpue_simulator>
     $<TARGET_OBJECTS:gpue_tests>)
 
-if(false)
-# libgpue.so
-add_library(gpue SHARED ${LIBS})
-target_link_libraries(gpue 
-    ${CUDA_LIBRARIES} 
-    ${CUDA_CUFFT_LIBRARIES}
-    ${HDF5_CXX_LIBRARIES}
-)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+option(BUILD_SHARED_LIB "Build libgpue.so" OFF)
+if(${BUILD_SHARED_LIB})
+    add_library(gpue SHARED ${LIBS})
+    target_link_libraries(gpue 
+        CUDA::cufft
+        CUDA::cudart
+        ${HDF5_CXX_LIBRARIES}
+    )
+    set_target_properties(gpue PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 endif()
 
 # gpue
-add_executable(gpue-exe ${CMAKE_SOURCE_DIR}/src/main.cu ${LIBS})
-target_link_libraries(gpue-exe 
-    ${CUDA_LIBRARIES}
-    ${CUDA_CUFFT_LIBRARIES}
-    ${HDF5_CXX_LIBRARIES}
-)
-
-set_target_properties(gpue-exe PROPERTIES OUTPUT_NAME gpue)
-set_target_properties(gpue-exe PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+option(BUILD_BIN "Build gpue bninary" ON)
+if(${BUILD_BIN})
+    add_executable(gpue-exe ${CMAKE_SOURCE_DIR}/src/main.cu ${LIBS})
+    target_link_libraries(gpue-exe 
+        CUDA::cufft
+        CUDA::cudart
+        ${HDF5_CXX_LIBRARIES}
+    )
+    set_target_properties(gpue-exe PROPERTIES OUTPUT_NAME gpue)
+    set_target_properties(gpue-exe PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+endif()
