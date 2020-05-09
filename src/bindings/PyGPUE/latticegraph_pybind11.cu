@@ -23,7 +23,7 @@ template <class T>
 void vortex_binding(py::module &m){
     py::class_<T>(m, "Vortex")
         .def(py::init<>())
-        .def(int2, double2, int, bool, std::size_t>())
+        .def(py::init<int2, double2, int, bool, std::size_t>())
         .def("updateUID", &T::updateUID)
         .def("updateWinding", &T::updateWinding)
         .def("updateIsOn", &T::updateIsOn)
@@ -42,7 +42,7 @@ template <class T>
 void vtxlist_binding(py::module &m){
     py::class_<T>(m, "VtxList")
         .def(py::init<>())
-        .def(std::size_t>())
+        .def(py::init<std::size_t>())
         .def("addVtx", py::overload_cast<std::shared_ptr<Vortex>>(&T::addVtx), "")
         .def("addVtx", py::overload_cast<std::shared_ptr<Vortex>,std::size_t>(&T::addVtx), "")
         .def("removeVtx", &T::removeVtx)
@@ -54,32 +54,32 @@ void vtxlist_binding(py::module &m){
         .def("getVtxMinDist", &T::getVtxMinDist)
         .def("swapUid", &T::swapUid)
         .def("swapUid_Idx", &T::swapUid_Idx)
-        .def("vortOff", &T::vortOff)
         .def("sortVtxUID", &T::sortVtxUID)
         .def("arrangeVtx", &T::arrangeVtx)
         .def("setUIDs", &T::setUIDs)
         .def("minDistPair", &T::minDistPair);
+        //.def("vortOff", &T::vortOff) //to be defined
 }
 
 template <class T>
 void node_binding(py::module &m){
     py::class_<T>(m, "Node")
         .def(py::init<>())
-        .def(py::init<Vortex>())
+        .def(py::init<Vortex&>())
         .def("getUid", &T::getUid)
-        .def("getSuid", &T::getSuid)
         .def("getData", &T::getData)
         .def("getEdges", &T::getEdges)
         .def("getEdge", &T::getEdge)
         .def("getConnectedNode", &T::getConnectedNode)
-        .def("getConnectedNodes", &T::getConnectedNodes)
         .def("setData", &T::setData)
         .def("addEdge", &T::addEdge)
-        .def("removeEdge", &T::removeEdge)
+        .def("removeEdge", py::overload_cast<std::shared_ptr<Node>>(&T::removeEdge), "")
+        .def("removeEdge", py::overload_cast<std::weak_ptr<Edge>>(&T::removeEdge), "")
         .def("removeEdgeUid", &T::removeEdgeUid)
         .def("removeEdgeIdx", &T::removeEdgeIdx)
-        .def("removeEdge", &T::removeEdge)
         .def("removeEdges", &T::removeEdges);
+        //.def("getSuid", &T::getSuid)
+        //.def("getConnectedNodes", &T::getConnectedNodes) //to be defined
 }
 
 template <class T>
@@ -89,13 +89,13 @@ void edge_binding(py::module &m){
         .def(py::init<std::weak_ptr<Node>, std::weak_ptr<Node> >())
         .def(py::init<std::weak_ptr<Node>, std::weak_ptr<Node>, int, double >())
         .def("getUid", &T::getUid)
-        .def("setUid", &T::setUid)
         .def("getDirection", &T::getDirection)
         .def("getVortex", &T::getVortex)
         .def("setDirection", &T::setDirection)
         .def("setWeight", &T::setWeight)
         .def("updateVortex", &T::updateVortex)
         .def("isMember", &T::isMember);
+        //.def("getSuid", &T::getSuid)
 }
 
 template <class T>
@@ -116,7 +116,7 @@ void lattice_binding(py::module &m){
         .def("setEdge", &T::setEdge)
         .def("addVortex", &T::addVortex)
         .def("addEdge", py::overload_cast<std::shared_ptr<Edge>>(&T::addEdge), "")
-        .def("addEdge", py::overload_cast<std::shared_ptr<Node>,std::shared_ptr<Node>>(&T::addEdge), "")
+        //.def("addEdge", py::overload_cast<std::shared_ptr<Node>,std::shared_ptr<Node>>(&T::addEdge), "")
         .def("addEdge", py::overload_cast<std::shared_ptr<Edge>,std::shared_ptr<Node>,std::shared_ptr<Node>>(&T::addEdge), "")
         .def("removeVortex", &T::removeVortex)
         .def("removeVortexIdx", &T::removeVortexIdx)
