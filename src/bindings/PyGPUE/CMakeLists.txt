@@ -29,6 +29,17 @@ if(${ENABLE_PYTHON})
         CUDA_SEPARABLE_COMPILATION ON
     )
 
+    add_library(_PyGPUE_SIM SHARED simulator_pybind11.cu)
+    target_link_libraries(_PyGPUE_SIM PRIVATE pybind11::module gpue CUDA::cufft CUDA::cudart ${HDF5_CXX_LIBRARIES})
+    set_target_properties(_PyGPUE_SIM PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
+    set_target_properties(_PyGPUE_SIM PROPERTIES COMPILE_FLAGS "-dc")
+    set_target_properties(_PyGPUE_SIM PROPERTIES 
+        POSITION_INDEPENDENT_CODE ON
+        CUDA_VISIBILITY_PRESET "hidden"
+        CUDA_SEPARABLE_COMPILATION ON
+    )
+
+
     #Ensure the Python module init and install files are copied to build directory
     configure_file(__init__.py ${CMAKE_CURRENT_BINARY_DIR}/__init__.py)
 endif()

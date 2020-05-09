@@ -58,7 +58,6 @@ void eqnnode_gpu_binding(py::module &m){
 void grid_binding(py::module &m){
     py::class_<Grid>(m, "Grid")
         .def(py::init<>())
-        .def(py::init<std::size_t>())
         .def("store", py::overload_cast<std::string, cufftDoubleComplex*>(&Grid::store), "")
         .def("store", py::overload_cast<std::string, int>(&Grid::store), "")
         .def("store", py::overload_cast<std::string, double>(&Grid::store), "")
@@ -72,7 +71,7 @@ void grid_binding(py::module &m){
         .def("store_new", py::overload_cast<std::string, int>(&Grid::store), "")
         .def("store_new", py::overload_cast<std::string, double>(&Grid::store), "")
         .def("store_new", py::overload_cast<std::string, bool>(&Grid::store), "")
-        .def("store_new", py::overload_cast<std::string, std:string>(&Grid::store), "")
+        .def("store_new", py::overload_cast<std::string, std::string>(&Grid::store), "")
         .def("ival_default", &Grid::ival_default)
         .def("dval_default", &Grid::dval_default)
         .def("bval_default", &Grid::bval_default)
@@ -137,7 +136,7 @@ void freefunc_binding(py::module &m){
     m.def("parse_eqn", &parse_eqn);
     m.def("find_element_num", &find_element_num);
     m.def("tree_to_array", &tree_to_array);
-    m.def("allocate_equation", &allocate_equation);
+    //m.def("allocate_equation", &allocate_equation);i //undefined
     m.def("parse_param_file", &parse_param_file);
 
     // manip.h
@@ -180,7 +179,7 @@ void freefunc_binding(py::module &m){
     m.def("curl3d_r", &curl3d_r, py::return_value_policy::reference);
     m.def("curl3d_phi", &curl3d_phi, py::return_value_policy::reference);
     m.def("filecheck", &filecheck);
-    m.def("file_A", &file_A);
+    //m.def("file_A", &file_A); //undefined
     m.def("generate_p_space", &generate_p_space);
     m.def("generate_K", &generate_K);
     m.def("generate_gauge",generate_gauge);
@@ -191,12 +190,12 @@ void freefunc_binding(py::module &m){
     m.def("gpuReduce", &gpuReduce);
     m.def("parSum", &parSum);
     m.def("optLatSetup", &optLatSetup);
-    m.def("energy_calc", &energy_calc)
+    m.def("energy_calc", &energy_calc);
 }
 
 // ############# Create binding module ################### //
 
-PYBIND11_MODULE(_PyGPUE_LG, m){
+PYBIND11_MODULE(_PyGPUE_SIM, m){
     pos_binding(m);
     eqnnode_binding(m);
     eqnnode_gpu_binding(m);
