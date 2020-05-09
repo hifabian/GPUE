@@ -74,6 +74,13 @@ option(BUILD_BIN "Build gpue binary" ON)
 
 if(${ENABLE_PYTHON})
     set(BUILD_SHARED_LIB ON)
+    find_package (Python COMPONENTS Interpreter Development REQUIRED)
+    execute_process(WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/
+        COMMAND bash install_pybind11.sh
+        COMMAND tee /dev/tty
+        COMMAND tail -n 1
+        OUTPUT_VARIABLE _PB11_ROOT
+    )
 endif()
 
 if(${BUILD_SHARED_LIB})
