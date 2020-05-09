@@ -68,7 +68,14 @@ set(LIBS
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+option(ENABLE_PYTHON "Build GPUE Python bindings" OFF)
 option(BUILD_SHARED_LIB "Build libgpue.so" OFF)
+option(BUILD_BIN "Build gpue binary" ON)
+
+if(${ENABLE_PYTHON})
+    set(BUILD_SHARED_LIB ON)
+endif()
+
 if(${BUILD_SHARED_LIB})
     add_library(gpue SHARED ${LIBS})
     target_link_libraries(gpue 
@@ -80,7 +87,6 @@ if(${BUILD_SHARED_LIB})
 endif()
 
 # gpue
-option(BUILD_BIN "Build gpue bninary" ON)
 if(${BUILD_BIN})
     add_executable(gpue-exe ${CMAKE_SOURCE_DIR}/src/main.cu ${LIBS})
     target_link_libraries(gpue-exe 
@@ -91,3 +97,5 @@ if(${BUILD_BIN})
     set_target_properties(gpue-exe PROPERTIES OUTPUT_NAME gpue)
     set_target_properties(gpue-exe PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 endif()
+
+add_subdirectory(third_party)
