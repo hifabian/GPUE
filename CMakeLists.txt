@@ -20,8 +20,8 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD OFF)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
 
-# Ensure C++11 enabled
-set(CMAKE_CXX_STANDARD 11)
+# Ensure C++14 enabled
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Use release build type (performance optimised) with debugging symbols
@@ -52,7 +52,7 @@ include_directories( ${HDF5_INCLUDE_DIRS}
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # Enable RDC and passing build flags to underlying compiler
-set(CMAKE_CUDA_FLAGS "-rdc=true -std=c++11 --compiler-options -fPIC") 
+set(CMAKE_CUDA_FLAGS "-rdc=true -std=c++14 --compiler-options -fPIC") 
 
 find_package(CUDAToolkit)
 
