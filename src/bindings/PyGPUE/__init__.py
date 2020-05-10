@@ -1,8 +1,8 @@
 name = "GPUE"
 
-import pygpue_io as io
-import pygpue_simulator as sim
-import pygpue_vortex as vtx
+import PyGPUE.io
+import PyGPUE.simulator
+import PyGPUE.vortex
 
 def run(params):
-    Grid
+    pass

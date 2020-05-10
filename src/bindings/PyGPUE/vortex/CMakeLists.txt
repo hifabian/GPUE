@@ -10,7 +10,8 @@ if(${ENABLE_PYTHON})
 
     add_library(_PyGPUE_VTX SHARED latticegraph_pybind11.cu)
     target_link_libraries(_PyGPUE_VTX PRIVATE pybind11::module gpue_vortex CUDA::cufft CUDA::cudart ${HDF5_CXX_LIBRARIES})
-    set_target_properties(_PyGPUE_VTX PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
+    set_target_properties(_PyGPUE_VTX PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}")
+    #set_target_properties(_PyGPUE_VTX PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
     set_target_properties(_PyGPUE_VTX PROPERTIES COMPILE_FLAGS "-dc")
     set_target_properties(_PyGPUE_VTX PROPERTIES 
         POSITION_INDEPENDENT_CODE ON

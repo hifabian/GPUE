@@ -21,6 +21,10 @@
 
 namespace py = pybind11;
 
+void test_all(){
+    printf("Please run unit tests in 'gpue' binary with flag '-u'\n");
+}
+
 // ############# ds.h ################ //
 
 void pos_binding(py::module &m){
@@ -191,6 +195,9 @@ void freefunc_binding(py::module &m){
     m.def("parSum", &parSum);
     m.def("optLatSetup", &optLatSetup);
     m.def("energy_calc", &energy_calc);
+
+    // Override test calls
+    m.def("test_all", &test_all);
 }
 
 // ############# Create binding module ################### //

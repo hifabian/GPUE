@@ -9,8 +9,9 @@ setuptools.setup(
     long_description="GPUE Python bindings",
     url="https://github.com/gpue-group/gpue",
     packages=setuptools.find_packages(),
-    package_data={'': ['_PyGPUE*.so'],},
+    package_data={'': ['lib_PyGPUE*.so'],},
     classifiers=[
         "Programming Language :: Python :: 3",
     ],
 )
+

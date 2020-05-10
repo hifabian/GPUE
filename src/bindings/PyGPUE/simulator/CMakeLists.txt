@@ -9,11 +9,12 @@ if(${ENABLE_PYTHON})
     find_package(Python COMPONENTS Interpreter Development)
 
     # Copied from https://stackoverflow.com/questions/51907755/building-a-pybind11-module-with-cpp-and-cuda-sources-using-cmake
-    add_library(_PyGPUE_IO SHARED io_pybind11.cu)
-    target_link_libraries(_PyGPUE PRIVATE pybind11::module gpue_io CUDA::cudart ${HDF5_CXX_LIBRARIES})
-    set_target_properties(_PyGPUE PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
-    set_target_properties(_PyGPUE PROPERTIES COMPILE_FLAGS "-dc")
-    set_target_properties(_PyGPUE PROPERTIES 
+    add_library(_PyGPUE_SIM SHARED simulator_pybind11.cu)
+    target_link_libraries(_PyGPUE_SIM PRIVATE pybind11::module gpue_simulator gpue_vortex gpue_io CUDA::cufft CUDA::cudart ${HDF5_CXX_LIBRARIES})
+    set_target_properties(_PyGPUE_SIM PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}")
+    #set_target_properties(_PyGPUE_SIM PROPERTIES PREFIX "${PYTHON_MODULE_PREFIX}" SUFFIX "${PYTHON_MODULE_EXTENSION}")
+    set_target_properties(_PyGPUE_SIM PROPERTIES COMPILE_FLAGS "-dc")
+    set_target_properties(_PyGPUE_SIM PROPERTIES 
         POSITION_INDEPENDENT_CODE ON
         CUDA_VISIBILITY_PRESET "hidden"
         CUDA_SEPARABLE_COMPILATION ON

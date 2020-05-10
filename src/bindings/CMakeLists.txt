@@ -14,12 +14,13 @@ if(${ENABLE_PYTHON})
     # Install the bound module into the GPUE Python environment
     configure_file(setup.py ${CMAKE_CURRENT_BINARY_DIR}/setup.py )
     find_package (Python COMPONENTS Interpreter Development REQUIRED)
-    add_custom_target(PipInstaller ALL DEPENDS _PyGPUE _PyGPUE_LG _PyGPUE_SIM)
+
+    add_custom_target(PipInstaller ALL DEPENDS _PyGPUE_VTX _PyGPUE_SIM _PyGPUE_IO)
     add_custom_command(TARGET PipInstaller
-        # Run after all other rules within the target have been executed
+    #    # Run after all other rules within the target have been executed
         POST_BUILD 
         DEPENDS Python::Interpreter
-        COMMAND ${Python_EXECUTABLE} -m pip install -e . --user
+        COMMAND ${Python_EXECUTABLE} -m pip install -e .
         COMMENT "Installing Python bindings into local installation"
         VERBATIM
     )
