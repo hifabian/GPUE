@@ -139,7 +139,7 @@ void lattice_binding(py::module &m){
         .def("isConnected", &T::isConnected);
 }
 
-PYBIND11_MODULE(_PyGPUE_LG, m){
+PYBIND11_MODULE(_PyGPUE_VTX, m){
     vortex_binding<Vortex>(m);
     vtxlist_binding<VtxList>(m);
     node_binding<Node>(m);
