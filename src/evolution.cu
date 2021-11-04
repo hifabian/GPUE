@@ -870,35 +870,59 @@ void evolve(Grid &par,
         }
 
         if (par.bval("energy_calc") && (i % (energy_calc_steps == 0 ? printSteps : energy_calc_steps) == 0)) {
-            double energy = energy_calc(par, gpuWfc);
+            // Energy
+            {
+                double energy = energy_calc(par, gpuWfc);
 
-            printf("Energy[t@%d]=%E\n",i,energy);
-            std::ofstream energy_out;
-            std::string mode = "energyi.dat";
-            if (gstate == 1){
-                mode = "energy.dat";
-            }
-            if (i == 0){
-                energy_out.open(data_dir + mode);
-            }
-            else{
-                energy_out.open(data_dir + mode, std::ios::out |
-                                                 std::ios::app);
-            }
-            energy_out << energy << '\n';
-            energy_out.close();
+                printf("Energy[t@%d]=%E\n",i,energy);
+                std::ofstream energy_out;
+                std::string mode = "energyi.dat";
+                if (gstate == 1){
+                    mode = "energy.dat";
+                }
+                if (i == 0){
+                  energy_out.open(data_dir + mode);
+                }
+                else{
+                   energy_out.open(data_dir + mode, std::ios::out |
+                                                    std::ios::app);
+                }
+                energy_out << energy << '\n';
+                energy_out.close();
             
-            double oldEnergy;
-            if (i != 0) {
-                oldEnergy = par.dval("energy");
-            } else {
-                oldEnergy = 0;
-            }
-            par.store("energy", energy);
+                double oldEnergy;
+                if (i != 0) {
+                    oldEnergy = par.dval("energy");
+                } else {
+                    oldEnergy = 0;
+                }
+                par.store("energy", energy);
 
-            if (i != 0 && fabs(oldEnergy - energy) < energy_calc_threshold * oldEnergy && gstate == 0) {
-                printf("Stopping early at step %d with energy %E\n", i, energy);
-                break;
+                if (i != 0 && fabs(oldEnergy - energy) < energy_calc_threshold * oldEnergy && gstate == 0) {
+                    printf("Stopping early at step %d with energy %E\n", i, energy);
+                    break;
+                }
+            }
+
+            // Monopole
+            {
+                double monopole = monopole_calc(par, gpuWfc);
+
+                printf("Monopole[t@%d]=%E\n",i,monopole);
+                std::ofstream monopole_out;
+                std::string mode = "monopolei.dat";
+                if (gstate == 1){
+                    mode = "monopole.dat";
+                }
+                if (i == 0){
+                    monopole_out.open(data_dir + mode);
+                }
+                else{
+                    monopole_out.open(data_dir + mode, std::ios::out |
+                                                       std::ios::app);
+                }
+                monopole_out << monopole << '\n';
+                monopole_out.close();
             }
         }
     }

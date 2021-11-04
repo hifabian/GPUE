@@ -102,4 +102,13 @@ void optLatSetup(const std::shared_ptr<Vtx::Vortex> centre, const double* V,
 */
 double energy_calc(Grid &par, double2* wfc);
 
+/**
+* @brief	Calculates the monopole mode of the condensate.
+* @ingroup	data
+* @param	par Parameter class
+* @param	wfc Device wavefunction array
+* @return	$\langle \Psi | r | \Psi \rangle$
+*/
+double monopole_calc(Grid &par, double2* wfc);
+
 #endif

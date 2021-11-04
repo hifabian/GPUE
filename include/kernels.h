@@ -590,4 +590,18 @@ inline __device__ double2 braKetMult(double2 in1, double2 in2);
 __global__ void pSum(double* in1, double* output, int pass);
 
 
+/**
+* @brief	Evaluate monopole mode.
+* @ingroup	gpu
+* @param	wfc Wavefunction
+* @param	dx
+* @param	dy
+* @param	dz
+* @param	xMax
+* @param	yMax
+* @param	zMax
+* @param	out Output
+*/
+__global__ void monopole_sum(double2 *wfc, double dx, double dy, double dz, double xMax, double yMax, double zMax, double *out);
+
 #endif

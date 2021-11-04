@@ -587,6 +587,21 @@ __global__ void multipass(double* input, double* output){
     }
 }
 
+__global__ void monopole_sum(double2 *wfc, double dx, double dy, double dz, double xMax, double yMax, double zMax, double *out) {
+    const int gid = getGid3d3d();
+    const int xid = blockIdx.x*blockDim.x + threadIdx.x;
+    const int yid = blockIdx.y*blockDim.y + threadIdx.y;
+    const int zid = blockIdx.z*blockDim.z + threadIdx.z;
+
+    const double2 wfc_l = wfc[gid];
+    const double x = -xMax+dx*xid;
+    const double y = -yMax+dy*yid;
+    const double z = -zMax+dz*zid;
+    const double r = sqrt(x*x+y*y+z*z);
+
+    out[gid] = r*(wfc_l.x*wfc_l.x+wfc_l.y*wfc_l.y);
+}
+
 /*
 * Calculates all of the energy of the current state. sqrt_omegaz_mass = sqrt(omegaZ/mass), part of the nonlin interaction term
 */
