@@ -924,6 +924,27 @@ void evolve(Grid &par,
                 monopole_out << monopole << '\n';
                 monopole_out.close();
             }
+
+            // Dipole
+            {
+                double dipole = dipole_calc(par, gpuWfc);
+
+                printf("Dipole[t@%d]=%E\n",i,dipole);
+                std::ofstream dipole_out;
+                std::string mode = "dipolei.dat";
+                if (gstate == 1){
+                    mode = "dipole.dat";
+                }
+                if (i == 0){
+                    dipole_out.open(data_dir + mode);
+                }
+                else{
+                    dipole_out.open(data_dir + mode, std::ios::out |
+                                                       std::ios::app);
+                }
+                dipole_out << dipole << '\n';
+                dipole_out.close();
+            }
         }
     }
 

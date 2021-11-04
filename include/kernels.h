@@ -604,4 +604,19 @@ __global__ void pSum(double* in1, double* output, int pass);
 */
 __global__ void monopole_sum(double2 *wfc, double dx, double dy, double dz, double xMax, double yMax, double zMax, double *out);
 
+
+/**
+* @brief	Evaluate dipole mode.
+* @ingroup	gpu
+* @param	wfc Wavefunction
+* @param	dx
+* @param	dy
+* @param	dz
+* @param	xMax
+* @param	yMax
+* @param	zMax
+* @param	out Output
+*/
+__global__ void dipole_sum(double2 *wfc, double dx, double dy, double dz, double xMax, double yMax, double zMax, double *out);
+
 #endif

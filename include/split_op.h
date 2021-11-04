@@ -111,4 +111,13 @@ double energy_calc(Grid &par, double2* wfc);
 */
 double monopole_calc(Grid &par, double2* wfc);
 
+/**
+* @brief	Calculates the dipole mode of the condensate.
+* @ingroup	data
+* @param	par Parameter class
+* @param	wfc Device wavefunction array
+* @return	$\langle \Psi | r^2 | \Psi \rangle$
+*/
+double dipole_calc(Grid &par, double2* wfc);
+
 #endif

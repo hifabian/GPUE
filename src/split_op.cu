@@ -411,3 +411,41 @@ double monopole_calc(Grid &par, double2* wfc){
 
     return sum;
 }
+
+double dipole_calc(Grid &par, double2* wfc){
+    dim3 grid = par.grid;
+    dim3 threads = par.threads;
+
+    int xDim = par.ival("xDim");
+    int yDim = par.ival("yDim");
+    int zDim = par.ival("zDim");
+    int gsize = xDim*yDim*zDim;
+
+    int dimnum = par.ival("dimnum");
+
+    double dx = par.dval("dx");
+    double dy = par.dval("dy");
+    double dz = par.dval("dz");
+    double xMax = par.dval("xMax");
+    double yMax = par.dval("yMax");
+    double zMax = par.dval("zMax");
+    double dg = dx*dy*dz;
+
+    double *dipole;
+    cudaHandleError( cudaMalloc((void **) &dipole, sizeof(double)*gsize)  );
+
+    dipole_sum<<<grid, threads>>>(wfc, dx, dy, dz, xMax, yMax, zMax, dipole);
+    cudaCheckError();
+
+    gpuReduce(dipole, gsize, threads.x);
+
+    double sum = 0;
+
+    cudaHandleError( cudaMemcpy(&sum, dipole, sizeof(double),
+                                cudaMemcpyDeviceToHost) );
+    cudaHandleError( cudaFree(dipole) );
+
+    sum *= dg;
+
+    return sum;
+}
