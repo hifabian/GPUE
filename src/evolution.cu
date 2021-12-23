@@ -904,27 +904,6 @@ void evolve(Grid &par,
                 }
             }
 
-            // Monopole
-            {
-                double monopole = monopole_calc(par, gpuWfc);
-
-                printf("Monopole[t@%d]=%E\n",i,monopole);
-                std::ofstream monopole_out;
-                std::string mode = "monopolei.dat";
-                if (gstate == 1){
-                    mode = "monopole.dat";
-                }
-                if (i == 0){
-                    monopole_out.open(data_dir + mode);
-                }
-                else{
-                    monopole_out.open(data_dir + mode, std::ios::out |
-                                                       std::ios::app);
-                }
-                monopole_out << monopole << '\n';
-                monopole_out.close();
-            }
-
             // Dipole
             {
                 double dipole = dipole_calc(par, gpuWfc);
@@ -944,6 +923,27 @@ void evolve(Grid &par,
                 }
                 dipole_out << dipole << '\n';
                 dipole_out.close();
+            }
+
+            // Quadrupole
+            {
+                double quadrupole = quadrupole_calc(par, gpuWfc);
+
+                printf("Quadrupole[t@%d]=%E\n",i,quadrupole);
+                std::ofstream quadrupole_out;
+                std::string mode = "quadrupolei.dat";
+                if (gstate == 1){
+                    mode = "quadrupole.dat";
+                }
+                if (i == 0){
+                    quadrupole_out.open(data_dir + mode);
+                }
+                else{
+                    quadrupole_out.open(data_dir + mode, std::ios::out |
+                                                       std::ios::app);
+                }
+                quadrupole_out << quadrupole << '\n';
+                quadrupole_out.close();
             }
         }
     }

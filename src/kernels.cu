@@ -587,7 +587,7 @@ __global__ void multipass(double* input, double* output){
     }
 }
 
-__global__ void monopole_sum(double2 *wfc, double dx, double dy, double dz, double xMax, double yMax, double zMax, double *out) {
+__global__ void dipole_sum(double2 *wfc, double dx, double dy, double dz, double xMax, double yMax, double zMax, double *out) {
     const int gid = getGid3d3d();
     const int xid = blockIdx.x*blockDim.x + threadIdx.x;
     const int yid = blockIdx.y*blockDim.y + threadIdx.y;
@@ -602,7 +602,7 @@ __global__ void monopole_sum(double2 *wfc, double dx, double dy, double dz, doub
     out[gid] = r*(wfc_l.x*wfc_l.x+wfc_l.y*wfc_l.y);
 }
 
-__global__ void dipole_sum(double2 *wfc, double dx, double dy, double dz, double xMax, double yMax, double zMax, double *out) {
+__global__ void quadrupole_sum(double2 *wfc, double dx, double dy, double dz, double xMax, double yMax, double zMax, double *out) {
     const int gid = getGid3d3d();
     const int xid = blockIdx.x*blockDim.x + threadIdx.x;
     const int yid = blockIdx.y*blockDim.y + threadIdx.y;

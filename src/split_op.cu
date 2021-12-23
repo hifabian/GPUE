@@ -374,44 +374,6 @@ double energy_calc(Grid &par, double2* wfc){
     return sum;
 }
 
-double monopole_calc(Grid &par, double2* wfc){
-    dim3 grid = par.grid;
-    dim3 threads = par.threads;
-
-    int xDim = par.ival("xDim");
-    int yDim = par.ival("yDim");
-    int zDim = par.ival("zDim");
-    int gsize = xDim*yDim*zDim;
-
-    int dimnum = par.ival("dimnum");
-
-    double dx = par.dval("dx");
-    double dy = par.dval("dy");
-    double dz = par.dval("dz");
-    double xMax = par.dval("xMax");
-    double yMax = par.dval("yMax");
-    double zMax = par.dval("zMax");
-    double dg = dx*dy*dz;
-
-    double *monopole;
-    cudaHandleError( cudaMalloc((void **) &monopole, sizeof(double)*gsize)  );
-
-    monopole_sum<<<grid, threads>>>(wfc, dx, dy, dz, xMax, yMax, zMax, monopole);
-    cudaCheckError();
-
-    gpuReduce(monopole, gsize, threads.x);
-
-    double sum = 0;
-
-    cudaHandleError( cudaMemcpy(&sum, monopole, sizeof(double),
-                                cudaMemcpyDeviceToHost) );
-    cudaHandleError( cudaFree(monopole) );
-
-    sum *= dg;
-
-    return sum;
-}
-
 double dipole_calc(Grid &par, double2* wfc){
     dim3 grid = par.grid;
     dim3 threads = par.threads;
@@ -444,6 +406,44 @@ double dipole_calc(Grid &par, double2* wfc){
     cudaHandleError( cudaMemcpy(&sum, dipole, sizeof(double),
                                 cudaMemcpyDeviceToHost) );
     cudaHandleError( cudaFree(dipole) );
+
+    sum *= dg;
+
+    return sum;
+}
+
+double quadrupole_calc(Grid &par, double2* wfc){
+    dim3 grid = par.grid;
+    dim3 threads = par.threads;
+
+    int xDim = par.ival("xDim");
+    int yDim = par.ival("yDim");
+    int zDim = par.ival("zDim");
+    int gsize = xDim*yDim*zDim;
+
+    int dimnum = par.ival("dimnum");
+
+    double dx = par.dval("dx");
+    double dy = par.dval("dy");
+    double dz = par.dval("dz");
+    double xMax = par.dval("xMax");
+    double yMax = par.dval("yMax");
+    double zMax = par.dval("zMax");
+    double dg = dx*dy*dz;
+
+    double *quadrupole;
+    cudaHandleError( cudaMalloc((void **) &quadrupole, sizeof(double)*gsize)  );
+
+    quadrupole_sum<<<grid, threads>>>(wfc, dx, dy, dz, xMax, yMax, zMax, quadrupole);
+    cudaCheckError();
+
+    gpuReduce(quadrupole, gsize, threads.x);
+
+    double sum = 0;
+
+    cudaHandleError( cudaMemcpy(&sum, quadrupole, sizeof(double),
+                                cudaMemcpyDeviceToHost) );
+    cudaHandleError( cudaFree(quadrupole) );
 
     sum *= dg;
 
